@@ -1,0 +1,35 @@
+---
+title: 'Game update'
+---
+
+<Card>
+<Badge>Game Update</Badge>
+
+Game update is triggered when a game is created, when betting on the game is opened or closed, or when the start time for the game has been updated.
+
+<Accordion title="Payload">
+<ResponseField name="id" type="string" />
+<ResponseField name="parentGameID" type="string" />
+<ResponseField name="league" type="string" />
+<ResponseField name="sport" type="number" />
+<ResponseField name="start" type="number">
+Format: date
+</ResponseField>
+<ResponseField name="ended" type="boolean" />
+<ResponseField name="participants" type="array" />
+<ResponseField name="awayMoneylines" type="array" />
+<ResponseField name="homeMoneylines" type="array" />
+<ResponseField name="awaySpreads" type="object" />
+<ResponseField name="homeSpreads" type="object" />
+<ResponseField name="over" type="object" />
+<ResponseField name="under" type="object" />
+<ResponseField name="mainHomeSpread" type="number" />
+<ResponseField name="mainAwaySpread" type="number" />
+<ResponseField name="mainTotal" type="number" />
+<ResponseField name="messageType" type="string">
+Allowed values: <Badge color="orange">marketOpen</Badge> <Badge color="orange">marketClosed</Badge>
+</ResponseField>
+
+Additional properties are allowed.
+</Accordion>
+</Card>

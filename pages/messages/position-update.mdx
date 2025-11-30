@@ -1,0 +1,65 @@
+---
+title: "Position update"
+---
+
+<Card>
+<Badge>Position Update</Badge>
+
+This is emitted when a price has changed in a single market of a game (example there is a new order on Team A +3.5). Note - V2 will simplify order updates to only include information about the relevant order.
+
+<Accordion title="Payload">
+<ResponseField name="matched" type="object">
+    <Expandable title="properties">
+    <ResponseField name="txID" type="string">
+        id of the bet. You can find the complete bet object by requesting getMatchedBets from the REST API and finding the bet with the same txID.
+    </ResponseField>
+
+    <ResponseField name="filled" type="number" />
+    <ResponseField name="odds" type="number">
+    the odds the bet got filled at. These will always be expressed in the odds that you have. If you had an order that allowed another user to get -105, you will see +105 here.
+    </ResponseField>
+    </Expandable>
+    The filled amount is how much was matched in terms of your risk. This will be null unless your order was matched. TX ID is ID of the bet, you can use this to look up matched ID on the Rest API to get information on game (https://documenter.getpostman.com/view/6710109/U16gNmHG#a8745d07-8b3c-4269-bcb6-ae9740aaf022).
+</ResponseField>
+
+<ResponseField name="unmatched" type="object">
+    <Expandable title="properties">
+    <ResponseField name="filled" type="number">
+        This is how much of your order was just filled, expressed in terms of your risk. This will NOT show the total filled if your order was taken multiple times.
+    </ResponseField>
+
+    <ResponseField name="offered" type="number">
+    Total amount offered in your order expressed in terms of your risk in dollars
+    </ResponseField>
+    <ResponseField name="orderID" type="string">
+    ID of your order, this can be used to look up your order in the [rest api](https://documenter.getpostman.com/view/6710109/U16gNmHG#537a968c-fa85-46ab-b37d-49f47fbd3f3b)
+    </ResponseField>
+    <ResponseField name="odds" type="number">
+    Odds of your side of the offer
+    </ResponseField>
+    </Expandable>
+    This is where you will receive information from your orders. If remaining is 0 that means your order is completly matched. If offered is 0, that means the order was canceled.
+</ResponseField>
+<ResponseField name="gameID" type="string">
+ID of the game this bet was for
+</ResponseField>
+<ResponseField name="eventName" type="string">
+Event name of the game this bet was for
+</ResponseField>
+<ResponseField name="parentGameID" type="string">
+ID of the parent game, if this is a 1H or 1Q game
+</ResponseField>
+<ResponseField name="league" type="string">
+League of the game
+</ResponseField>
+<ResponseField name="sport" type="string">
+Sport of the game
+</ResponseField>
+<ResponseField name="origin" type="string">
+Allowed values: <Badge color="orange">offer</Badge> <Badge color="orange">wager</Badge>
+</ResponseField>
+
+Additional properties are allowed.
+
+</Accordion>
+</Card>

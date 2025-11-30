@@ -1,0 +1,565 @@
+---
+title: 'Operations'
+---
+
+## <Badge color="green">SUB</Badge> /
+
+Channel specific information <Badge color="green">WSS</Badge>
+
+<ResponseField name="query" type="object">
+    <Expandable title="properties">
+    <ResponseField name="token" type="string" required>
+        A valid auth token from the 4casters REST API is needed
+    </ResponseField>
+    </Expandable>
+</ResponseField>
+
+Accepts the following message:
+
+## <Badge color="green">SUB</Badge> /priceUpdates
+
+Accepts **one of** the following messages:
+
+<Card>
+**#0** <Badge>Order Update</Badge>
+
+This is emitted when a price has changed in a single market of a game (example there is a new order on Team A +3.5). Note - V2 will simplify order updates to only include information about the relevant order.
+
+<ResponseField name="payload" type="object">
+    <Expandable title="properties">
+    <ResponseField name="gameID" type="string"/>
+    <ResponseField name="type" type="string">
+    Allowed values: <Badge color="orange">moneyline</Badge> <Badge color="orange">spread</Badge> <Badge color="orange">total</Badge> <Badge color="orange">moneyline1x2</Badge>
+    </ResponseField>
+    <ResponseField name="sideOrders" type="array"/>
+    <ResponseField name="spread" type="number"/>
+    <ResponseField name="total" type="number"/>
+    <ResponseField name="side" type="string"/>
+    <ResponseField name="market" type="string"/>
+    </Expandable>
+</ResponseField>
+</Card>
+
+<Expandable title="payload">
+<CodeGroup>
+```json
+{
+  "payload": {
+    "gameID": "62619dce25e2fb049a71cc2e",
+    "type": "total",
+    "OU": "under",
+    "total": 8.5,
+    "spread": null,
+    "sideOrders": [
+      {
+        "id": "62619e6a40e36d0494600f48",
+        "type": "total",
+        "createdBy": "603eb5d05eca45001243aedc",
+        "sumUntaken": 255,
+        "odds": 104,
+        "bet": 265.2,
+        "gameID": "62619dce25e2fb049a71cc2e",
+        "takenRatio": 0,
+        "participantID": null,
+        "total": 8.5,
+        "spread": null,
+        "OU": "under",
+        "followPinnacle": false,
+        "source": "fourcaster",
+        "level": 1,
+        "expiry": "2022-04-21T23:40:12.000Z",
+        "createdAt": "2022-04-21T18:11:54.614Z"
+      }
+    ]
+  }
+}
+```
+
+</CodeGroup>
+</Expandable>
+
+
+<Card>
+**#1** <Badge>Game Update</Badge>
+
+Game update is triggered when a game is created, when betting on the game is opened or closed, or when the start time for the game has been updated.
+
+<Accordion title="Payload">
+<ResponseField name="id" type="string" />
+<ResponseField name="parentGameID" type="string" />
+<ResponseField name="league" type="string" />
+<ResponseField name="sport" type="number" />
+<ResponseField name="start" type="number">
+Format: date
+</ResponseField>
+<ResponseField name="ended" type="boolean" />
+<ResponseField name="participants" type="array" />
+<ResponseField name="awayMoneylines" type="array" />
+<ResponseField name="homeMoneylines" type="array" />
+<ResponseField name="awaySpreads" type="object" />
+<ResponseField name="homeSpreads" type="object" />
+<ResponseField name="over" type="object" />
+<ResponseField name="under" type="object" />
+<ResponseField name="mainHomeSpread" type="number" />
+<ResponseField name="mainAwaySpread" type="number" />
+<ResponseField name="mainTotal" type="number" />
+<ResponseField name="messageType" type="string">
+Allowed values: <Badge color="orange">marketOpen</Badge> <Badge color="orange">marketClosed</Badge>
+</ResponseField>
+
+Additional properties are allowed.
+</Accordion>
+</Card>
+
+<Expandable title="payload">
+<CodeGroup>
+```json
+{
+  "payload": {
+    "isFutures": false,
+    "futuresTeam": "DAL",
+    "id": "625ecb5f269b7ff13619ca7c",
+    "parentGameID": null,
+    "cheapDataUID": "14251-40177-2022-04-21",
+    "league": "NBA",
+    "sport": "basketball",
+    "start": "2022-04-22T01:00:00.000Z",
+    "ended": false,
+    "participants": [
+      {
+        "id": "607349dc22a237cf46b021fb",
+        "longName": "Dallas Mavericks",
+        "shortName": "DAL",
+        "homeAway": "away",
+        "mainPitcher": null,
+        "rotationNumber": "571",
+        "futuresSide": ""
+      },
+      {
+        "id": "60747bcde3b0844e56d2e7e8",
+        "longName": "Utah Jazz",
+        "shortName": "UTA",
+        "homeAway": "home",
+        "mainPitcher": null,
+        "rotationNumber": "572",
+        "futuresSide": ""
+      }
+    ],
+    "awayMoneylines": [
+      {
+        "id": "6261a5551a903d7836e8a893",
+        "type": "moneyline",
+        "createdBy": "60d77fc33fa34fec983ee4cf",
+        "sumUntaken": 186.55462,
+        "odds": 238,
+        "bet": 444,
+        "gameID": "625ecb5f269b7ff13619ca7c",
+        "takenRatio": null,
+        "participantID": "607349dc22a237cf46b021fb",
+        "total": null,
+        "spread": null,
+        "followPinnacle": false,
+        "pinnacleOdds": 245,
+        "source": "marketmaker",
+        "level": 1,
+        "expiry": null,
+        "createdAt": "2022-04-21T18:41:25.251Z"
+      },
+      {
+        "id": "62603475bc30622124107d10",
+        "type": "moneyline",
+        "createdBy": "62454d375815b1c074221808",
+        "sumUntaken": 516.27907,
+        "odds": 215,
+        "bet": 1110,
+        "gameID": "625ecb5f269b7ff13619ca7c",
+        "takenRatio": 0,
+        "participantID": "607349dc22a237cf46b021fb",
+        "total": null,
+        "spread": null,
+        "followPinnacle": false,
+        "pinnacleOdds": 245,
+        "source": "fourcaster",
+        "level": 1,
+        "expiry": "2022-04-22T01:00:20.000Z",
+        "createdAt": "2022-04-20T16:27:33.322Z"
+      }
+    ],
+    "homeMoneylines": [
+      {
+        "id": "62603474bc30622124107ce3",
+        "type": "moneyline",
+        "createdBy": "62454d375815b1c074221808",
+        "sumUntaken": 1470.75,
+        "odds": -265,
+        "bet": 555,
+        "gameID": "625ecb5f269b7ff13619ca7c",
+        "takenRatio": 0,
+        "participantID": "60747bcde3b0844e56d2e7e8",
+        "total": null,
+        "spread": null,
+        "followPinnacle": false,
+        "pinnacleOdds": -290,
+        "source": "fourcaster",
+        "level": 1,
+        "expiry": "2022-04-22T01:00:19.000Z",
+        "createdAt": "2022-04-20T16:27:32.927Z"
+      },
+      {
+        "id": "6261a5551a903d7836e8a88d",
+        "type": "moneyline",
+        "createdBy": "60d77fc33fa34fec983ee4cf",
+        "sumUntaken": 588.3,
+        "odds": -265,
+        "bet": 222,
+        "gameID": "625ecb5f269b7ff13619ca7c",
+        "takenRatio": null,
+        "participantID": "60747bcde3b0844e56d2e7e8",
+        "total": null,
+        "spread": null,
+        "followPinnacle": false,
+        "pinnacleOdds": -290,
+        "source": "marketmaker",
+        "level": 1,
+        "expiry": null,
+        "createdAt": "2022-04-21T18:41:25.201Z"
+      }
+    ],
+    "awaySpreads": {
+      "6": [
+        {
+          "id": "62619220e2884c322a9d83e7",
+          "type": "spread",
+          "createdBy": "60d783790f7939ee6113ed05",
+          "sumUntaken": 109,
+          "odds": -109,
+          "bet": 100,
+          "gameID": "625ecb5f269b7ff13619ca7c",
+          "takenRatio": 0,
+          "participantID": "607349dc22a237cf46b021fb",
+          "total": null,
+          "spread": 6,
+          "followPinnacle": false,
+          "source": "fourcaster",
+          "level": 1,
+          "expiry": "2022-04-22T01:00:22.000Z",
+          "createdAt": "2022-04-21T17:19:28.273Z"
+        },
+        {
+          "id": "62603477bc30622124107d8d",
+          "type": "spread",
+          "createdBy": "62454d375815b1c074221808",
+          "sumUntaken": 220.5,
+          "odds": -110,
+          "bet": 555,
+          "gameID": "625ecb5f269b7ff13619ca7c",
+          "takenRatio": 0.6388206388206388,
+          "participantID": "607349dc22a237cf46b021fb",
+          "total": null,
+          "spread": 6,
+          "followPinnacle": false,
+          "source": "fourcaster",
+          "level": 1,
+          "expiry": "2022-04-22T01:00:11.000Z",
+          "createdAt": "2022-04-20T16:27:35.119Z"
+        },
+        {
+          "id": "626172dc124d4320aac57f68",
+          "type": "spread",
+          "createdBy": "624f057c6c6a2ebcc7bf003c",
+          "sumUntaken": 550,
+          "odds": -110,
+          "bet": 500,
+          "gameID": "625ecb5f269b7ff13619ca7c",
+          "takenRatio": 0,
+          "participantID": "607349dc22a237cf46b021fb",
+          "total": null,
+          "spread": 6,
+          "followPinnacle": false,
+          "source": "fourcaster",
+          "level": 1,
+          "expiry": "2022-04-22T01:00:13.000Z",
+          "createdAt": "2022-04-21T15:06:04.853Z"
+        }
+      ],
+      "6.5": [
+        {
+          "id": "6261a5551a903d7836e8a8a5",
+          "type": "spread",
+          "createdBy": "60d77fc33fa34fec983ee4cf",
+          "sumUntaken": 352.98,
+          "odds": -106,
+          "bet": 333,
+          "gameID": "625ecb5f269b7ff13619ca7c",
+          "takenRatio": null,
+          "participantID": "607349dc22a237cf46b021fb",
+          "total": null,
+          "spread": 6.5,
+          "followPinnacle": false,
+          "pinnacleOdds": -110,
+          "source": "marketmaker",
+          "level": 1,
+          "expiry": null,
+          "createdAt": "2022-04-21T18:41:25.493Z"
+        }
+      ]
+    },
+    "homeSpreads": {
+      "-6": [
+        {
+          "id": "62617250124d4320aac57eba",
+          "type": "spread",
+          "createdBy": "624f057c6c6a2ebcc7bf003c",
+          "sumUntaken": 2120,
+          "odds": -106,
+          "bet": 2000,
+          "gameID": "625ecb5f269b7ff13619ca7c",
+          "takenRatio": 0,
+          "participantID": "60747bcde3b0844e56d2e7e8",
+          "total": null,
+          "spread": -6,
+          "followPinnacle": false,
+          "pinnacleOdds": -110,
+          "source": "fourcaster",
+          "level": 1,
+          "expiry": "2022-04-22T01:00:23.000Z",
+          "createdAt": "2022-04-21T15:03:44.222Z"
+        },
+        {
+          "id": "62603475bc30622124107d41",
+          "type": "spread",
+          "createdBy": "62454d375815b1c074221808",
+          "sumUntaken": 610.5,
+          "odds": -110,
+          "bet": 555,
+          "gameID": "625ecb5f269b7ff13619ca7c",
+          "takenRatio": 0,
+          "participantID": "60747bcde3b0844e56d2e7e8",
+          "total": null,
+          "spread": -6,
+          "followPinnacle": false,
+          "source": "fourcaster",
+          "level": 1,
+          "expiry": "2022-04-22T01:00:19.000Z",
+          "createdAt": "2022-04-20T16:27:33.844Z"
+        }
+      ],
+      "-6.5": [
+        {
+          "id": "6261a5551a903d7836e8a89f",
+          "type": "spread",
+          "createdBy": "60d77fc33fa34fec983ee4cf",
+          "sumUntaken": 352.98,
+          "odds": -106,
+          "bet": 333,
+          "gameID": "625ecb5f269b7ff13619ca7c",
+          "takenRatio": null,
+          "participantID": "60747bcde3b0844e56d2e7e8",
+          "total": null,
+          "spread": -6.5,
+          "followPinnacle": false,
+          "pinnacleOdds": -110,
+          "source": "marketmaker",
+          "level": 1,
+          "expiry": null,
+          "createdAt": "2022-04-21T18:41:25.451Z"
+        }
+      ]
+    },
+    "over": {
+      "209.5": [
+        {
+          "id": "6261a5551a903d7836e8a8b6",
+          "type": "total",
+          "createdBy": "60d77fc33fa34fec983ee4cf",
+          "sumUntaken": 237.54,
+          "odds": -107,
+          "bet": 222,
+          "gameID": "625ecb5f269b7ff13619ca7c",
+          "takenRatio": null,
+          "participantID": null,
+          "total": 209.5,
+          "spread": null,
+          "OU": "over",
+          "followPinnacle": false,
+          "pinnacleOdds": -110,
+          "source": "marketmaker",
+          "level": 1,
+          "expiry": null,
+          "createdAt": "2022-04-21T18:41:25.702Z"
+        }
+      ],
+      "210.5": [
+        {
+          "id": "625ed5fbe5ecf373651e8c0d",
+          "type": "total",
+          "createdBy": "62454d375815b1c074221808",
+          "sumUntaken": 610.5,
+          "odds": -110,
+          "bet": 555,
+          "gameID": "625ecb5f269b7ff13619ca7c",
+          "takenRatio": 0,
+          "participantID": null,
+          "total": 210.5,
+          "spread": null,
+          "OU": "over",
+          "followPinnacle": false,
+          "source": "fourcaster",
+          "level": 1,
+          "expiry": "2022-04-22T01:00:13.000Z",
+          "createdAt": "2022-04-19T15:32:11.793Z"
+        }
+      ]
+    },
+    "under": {
+      "209.5": [
+        {
+          "id": "6261a5551a903d7836e8a8b0",
+          "type": "total",
+          "createdBy": "60d77fc33fa34fec983ee4cf",
+          "sumUntaken": 228.66,
+          "odds": -103,
+          "bet": 222,
+          "gameID": "625ecb5f269b7ff13619ca7c",
+          "takenRatio": null,
+          "participantID": null,
+          "total": 209.5,
+          "spread": null,
+          "OU": "under",
+          "followPinnacle": false,
+          "pinnacleOdds": -110,
+          "source": "marketmaker",
+          "level": 1,
+          "expiry": null,
+          "createdAt": "2022-04-21T18:41:25.657Z"
+        }
+      ],
+      "210.5": [
+        {
+          "id": "625ed5fbe5ecf373651e8bff",
+          "type": "total",
+          "createdBy": "62454d375815b1c074221808",
+          "sumUntaken": 610.5,
+          "odds": -110,
+          "bet": 555,
+          "gameID": "625ecb5f269b7ff13619ca7c",
+          "takenRatio": 0,
+          "participantID": null,
+          "total": 210.5,
+          "spread": null,
+          "OU": "under",
+          "followPinnacle": false,
+          "source": "fourcaster",
+          "level": 1,
+          "expiry": "2022-04-22T01:00:17.000Z",
+          "createdAt": "2022-04-19T15:32:11.471Z"
+        }
+      ]
+    },
+    "mainHomeSpread": -6.5,
+    "mainAwaySpread": 6.5,
+    "mainTotal": 209.5
+  }
+}
+```
+
+</CodeGroup>
+</Expandable>
+
+## <Badge color="green">SUB</Badge> /v2/user/{username}
+
+<Expandable title="parameters">
+    <ResponseField name="username" type="string" required>
+        your 4casters username, this has to be your username, not email
+    </ResponseField>
+</Expandable>
+
+Accepts the following message:
+
+<Card>
+<Badge>Position Update</Badge>
+
+This is emitted when a price has changed in a single market of a game (example there is a new order on Team A +3.5). Note - V2 will simplify order updates to only include information about the relevant order.
+
+<Accordion title="Payload">
+<ResponseField name="matched" type="object">
+    <Expandable title="properties">
+    <ResponseField name="txID" type="string">
+        id of the bet. You can find the complete bet object by requesting getMatchedBets from the REST API and finding the bet with the same txID.
+    </ResponseField>
+
+    <ResponseField name="filled" type="number" />
+    <ResponseField name="odds" type="number">
+    the odds the bet got filled at. These will always be expressed in the odds that you have. If you had an order that allowed another user to get -105, you will see +105 here.
+    </ResponseField>
+    </Expandable>
+    The filled amount is how much was matched in terms of your risk. This will be null unless your order was matched. TX ID is ID of the bet, you can use this to look up matched ID on the Rest API to get information on game (https://documenter.getpostman.com/view/6710109/U16gNmHG#a8745d07-8b3c-4269-bcb6-ae9740aaf022).
+</ResponseField>
+
+<ResponseField name="unmatched" type="object">
+    <Expandable title="properties">
+    <ResponseField name="filled" type="number">
+        This is how much of your order was just filled, expressed in terms of your risk. This will NOT show the total filled if your order was taken multiple times.
+    </ResponseField>
+
+    <ResponseField name="offered" type="number">
+    Total amount offered in your order expressed in terms of your risk in dollars
+    </ResponseField>
+    <ResponseField name="orderID" type="string">
+    ID of your order, this can be used to look up your order in the [rest api](https://documenter.getpostman.com/view/6710109/U16gNmHG#537a968c-fa85-46ab-b37d-49f47fbd3f3b)
+    </ResponseField>
+    <ResponseField name="odds" type="number">
+    Odds of your side of the offer
+    </ResponseField>
+    </Expandable>
+    This is where you will receive information from your orders. If remaining is 0 that means your order is completly matched. If offered is 0, that means the order was canceled.
+</ResponseField>
+<ResponseField name="gameID" type="string">
+ID of the game this bet was for
+</ResponseField>
+<ResponseField name="eventName" type="string">
+Event name of the game this bet was for
+</ResponseField>
+<ResponseField name="parentGameID" type="string">
+ID of the parent game, if this is a 1H or 1Q game
+</ResponseField>
+<ResponseField name="league" type="string">
+League of the game
+</ResponseField>
+<ResponseField name="sport" type="string">
+Sport of the game
+</ResponseField>
+<ResponseField name="origin" type="string">
+Allowed values: <Badge color="orange">offer</Badge> <Badge color="orange">wager</Badge>
+</ResponseField>
+
+Additional properties are allowed.
+
+</Accordion>
+</Card>
+
+<Expandable title="payload">
+<CodeGroup>
+```json
+{
+  "payload": {
+    "matched": null,
+    "unmatched": {
+      "filled": 0,
+      "offered": 999,
+      "remaining": 999,
+      "orderID": "62619e6b40e36d0494600f67",
+      "odds": -105
+    },
+    "gameID": "603eb5d05eca45001243aedc",
+    "eventName": "PHILADELPHIA-76ERS-VS-MIAMI-HEAT",
+    "parentGameID": null,
+    "league": "NBA",
+    "sport": "basketball",
+    "origin": "offer"
+  }
+}
+```
+
+</CodeGroup>
+</Expandable>

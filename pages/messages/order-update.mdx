@@ -1,0 +1,23 @@
+---
+title: 'Order update'
+---
+
+<Card>
+<Badge>Order Update</Badge>
+
+This is emitted when a price has changed in a single market of a game (example there is a new order on Team A +3.5). Note - V2 will simplify order updates to only include information about the relevant order.
+
+<Accordion title="Payload">
+<ResponseField name="gameID" type="string" />
+<ResponseField name="type" type="string">
+Allowed values: <Badge color="orange">moneyline</Badge> <Badge color="orange">spread</Badge> <Badge color="orange">total</Badge> <Badge color="orange">moneyline1x2</Badge>
+</ResponseField>
+<ResponseField name="sideOrders" type="array" />
+<ResponseField name="spread" type="number" />
+<ResponseField name="total" type="number" />
+<ResponseField name="side" type="string" />
+<ResponseField name="market" type="string" />
+
+Additional properties are allowed.
+</Accordion>
+</Card>
