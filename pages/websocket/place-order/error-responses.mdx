@@ -1,0 +1,73 @@
+When the server fails to place an individual order, the **per-order** entry in `data[]` is returned in this shape: 
+
+<CodeGroup>
+```json JSON
+{ 
+    "data": [ 
+        { 
+            "error": "<human-readable message>", 
+            "error_type": "<one of: validation_error | rejected_liability |   
+            rejected_order_type_rules |   system_error>" 
+        },
+    ], 
+    "requestID":"YOUR_REQUEST_ID" 
+}
+```
+
+</CodeGroup>
+
+If you receive an error message, the order has not been processed and is safe to submit again.
+
+Errors are returned positionally in the `data` array, matching the index of the input order in your `orders` array. 
+
+- `error` is not standardized; it’s a descriptive string and may vary.
+- `error_type` is an enum you can rely on for programmatic handling: 
+    - `validation_error` — payload or state failed validation (e.g., missing fields, bad odds/number, invalid side, inactive game).
+    - `rejected_liability` — user/account/liability constraints prevented posting or execution. 
+    - `rejected_order_type_rules` — order-type rules forbid execution (e.g., fillAndKill found no executable liquidity, so nothing could be filled and the order was rejected, or post order found matches).
+    - `system_error` — transient/internal error; retry may succeed.
+
+Here is an example showing multiple order places, some of which incurred an error response.
+<CodeGroup>
+```json JSON
+{ 
+    "data": [ 
+        { 
+            "matched": [ 
+                { 
+                    "amount": 25, 
+                    "odds": 185, 
+                    "orderID": "68d43575cfebf0b249a2c292", 
+                    "risk": 25.25, 
+                    "side": "5d49b340e5bd9d0008b69169", 
+                    "txID": "68d43d96cfebf0b249a2c2a2", 
+                    "type": "moneyline", 
+                    "userReference": "ok-success", 
+                    "wagerRequestID": "68d43d96cfebf0b249a2c2a1", 
+                    "win": 45.7875, 
+                    "winWithoutCommission": 46.25
+                } 
+            ], 
+            "unmatched": {} 
+        }, 
+        {
+            "error": "game not found: invalid gameID: the provided hex string is not a valid ObjectID", 
+            "error_type": "validation_error" 
+        },
+        { 
+            "error": "Insufficient balance. You have $92639.91 available for betting. Balance is $59.50, credit limit is $-100000.00, current liability is $-7419.59.",
+            "error_type": "rejected_liability" 
+        }, 
+        { 
+            "error": "post order cannot have matches", 
+            "error_type": "rejected_order_type_rules" 
+        }, 
+        { 
+            "error": "failed to interact with database", 
+            "error_type": "system_error" 
+        }, 
+    ], 
+    "requestID": "error-demo-1758739862301" 
+}
+```
+</CodeGroup>

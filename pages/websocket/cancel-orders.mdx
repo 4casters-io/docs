@@ -1,0 +1,58 @@
+---
+title: 'Cancelling orders'
+---
+
+To cancel a single order send:
+<CodeGroup>
+```json JSON
+[
+    "cancelById",
+    {
+        "requestID": "YOUR_REQUEST_ID",
+        "orderID": "ORDER_ID_TO_CANCEL"
+    } 
+]
+```
+</CodeGroup>
+
+To cancel multiple orders send: 
+<CodeGroup>
+```json JSON
+[
+    "cancelMultiple",
+    {
+        "requestID": "YOUR_REQUEST_ID",
+        "orderIDs": [
+            "ORDER_ID_1",
+            "ORDER_ID_2",
+            "ORDER_ID_3"
+        ]
+    }
+]
+```
+</CodeGroup>
+
+To cancel all orders for a game send:
+<CodeGroup>
+```json JSON
+[
+    "cancelAllByGame",
+    {
+        "requestID": "YOUR_REQUEST_ID",
+        "gameID": "GAME_ID_TO_CANCEL"
+    }
+] 
+```
+</CodeGroup>
+
+To cancel all orders send:
+<CodeGroup>
+```json JSON
+[
+    "cancelAll",
+    {
+        "requestID": "YOUR_REQUEST_ID",
+    } 
+]
+```
+</CodeGroup>

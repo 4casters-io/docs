@@ -1,0 +1,36 @@
+---
+title: '4Caster Orders WebSocket API'
+---
+
+This document describes how to use the 4Caster Orders WebSocket API for real-time order placement, cancellation, and 
+management. 
+
+## Websocket connection
+
+To connect, establish a WebSocket to this link wss://[orders-api.4casters.io/orders/ws](wss://orders-api.4casters.io/orders/ws)
+The WebSocket connection must include an Authorization header containing a valid token from the [4Casters API](https://documenter.getpostman.com/view/6710109/U16gNmHG#1cf564c7-2e87-46a1-8246-b295fe2db3fb).
+
+<CodeGroup>
+```javascript JavaScript
+const ws = new WebSocket("wss://orders-api.4casters.io/orders/ws", {
+    headers: {
+        Authorization: YOUR_TOKEN,
+    } 
+});
+```
+</CodeGroup>
+
+## Heartbeat
+
+This message is used to trigger a heartbeat with a given requestTimeout. If another heartbeat message is not received within the requestTimeout period, then all of your orders will be cancelled. 
+
+<CodeGroup>
+```json JSON
+[
+    "heartbeat",
+    {
+        "requestTimeout": NUMBER
+    }
+]
+```
+</CodeGroup>

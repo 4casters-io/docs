@@ -9,16 +9,37 @@
   },
   "favicon": "/favicon.png",
   "navigation": {
-    "pages": [
-      "index",
-      "pages/servers",
-      "pages/operations",
+    "tabs": [
       {
-        "group": "Messages",
+        "tab": "Streaming API",
         "pages": [
-          "pages/messages/order-update",
-          "pages/messages/game-update",
-          "pages/messages/position-update"
+          "pages/streaming/introduction",
+          "pages/streaming/servers",
+          "pages/streaming/operations",
+          {
+            "group": "Messages",
+            "pages": [
+              "pages/streaming/messages/order-update",
+              "pages/streaming/messages/game-update",
+              "pages/streaming/messages/position-update"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "WebSocket API",
+        "pages": [
+            "pages/websocket/introduction",
+            "pages/websocket/cancel-orders",
+            {
+              "group": "Place order",
+              "pages": [
+                "pages/websocket/place-order/response",
+                "pages/websocket/place-order/examples",
+                "pages/websocket/place-order/live-delay",
+                "pages/websocket/place-order/error-responses"
+              ]
+            }
         ]
       }
     ]

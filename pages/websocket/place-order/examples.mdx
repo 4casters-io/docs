@@ -1,0 +1,210 @@
+### Scenario 1: Match Orders with no leftover liquidity
+
+Here we place 3 orders that would match instantly with available liquidity.
+
+<CodeGroup>
+```json JSON
+[
+    "placeV3",
+    {
+        "requestID": "post-triplet-001",
+        "orders": [
+            {
+                "gameId": "688c0516fbc14da0c202d426",
+                "type": "moneyline",
+                "side": "5c12bc1ce0daba000f47ba8b",
+                "odds": -175,
+                "bet": 100,
+                "orderType": "post",
+                "userReference": "docs-post-triplet-moneyline"
+            },
+            {
+                "gameId": "688c0516fbc14da0c202d426",
+                "type": "spread",
+                "side": "5c12bc1ce0daba000f47ba8b",
+                "odds": -110,
+                "bet": 100,
+                "orderType": "post",
+                "number": 3.5,
+                "userReference": "docs-post-triplet-spread"
+            }, 
+            { 
+                "gameId": "688c0516fbc14da0c202d426", 
+                "type": "total", 
+                "side": "over", 
+                "odds": -104, 
+                "bet": 100, 
+                "orderType": "post", 
+                "number": 50, 
+                "userReference": "docs-post-triplet-total" 
+            }
+        ]
+    } 
+] 
+```
+</CodeGroup>
+
+Response:
+<CodeGroup>
+```json JSON
+{ 
+  "requestID": "match-triplet-1758736259482", 
+  "responses": [ 
+    { 
+      "data": [ 
+        { 
+          "matched": [ 
+            { 
+              "amount": 50, 
+              "odds": -175, 
+              "orderID": "68d42f82cfebf0b249a2c26e", 
+              "risk": 50.285714285714285, 
+              "side": "5d48bd5198366d41ec7238da", 
+              "txID": "68d42f83cfebf0b249a2c279", 
+              "type": "moneyline", 
+              "userReference": "docs-match-triplet-moneyline", 
+              "wagerRequestID": "68d42f83cfebf0b249a2c278", 
+              "win": 28.285714285714285, 
+              "winWithoutCommission": 28.57142857142857 
+            } 
+          ], 
+          "unmatched": {} 
+        }, 
+        { 
+          "matched": [ 
+            { 
+              "amount": 50, 
+              "number": -3.5, 
+              "odds": -110, 
+              "orderID": "68d42f82cfebf0b249a2c272", 
+              "risk": 50.45454545454545, 
+              "side": "5d48bd5198366d41ec7238da", 
+              "txID": "68d42f84cfebf0b249a2c27b", 
+              "type": "spread", 
+              "userReference": "docs-match-triplet-spread", 
+              "wagerRequestID": "68d42f84cfebf0b249a2c27a", 
+              "win": 45, 
+              "winWithoutCommission": 45.45454545454545 
+            } 
+          ], 
+          "unmatched": {} 
+        }, 
+        { 
+          "matched": [ 
+            { 
+              "amount": 50, 
+              "number": 50, 
+              "odds": -104, 
+              "orderID": "68d42f82cfebf0b249a2c276", 
+              "risk": 50.48076923076923, 
+              "side": "under", 
+              "txID": "68d42f84cfebf0b249a2c27d", 
+              "type": "total", 
+              "userReference": "docs-match-triplet-total", 
+              "wagerRequestID": "68d42f84cfebf0b249a2c27c", 
+              "win": 47.59615384615385, 
+              "winWithoutCommission": 48.07692307692308 
+            } 
+          ], 
+          "unmatched": {} 
+        } 
+      ], 
+      "requestID": "match-triplet-1758736259482" 
+    } 
+  ] 
+} 
+```
+</CodeGroup>
+
+### Scenario 2: Limit order with leftover liquidity
+
+Here we place 1 order for 300 that will partially match instantly and leave the remaining liquidity resting on the 
+orderbook. Below is the response, with a portion matched and and a portion of the order left unmatched.
+
+<CodeGroup>
+```json JSON
+{ 
+  "data": [ 
+    { 
+      "matched": [ 
+        { 
+          "amount": 185, 
+          "odds": -185, 
+          "orderID": "68d43574cfebf0b249a2c28d", 
+          "risk": 186, 
+          "side": "5d48bd5198366d41ec7238da", 
+          "txID": "68d43574cfebf0b249a2c290", 
+          "type": "moneyline", 
+          "userReference": "match-ref", 
+          "wagerRequestID": "68d43574cfebf0b249a2c28f", 
+          "win": 99, 
+          "winWithoutCommission": 100 
+        } 
+      ], 
+      "unmatched": { 
+        "number": null, 
+        "odds": -185, 
+        "offered": 115, 
+        "orderID": "68d43575cfebf0b249a2c292", 
+        "side": "5d48bd5198366d41ec7238da", 
+        "type": "moneyline", 
+        "userReference": "match-ref", 
+        "wagerRequestID": "68d43574cfebf0b249a2c28f" 
+      } 
+    } 
+  ], 
+  "requestID": "match-1758737780621" 
+}
+```
+</CodeGroup>
+
+### Scenario 3: Fill And Kill order with match 
+
+Here we place a fill and kill order that has a full match.
+
+<CodeGroup>
+```json JSON
+{ 
+  "data": [ 
+    { 
+      "matched": [ 
+        { 
+          "amount": 100, 
+          "odds": -186, 
+          "orderID": "68d4368acfebf0b249a2c298", 
+          "risk": 100.53763440860214, 
+          "side": "5d48bd5198366d41ec7238da", 
+          "txID": "68d436bacfebf0b249a2c29b", 
+          "type": "moneyline", 
+          "userReference": "docs-fillandkill-match", 
+          "wagerRequestID": "68d436bacfebf0b249a2c29a", 
+          "win": 53.2258064516129, 
+          "winWithoutCommission": 53.76344086021505 
+      } 
+    ], 
+    "unmatched": {} 
+    } 
+  ], 
+  "requestID": "fillandkill-match-1758738106842" 
+}
+```
+</CodeGroup>
+
+### Scenario 4: Fill and Kill order with no match
+
+Here we place a fill and kill order that has no match. Notice that the server responds with an error and an error_type 
+property.
+
+<CodeGroup>
+```json JSON
+{ 
+  "data": [ 
+    { 
+      "error": "fill and kill has no matches", 
+      "error_type": "rejected_order_type_rules" 
+    } 
+  ], 
+  "requestID": "fillandkill-1758737972423" 
+} 
+```
+</CodeGroup>

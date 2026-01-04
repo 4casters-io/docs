@@ -1,0 +1,75 @@
+To place an order, send a message over the WebSocket connection using the following format:
+
+<CodeGroup>
+```json JSON
+[
+    "placeV3",
+    {
+        "requestID": "YOUR_UNIQUE_REQUEST_ID",
+        "orders": [
+            {
+                "gameId": "4CASTER_GAME_ID", 
+                "bet":  AMOUNT_TO_RISK, 
+                "type": "moneyline | spread | total", 
+                "side": "PARTICIPANT_ID | over | under", 
+                "orderType": "post", 
+                "odds": AMERICAN_ODDS, 
+                "number": OPTIONAL_HANDICAP_FOR_SPREAD_OR_TOTAL, 
+                "userReference": "OPTIONAL_CLIENT_SIDE_IDENTIFIER"
+            }
+        ] 
+    } 
+] 
+```
+</CodeGroup>
+
+Each **order object** includes:
+
+<ResponseField name="gameId" type="string" required>
+  The unique ID of the game
+</ResponseField>
+<ResponseField name="bet" type="number" required>
+  The amount to risk on the bet
+</ResponseField>
+<ResponseField name="type" type="string" required>
+ The market type — either "moneyline", "spread", or "total". 
+</ResponseField>
+<ResponseField name="side" type="string" required>
+ The participant ID (for moneyline and spread), or "over"/"under" (for total).
+</ResponseField>
+<ResponseField name="orderType" type="string" required>
+  "post" to create a new offer 
+</ResponseField>
+<ResponseField name="odds" type="number" required>
+  The odds in American format (e.g., +150 or -110)
+</ResponseField>
+<ResponseField name="number" type="number">
+  The spread or total number (required for "spread" and "total" types). 
+</ResponseField>
+<ResponseField name="userReference" type="string">
+  A client-defined identifier to help track the order on your side
+</ResponseField>
+
+## Response
+The server responds to place requests with the request ID and a list of successful order IDs and details.
+
+<CodeGroup>
+```json JSON
+{ 
+    "data": [
+        {
+            "number": null,
+            "odds": 245,
+            "offered": "122.000000",
+            "orderID": "67f45377c18c6697c172afa4",
+            "side": "6259a766452fb85a6cdd17f6",
+            "type": "moneyline",
+            "userReference": "YOUR_USER_REFERENCE",
+            "wagerRequestID": "67f45377c18c6697c172af9d"
+        }
+...
+    ],
+    "requestID": "YOUR_REQUEST_ID"
+} 
+```
+</CodeGroup>

@@ -1,0 +1,12 @@
+Orders placed on a game marked as live will follow these rules:
+
+1. If the order does not match any existing liquidity, it will be placed immediately 
+2. If the order does match existing liquidity, it will incur a delay period before it is executed. 
+3. Different leagues have different live delay periods.
+    1. NFL, UFCMMA, NCAAF - 3 seconds.
+    2. NCAAB, NBA - 5 seconds.
+    3. ATP, WTA - 8 seconds.
+    4. Default - 10 seconds.
+4. After the delay, the order will attempt to execute. 
+    1. If the odds improve, it will match instantly 
+    2. If the odds decrease, it will not match 
