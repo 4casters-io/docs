@@ -1,0 +1,50 @@
+The price feed streams market/orderbook updates. Payloads mirror the previous Socket.IO price stream events, without the Socket.IO envelope. 
+
+<CodeGroup>
+```javascript JavaScript
+// price_feed_quickstart.js 
+const WebSocket = require('ws'); 
+const token = process.env.FOURCASTERS_TOKEN; 
+ 
+function connectPriceFeed() { 
+  const ws = new 
+  WebSocket('wss://streaming-api.4casters.io/price-stream', { 
+    headers: { Authorization: token }, 
+  }); 
+ 
+  let pingTimer; let lastPong = Date.now(); 
+ 
+  ws.on('open', () => { 
+    console.log('price stream connected'); 
+    pingTimer = setInterval(() => { 
+      if (ws.readyState === WebSocket.OPEN) ws.ping(); 
+      if (Date.now() - lastPong > 30000) { 
+        console.warn('price stream: missed pong >30s, closing'); 
+        ws.terminate(); 
+      } 
+    }, 10000); 
+  }); 
+ 
+  ws.on('pong', () => { lastPong = Date.now(); }); 
+ 
+  ws.on('message', (buf) => { 
+    try { 
+      const msg = JSON.parse(buf.toString()); 
+      console.log('price update:', JSON.stringify(msg, null, 2)); 
+    } catch { console.log('price update (raw):', buf.toString()); } 
+  }); 
+ 
+  ws.on('error', (e) => console.error('price stream error:', e.message)); 
+ 
+  ws.on('close', (code, reason) => { 
+    console.log(`price stream closed: ${code} ${reason}`); 
+    clearInterval(pingTimer); 
+    setTimeout(connectPriceFeed, 1000); 
+  }); 
+} 
+connectPriceFeed();
+```
+</CodeGroup>
+
+## Ping/Pong
+Both feeds support standard WebSocket `ping/pong`. You may proactively `ping()` on an interval and track `pong` to verify liveness.

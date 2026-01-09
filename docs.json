@@ -23,6 +23,19 @@
               "pages/streaming/messages/game-update",
               "pages/streaming/messages/position-update"
             ]
+          },
+          {
+            "group": "User & Price Feeds",
+            "pages": [
+              "pages/streaming/user-and-price-feeds/introduction",
+              {
+                "group": "Quickstart",
+                "pages": [
+                  "pages/streaming/user-and-price-feeds/quickstart/user-feed",
+                  "pages/streaming/user-and-price-feeds/quickstart/price-feed"
+                ]
+              }
+            ]
           }
         ]
       },

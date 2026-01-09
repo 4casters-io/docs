@@ -1,0 +1,19 @@
+Drop‑in, raw WebSocket replacements for the old Socket.IO feeds. Same payloads, smoother pipe.
+
+## Endpoints
+- **User feed**: `wss://streaming-api.4casters.io/v2/user`
+- **Price feed**: `wss://streaming-api.4casters.io/price-stream`
+
+## Auth 
+Send your 4Casters token in the `Authorization` header. The server derives the 
+user from the token — **no username in the URL**. 
+
+<CodeGroup>
+```javascript JavaScript
+const WebSocket = require('ws'); 
+const token = process.env.FOURCASTERS_TOKEN; 
+const ws = new WebSocket('wss://streaming-api.4casters.io/v2/user', { 
+  headers: { Authorization: token }, 
+}); 
+```
+</CodeGroup>

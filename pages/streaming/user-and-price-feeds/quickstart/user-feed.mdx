@@ -1,0 +1,47 @@
+The user feed streams your account‑scoped updates (orders, fills, cancels).
+
+<CodeGroup>
+```javascript JavaScript
+// user_feed_quickstart.js 
+const WebSocket = require('ws'); 
+const token = process.env.FOURCASTERS_TOKEN; 
+function connectUserFeed() { 
+  const ws = new WebSocket('wss://streaming-api.4casters.io/v2/user', { 
+    headers: { Authorization: token }, 
+  });
+  let pingTimer; let lastPong = Date.now(); 
+  ws.on('open', () => { 
+    console.log('user feed connected'); 
+    pingTimer = setInterval(() => { 
+      if (ws.readyState === WebSocket.OPEN) { 
+        ws.ping(); 
+      } 
+      if (Date.now() - lastPong > 30000) { 
+        console.warn('user feed: missed pong >30s, closing'); 
+        ws.terminate(); 
+      } 
+    }, 10000); 
+  }); 
+ 
+  ws.on('pong', () => { lastPong = Date.now(); }); 
+ 
+  ws.on('message', (buf) => { 
+    try { 
+      const msg = JSON.parse(buf.toString()); 
+      console.log('user update:', JSON.stringify(msg, null, 2)); 
+    } catch { console.log('user update (raw):', buf.toString()); } 
+  }); 
+ 
+  ws.on('error', (e) => console.error('⚠️ user feed error:', e.message));
+ 
+  ws.on('close', (code, reason) => { 
+    console.log(`user feed closed: ${code} ${reason}`); 
+    clearInterval(pingTimer); 
+    // basic backoff reconnect 
+    setTimeout(connectUserFeed, 1000); 
+  }); 
+} 
+ 
+connectUserFeed(); 
+```
+</CodeGroup>
