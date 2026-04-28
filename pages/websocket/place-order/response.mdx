@@ -67,6 +67,8 @@ Examples:
 - Best order **−200** — the band extends to about **−202** on the negative side (same 1% rule).
 - With **+100** on the book, **−101** is the reference limit on the other side for the 1% tolerance (per product rules).
 
+**`postArb`** avoids **taker fees** across a normal trade — you are not charged taker fees on this flow the way you would be if you lifted or hit resting liquidity as a taker.
+
 ### `fillOrKill`
 
 Must execute immediately against available size at your price, or the order is rejected. See the Fill And Kill scenarios in the [examples](/pages/websocket/place-order/examples).
