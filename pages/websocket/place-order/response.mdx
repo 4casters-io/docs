@@ -38,7 +38,7 @@ Each **order object** includes:
  The participant ID (for moneyline and spread), or "over"/"under" (for total).
 </ResponseField>
 <ResponseField name="orderType" type="string" required>
-  "post" to create a new offer 
+  One of **`post`**, **`postArb`**, or **`fillOrKill`**. See [Order types](#order-types) below.
 </ResponseField>
 <ResponseField name="odds" type="number" required>
   The odds in American format (e.g., +150 or -110)
@@ -49,6 +49,27 @@ Each **order object** includes:
 <ResponseField name="userReference" type="string">
   A client-defined identifier to help track the order on your side
 </ResponseField>
+
+## Order types
+
+### `post`
+
+Create a resting offer. If the order **would match** existing liquidity when placed, the server rejects it (typically `rejected_order_type_rules`, for example `"post order cannot have matches"`).
+
+### `postArb`
+
+Behaves like **`post`**, but you may post **even when the order would match**, **only if** your **American odds** are within **1%** of the odds on the resting order you would match. If that price difference is **more than 1%**, the place is rejected.
+
+Examples:
+
+- Best offer **+100** and you post **+100** — **`post`** is rejected (it would match); **`postArb`** can be allowed.
+- Best offer **+200** — **`postArb`** at **+190** is rejected (too far from **+200**). About **+198** is at the edge of the 1% band vs **+200**.
+- Best order **−200** — the band extends to about **−202** on the negative side (same 1% rule).
+- With **+100** on the book, **−101** is the reference limit on the other side for the 1% tolerance (per product rules).
+
+### `fillOrKill`
+
+Must execute immediately against available size at your price, or the order is rejected. See the Fill And Kill scenarios in the [examples](/pages/websocket/place-order/examples).
 
 ## Response
 The server responds to place requests with the request ID and a list of successful order IDs and details.

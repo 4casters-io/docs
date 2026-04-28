@@ -208,3 +208,29 @@ property.
 } 
 ```
 </CodeGroup>
+
+### Scenario 5: postArb vs post when the book would match
+
+**`post`** rejects an order that would match resting liquidity (for example, best offer **+100** and you try to post **+100**). **`postArb`** allows that situation when your odds are within **1%** of the order you would match — so the same **+100** post can succeed as **`postArb`**. If your price is too far from the resting quote (e.g. best offer **+200** but you send **+190**), **`postArb`** is rejected; a price around **+198** is near the limit vs **+200**. Use **`orderType": "postArb"`** in the order object the same way as **`post`** or **`fillOrKill`**.
+
+<CodeGroup>
+```json JSON
+[
+    "placeV3",
+    {
+        "requestID": "postarb-example-001",
+        "orders": [
+            {
+                "gameId": "688c0516fbc14da0c202d426",
+                "type": "moneyline",
+                "side": "5c12bc1ce0daba000f47ba8b",
+                "odds": 100,
+                "bet": 50,
+                "orderType": "postArb",
+                "userReference": "docs-postarb-same-line-as-offer"
+            }
+        ]
+    }
+]
+```
+</CodeGroup>
