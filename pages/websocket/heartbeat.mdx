@@ -1,0 +1,68 @@
+---
+title: 'Heartbeat'
+---
+
+The heartbeat keeps your session alive. Send a heartbeat with a `requestTimeout` (in **seconds**) — if the server does not receive another heartbeat before that timeout elapses, **all of your open orders are automatically cancelled**.
+
+You typically send heartbeats on a recurring interval (e.g. every 5s with a 10s timeout) for the lifetime of your connection.
+
+## Request
+
+<CodeGroup>
+```json JSON
+[
+  "heartbeat",
+  {
+    "requestID": "YOUR_REQUEST_ID",
+    "requestTimeout": 10
+  }
+]
+```
+</CodeGroup>
+
+<ResponseField name="requestID" type="string">
+  A client-generated identifier; echoed back on the response. If omitted, the server generates one.
+</ResponseField>
+<ResponseField name="requestTimeout" type="number" required>
+  Number of seconds the server should wait for the next heartbeat before cancelling all of your open orders. Must be greater than `0`.
+</ResponseField>
+
+## Response
+
+The server replies with a `heartbeatAck` containing the server's clock and the active timeout.
+
+<CodeGroup>
+```json JSON
+{
+  "requestID": "YOUR_REQUEST_ID",
+  "data": {
+    "type": "heartbeatAck",
+    "serverTime": "2026-04-22T15:30:00.123456789Z",
+    "timeoutSec": 10
+  }
+}
+```
+</CodeGroup>
+
+<ResponseField name="data.type" type="string">
+  Always `heartbeatAck`.
+</ResponseField>
+<ResponseField name="data.serverTime" type="string">
+  Current server time as RFC 3339 with nanosecond precision.
+</ResponseField>
+<ResponseField name="data.timeoutSec" type="number">
+  Echoes the `requestTimeout` you sent.
+</ResponseField>
+
+## Errors
+
+If `requestTimeout` is missing or `<= 0`, the server returns:
+
+<CodeGroup>
+```json JSON
+{
+  "requestID": "YOUR_REQUEST_ID",
+  "error": "Invalid heartbeat timeout"
+}
+```
+</CodeGroup>

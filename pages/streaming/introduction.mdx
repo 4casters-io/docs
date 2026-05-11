@@ -1,17 +1,35 @@
 ---
-title: '4casters streaming API'
+title: '4casters Streaming API'
 ---
 
-<Card href="https://www.iana.org/assignments/media-types/application/json" title="APLICATION/JSON" />
+The 4casters streaming API delivers real-time user and market updates over a raw WebSocket connection.
 
-This is the first version of the [4casters.io](https://4casters.io/) streaming API, powered by [socket.io](https://socket.io/).
+## Endpoints
+- **User feed**: `wss://streaming-api.4casters.io/v2/user`
+- **Price feed**: `wss://streaming-api.4casters.io/price-stream`
 
-Find the 4casters rest API [here](https://documenter.getpostman.com/view/6710109/U16gNmHG)
+## Auth
 
-To build a client application for this API, we recommend using one of the official Socket.io client libraries.
+Both feeds authenticate with a 4Casters token. Send the token in the
+`Authorization` header on the WebSocket handshake. The server derives the user
+from the token — **no username in the URL**.
 
-[javascript](https://github.com/socketio/socket.io-client)
+### Get a token
 
-[java](https://github.com/socketio/socket.io-client-java)
+Log in with your 4Casters username and password by calling the `/user/login`
+endpoint of the 4Casters REST API. The response includes a token you can use
+here.
 
-[c++](https://github.com/socketio/socket.io-client-cpp)
+See [`POST /user/login` in the 4Casters REST API docs](https://documenter.getpostman.com/view/6710109/U16gNmHG#1cf564c7-2e87-46a1-8246-b295fe2db3fb).
+
+### Connect
+
+<CodeGroup>
+```javascript JavaScript
+const WebSocket = require('ws');
+const token = process.env.FOURCASTERS_TOKEN;
+const ws = new WebSocket('wss://streaming-api.4casters.io/v2/user', {
+  headers: { Authorization: token },
+});
+```
+</CodeGroup>

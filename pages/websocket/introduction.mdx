@@ -1,32 +1,68 @@
-This document describes how to use the 4Caster Orders WebSocket API for real-time order placement, cancellation, and 
-management. 
+---
+title: '4casters Orders API'
+---
 
-## Websocket connection
+The 4casters Orders API supports real-time order placement, cancellation, and session management over a raw WebSocket connection.
 
-To connect, establish a WebSocket to this link wss://[orders-api.4casters.io/orders/ws](wss://orders-api.4casters.io/orders/ws)
-The WebSocket connection must include an Authorization header containing a valid token from the [4Casters API](https://documenter.getpostman.com/view/6710109/U16gNmHG#1cf564c7-2e87-46a1-8246-b295fe2db3fb).
+## Endpoints
+- **Orders API**: `wss://orders-api.4casters.io/orders/ws`
+
+## Auth
+
+The connection authenticates with a 4Casters token. Send the token in the
+`Authorization` header on the WebSocket handshake. The server derives the user
+from the token — **no username in the URL**.
+
+### Get a token
+
+Log in with your 4Casters username and password by calling the `/user/login`
+endpoint of the 4Casters REST API. The response includes a token you can use
+here.
+
+See [`POST /user/login` in the 4Casters REST API docs](https://documenter.getpostman.com/view/6710109/U16gNmHG#1cf564c7-2e87-46a1-8246-b295fe2db3fb).
+
+### Connect
 
 <CodeGroup>
 ```javascript JavaScript
-const ws = new WebSocket("wss://orders-api.4casters.io/orders/ws", {
-    headers: {
-        Authorization: YOUR_TOKEN,
-    } 
+const WebSocket = require('ws');
+const token = process.env.FOURCASTERS_TOKEN;
+const ws = new WebSocket('wss://orders-api.4casters.io/orders/ws', {
+  headers: { Authorization: token },
 });
 ```
 </CodeGroup>
 
-## Heartbeat
+## Message format
 
-This message is used to trigger a heartbeat with a given requestTimeout. If another heartbeat message is not received within the requestTimeout period, then all of your orders will be cancelled. 
+Every client request is a 2-tuple `[messageType, payload]`. Every payload should include a `requestID` that you generate; the server echoes it back so you can correlate responses.
 
 <CodeGroup>
-```json JSON
+```json Request
 [
-    "heartbeat",
-    {
-        "requestTimeout": NUMBER
-    }
+  "messageType",
+  {
+    "requestID": "YOUR_REQUEST_ID",
+    "...": "..."
+  }
 ]
+```
+</CodeGroup>
+
+Server responses are JSON objects with `requestID` plus either `data` (success) or `error` (failure):
+
+<CodeGroup>
+```json Success
+{
+  "requestID": "YOUR_REQUEST_ID",
+  "data": { "...": "..." }
+}
+```
+
+```json Error
+{
+  "requestID": "YOUR_REQUEST_ID",
+  "error": "human-readable error"
+}
 ```
 </CodeGroup>

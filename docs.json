@@ -11,49 +11,25 @@
   "navigation": {
     "tabs": [
       {
-        "tab": "Streaming API",
+        "tab": "WebSocket Streaming",
         "pages": [
           "pages/streaming/introduction",
-          "pages/streaming/servers",
-          "pages/streaming/operations",
-          {
-            "group": "Messages",
-            "pages": [
-              "pages/streaming/messages/order-update",
-              "pages/streaming/messages/game-update",
-              "pages/streaming/messages/position-update"
-            ]
-          },
-          {
-            "group": "User & Price Feeds",
-            "pages": [
-              "pages/streaming/user-and-price-feeds/introduction",
-              {
-                "group": "Quickstart",
-                "pages": [
-                  "pages/streaming/user-and-price-feeds/quickstart/user-feed",
-                  "pages/streaming/user-and-price-feeds/quickstart/price-feed"
-                ]
-              }
-            ]
-          }
+          "pages/streaming/user-feed",
+          "pages/streaming/price-feed"
         ]
       },
       {
-        "tab": "WebSocket API",
+        "tab": "Orders API",
         "pages": [
-            "pages/websocket/introduction",
-            "pages/websocket/cancel-orders",
-            {
-              "group": "Place order",
-              "pages": [
-                "pages/websocket/place-order/response",
-                "pages/websocket/place-order/examples",
-                "pages/websocket/place-order/live-delay",
-                "pages/websocket/place-order/error-responses"
-              ]
-            }
+          "pages/websocket/introduction",
+          "pages/websocket/heartbeat",
+          "pages/websocket/place-order",
+          "pages/websocket/cancel-orders"
         ]
+      },
+      {
+        "tab": "REST API",
+        "href": "https://documenter.getpostman.com/view/6710109/U16gNmHG"
       }
     ]
   },

@@ -1,0 +1,466 @@
+---
+title: 'Place order'
+---
+
+To place one or more orders, send a `placeV3` message over the WebSocket connection. A single request may contain a batch of orders; per-order results come back in a `data` array, positional with your `orders` array.
+
+<CodeGroup>
+```json JSON
+[
+  "placeV3",
+  {
+    "requestID": "YOUR_UNIQUE_REQUEST_ID",
+    "orders": [
+      {
+        "gameId": "4CASTER_GAME_ID",
+        "bet": 100,
+        "type": "moneyline | spread | total | moneyline1x2",
+        "side": "PARTICIPANT_ID | over | under | yes | no",
+        "orderType": "post",
+        "odds": -110,
+        "number": 3.5,
+        "market": "PARTICIPANT_ID | draw",
+        "userReference": "OPTIONAL_CLIENT_SIDE_IDENTIFIER"
+      }
+    ]
+  }
+]
+```
+</CodeGroup>
+
+Each **order object** includes:
+
+<ResponseField name="gameId" type="string" required>
+  The unique ID of the game.
+</ResponseField>
+<ResponseField name="bet" type="number" required>
+  The amount to risk on the bet.
+</ResponseField>
+<ResponseField name="type" type="string" required>
+  The market type — one of `moneyline`, `spread`, `total`, or `moneyline1x2`. `moneyline1x2` is **soccer only** (three-way money line: home / away / draw).
+</ResponseField>
+<ResponseField name="side" type="string" required>
+  Depends on `type`:
+  - `moneyline`, `spread` — the participant ID you are backing.
+  - `total` — `"over"` or `"under"`.
+  - `moneyline1x2` — `"yes"` or `"no"` on the outcome named by `market`.
+</ResponseField>
+<ResponseField name="market" type="string">
+  Required only for `moneyline1x2`. Either `"draw"` or a participant ID — names the outcome you're betting yes/no on. For example, `side: "yes"` + `market: "draw"` means *the match ends in a draw*; `side: "no"` + `market: "<homeTeamId>"` means *the home team does not win*.
+</ResponseField>
+<ResponseField name="orderType" type="string" required>
+  One of `post`, `postArb`, or `fillOrKill`. See [Order types](#order-types) below.
+</ResponseField>
+<ResponseField name="odds" type="number" required>
+  The odds in American format (e.g., +150 or -110).
+</ResponseField>
+<ResponseField name="number" type="number">
+  The spread or total number. Required for `spread` and `total`; not used for `moneyline` or `moneyline1x2`.
+</ResponseField>
+<ResponseField name="userReference" type="string">
+  A client-defined identifier to help track the order on your side.
+</ResponseField>
+
+## Order types
+
+### `post`
+
+Create a resting offer. If the order **would match** existing liquidity when placed, the server rejects it (typically `rejected_order_type_rules`, for example `"post order cannot have matches"`).
+
+### `postArb`
+
+Behaves like `post`, but you may post **even when the order would match**, **only if** your **American odds** are within **1%** of the odds on the resting order you would match. If that price difference is **more than 1%**, the place is rejected.
+
+Examples:
+
+- Best offer **+100** and you post **+100** — `post` is rejected (it would match); `postArb` can be allowed.
+- Best offer **+200** — `postArb` at **+190** is rejected (too far from **+200**). About **+198** is at the edge of the 1% band vs **+200**.
+- Best order **−200** — the band extends to about **−202** on the negative side (same 1% rule).
+- With **+100** on the book, **−101** is the reference limit on the other side for the 1% tolerance (per product rules).
+
+`postArb` avoids **taker fees** across a normal trade — you are not charged taker fees on this flow the way you would be if you lifted or hit resting liquidity as a taker.
+
+### `fillOrKill`
+
+Must execute immediately against available size at your price, or the order is rejected. See the Fill And Kill scenarios in the [examples](#examples) below.
+
+## Response
+
+The server responds with your `requestID` and a list of per-order results.
+
+<CodeGroup>
+```json JSON
+{
+  "data": [
+    {
+      "number": null,
+      "odds": 245,
+      "offered": "122.000000",
+      "orderID": "67f45377c18c6697c172afa4",
+      "side": "6259a766452fb85a6cdd17f6",
+      "type": "moneyline",
+      "userReference": "YOUR_USER_REFERENCE",
+      "wagerRequestID": "67f45377c18c6697c172af9d"
+    }
+  ],
+  "requestID": "YOUR_REQUEST_ID"
+}
+```
+</CodeGroup>
+
+## Examples
+
+### Scenario 1: Match orders with no leftover liquidity
+
+Place 3 orders that all match instantly with available liquidity.
+
+<CodeGroup>
+```json JSON
+[
+  "placeV3",
+  {
+    "requestID": "post-triplet-001",
+    "orders": [
+      {
+        "gameId": "688c0516fbc14da0c202d426",
+        "type": "moneyline",
+        "side": "5c12bc1ce0daba000f47ba8b",
+        "odds": -175,
+        "bet": 100,
+        "orderType": "post",
+        "userReference": "docs-post-triplet-moneyline"
+      },
+      {
+        "gameId": "688c0516fbc14da0c202d426",
+        "type": "spread",
+        "side": "5c12bc1ce0daba000f47ba8b",
+        "odds": -110,
+        "bet": 100,
+        "orderType": "post",
+        "number": 3.5,
+        "userReference": "docs-post-triplet-spread"
+      },
+      {
+        "gameId": "688c0516fbc14da0c202d426",
+        "type": "total",
+        "side": "over",
+        "odds": -104,
+        "bet": 100,
+        "orderType": "post",
+        "number": 50,
+        "userReference": "docs-post-triplet-total"
+      }
+    ]
+  }
+]
+```
+</CodeGroup>
+
+Response:
+
+<CodeGroup>
+```json JSON
+{
+  "requestID": "match-triplet-1758736259482",
+  "responses": [
+    {
+      "data": [
+        {
+          "matched": [
+            {
+              "amount": 50,
+              "odds": -175,
+              "orderID": "68d42f82cfebf0b249a2c26e",
+              "risk": 50.285714285714285,
+              "side": "5d48bd5198366d41ec7238da",
+              "txID": "68d42f83cfebf0b249a2c279",
+              "type": "moneyline",
+              "userReference": "docs-match-triplet-moneyline",
+              "wagerRequestID": "68d42f83cfebf0b249a2c278",
+              "win": 28.285714285714285,
+              "winWithoutCommission": 28.57142857142857
+            }
+          ],
+          "unmatched": {}
+        },
+        {
+          "matched": [
+            {
+              "amount": 50,
+              "number": -3.5,
+              "odds": -110,
+              "orderID": "68d42f82cfebf0b249a2c272",
+              "risk": 50.45454545454545,
+              "side": "5d48bd5198366d41ec7238da",
+              "txID": "68d42f84cfebf0b249a2c27b",
+              "type": "spread",
+              "userReference": "docs-match-triplet-spread",
+              "wagerRequestID": "68d42f84cfebf0b249a2c27a",
+              "win": 45,
+              "winWithoutCommission": 45.45454545454545
+            }
+          ],
+          "unmatched": {}
+        },
+        {
+          "matched": [
+            {
+              "amount": 50,
+              "number": 50,
+              "odds": -104,
+              "orderID": "68d42f82cfebf0b249a2c276",
+              "risk": 50.48076923076923,
+              "side": "under",
+              "txID": "68d42f84cfebf0b249a2c27d",
+              "type": "total",
+              "userReference": "docs-match-triplet-total",
+              "wagerRequestID": "68d42f84cfebf0b249a2c27c",
+              "win": 47.59615384615385,
+              "winWithoutCommission": 48.07692307692308
+            }
+          ],
+          "unmatched": {}
+        }
+      ],
+      "requestID": "match-triplet-1758736259482"
+    }
+  ]
+}
+```
+</CodeGroup>
+
+### Scenario 2: Limit order with leftover liquidity
+
+Place 1 order for 300 that partially matches instantly and leaves the remaining liquidity resting on the orderbook. The response shows a portion matched and a portion left unmatched.
+
+<CodeGroup>
+```json JSON
+{
+  "data": [
+    {
+      "matched": [
+        {
+          "amount": 185,
+          "odds": -185,
+          "orderID": "68d43574cfebf0b249a2c28d",
+          "risk": 186,
+          "side": "5d48bd5198366d41ec7238da",
+          "txID": "68d43574cfebf0b249a2c290",
+          "type": "moneyline",
+          "userReference": "match-ref",
+          "wagerRequestID": "68d43574cfebf0b249a2c28f",
+          "win": 99,
+          "winWithoutCommission": 100
+        }
+      ],
+      "unmatched": {
+        "number": null,
+        "odds": -185,
+        "offered": 115,
+        "orderID": "68d43575cfebf0b249a2c292",
+        "side": "5d48bd5198366d41ec7238da",
+        "type": "moneyline",
+        "userReference": "match-ref",
+        "wagerRequestID": "68d43574cfebf0b249a2c28f"
+      }
+    }
+  ],
+  "requestID": "match-1758737780621"
+}
+```
+</CodeGroup>
+
+### Scenario 3: Fill and Kill order with match
+
+A fill-and-kill order with a full match.
+
+<CodeGroup>
+```json JSON
+{
+  "data": [
+    {
+      "matched": [
+        {
+          "amount": 100,
+          "odds": -186,
+          "orderID": "68d4368acfebf0b249a2c298",
+          "risk": 100.53763440860214,
+          "side": "5d48bd5198366d41ec7238da",
+          "txID": "68d436bacfebf0b249a2c29b",
+          "type": "moneyline",
+          "userReference": "docs-fillandkill-match",
+          "wagerRequestID": "68d436bacfebf0b249a2c29a",
+          "win": 53.2258064516129,
+          "winWithoutCommission": 53.76344086021505
+        }
+      ],
+      "unmatched": {}
+    }
+  ],
+  "requestID": "fillandkill-match-1758738106842"
+}
+```
+</CodeGroup>
+
+### Scenario 4: Fill and Kill order with no match
+
+A fill-and-kill order with no match. The server responds with an `error` and `error_type`.
+
+<CodeGroup>
+```json JSON
+{
+  "data": [
+    {
+      "error": "fill and kill has no matches",
+      "error_type": "rejected_order_type_rules"
+    }
+  ],
+  "requestID": "fillandkill-1758737972423"
+}
+```
+</CodeGroup>
+
+### Scenario 5: postArb vs post when the book would match
+
+`post` rejects an order that would match resting liquidity (for example, best offer **+100** and you try to post **+100**). `postArb` allows that situation when your odds are within **1%** of the order you would match — so the same **+100** post can succeed as `postArb`, and you **avoid** the **taker fees** you would pay across a normal trade if you took that liquidity as a taker. If your price is too far from the resting quote (e.g. best offer **+200** but you send **+190**), `postArb` is rejected; a price around **+198** is near the limit vs **+200**. Use `"orderType": "postArb"` in the order object the same way as `post` or `fillOrKill`.
+
+<CodeGroup>
+```json JSON
+[
+  "placeV3",
+  {
+    "requestID": "postarb-example-001",
+    "orders": [
+      {
+        "gameId": "688c0516fbc14da0c202d426",
+        "type": "moneyline",
+        "side": "5c12bc1ce0daba000f47ba8b",
+        "odds": 100,
+        "bet": 50,
+        "orderType": "postArb",
+        "userReference": "docs-postarb-same-line-as-offer"
+      }
+    ]
+  }
+]
+```
+</CodeGroup>
+
+### Scenario 6: `moneyline1x2` (soccer three-way)
+
+`moneyline1x2` is the soccer three-way market — home / away / draw — placed as a yes/no bet on the outcome named by `market`. Below, **yes on the draw** at +250.
+
+<CodeGroup>
+```json JSON
+[
+  "placeV3",
+  {
+    "requestID": "ml1x2-draw-001",
+    "orders": [
+      {
+        "gameId": "65f0c3...",
+        "type": "moneyline1x2",
+        "side": "yes",
+        "market": "draw",
+        "odds": 250,
+        "bet": 50,
+        "orderType": "post",
+        "userReference": "docs-ml1x2-yes-draw"
+      }
+    ]
+  }
+]
+```
+</CodeGroup>
+
+To bet that the **home team does not win**, send `side: "no"` and set `market` to the home participant's ID.
+
+## Live delay
+
+Orders placed on a game marked as live follow these rules:
+
+1. If the order does not match any existing liquidity, it is placed immediately.
+2. If the order does match existing liquidity, it incurs a delay period before it is executed.
+3. Different leagues have different live delay periods:
+    - NFL, UFCMMA, NCAAF — 3 seconds.
+    - NCAAB, NBA — 5 seconds.
+    - ATP, WTA — 8 seconds.
+    - Default — 10 seconds.
+4. After the delay, the order attempts to execute:
+    - If the odds improve, it matches instantly.
+    - If the odds decrease, it does not match.
+
+## Error responses
+
+When the server fails to place an individual order, the **per-order** entry in `data[]` is returned in this shape:
+
+<CodeGroup>
+```json JSON
+{
+  "data": [
+    {
+      "error": "<human-readable message>",
+      "error_type": "<one of: validation_error | rejected_liability | rejected_order_type_rules | system_error>"
+    }
+  ],
+  "requestID": "YOUR_REQUEST_ID"
+}
+```
+</CodeGroup>
+
+If you receive an error message, the order has not been processed and is safe to submit again.
+
+Errors are returned positionally in the `data` array, matching the index of the input order in your `orders` array.
+
+- `error` is not standardized; it's a descriptive string and may vary.
+- `error_type` is an enum you can rely on for programmatic handling:
+    - `validation_error` — payload or state failed validation (e.g., missing fields, bad odds/number, invalid side, inactive game).
+    - `rejected_liability` — user/account/liability constraints prevented posting or execution.
+    - `rejected_order_type_rules` — order-type rules forbid execution (e.g., `fillOrKill` found no executable liquidity, so nothing could be filled and the order was rejected; `post` found matches when matches are not allowed; or `postArb` was rejected because your American odds differ from the resting order you would match by **more than 1%**).
+    - `system_error` — transient/internal error; retry may succeed.
+
+Example with multiple order places, some of which incurred an error response:
+
+<CodeGroup>
+```json JSON
+{
+  "data": [
+    {
+      "matched": [
+        {
+          "amount": 25,
+          "odds": 185,
+          "orderID": "68d43575cfebf0b249a2c292",
+          "risk": 25.25,
+          "side": "5d49b340e5bd9d0008b69169",
+          "txID": "68d43d96cfebf0b249a2c2a2",
+          "type": "moneyline",
+          "userReference": "ok-success",
+          "wagerRequestID": "68d43d96cfebf0b249a2c2a1",
+          "win": 45.7875,
+          "winWithoutCommission": 46.25
+        }
+      ],
+      "unmatched": {}
+    },
+    {
+      "error": "game not found: invalid gameID: the provided hex string is not a valid ObjectID",
+      "error_type": "validation_error"
+    },
+    {
+      "error": "Insufficient balance. You have $92639.91 available for betting. Balance is $59.50, credit limit is $-100000.00, current liability is $-7419.59.",
+      "error_type": "rejected_liability"
+    },
+    {
+      "error": "post order cannot have matches",
+      "error_type": "rejected_order_type_rules"
+    },
+    {
+      "error": "failed to interact with database",
+      "error_type": "system_error"
+    }
+  ],
+  "requestID": "error-demo-1758739862301"
+}
+```
+</CodeGroup>

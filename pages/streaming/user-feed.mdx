@@ -1,0 +1,235 @@
+The user feed streams your account‑scoped updates (orders, fills, cancels).
+
+<CodeGroup>
+```javascript JavaScript
+// user_feed_quickstart.js 
+const WebSocket = require('ws'); 
+const token = process.env.FOURCASTERS_TOKEN; 
+function connectUserFeed() { 
+  const ws = new WebSocket('wss://streaming-api.4casters.io/v2/user', { 
+    headers: { Authorization: token }, 
+  });
+  let pingTimer; let lastPong = Date.now(); 
+  ws.on('open', () => { 
+    console.log('user feed connected'); 
+    pingTimer = setInterval(() => { 
+      if (ws.readyState === WebSocket.OPEN) { 
+        ws.ping(); 
+      } 
+      if (Date.now() - lastPong > 30000) { 
+        console.warn('user feed: missed pong >30s, closing'); 
+        ws.terminate(); 
+      } 
+    }, 10000); 
+  }); 
+ 
+  ws.on('pong', () => { lastPong = Date.now(); }); 
+ 
+  ws.on('message', (buf) => { 
+    try { 
+      const msg = JSON.parse(buf.toString()); 
+      console.log('user update:', JSON.stringify(msg, null, 2)); 
+    } catch { console.log('user update (raw):', buf.toString()); } 
+  }); 
+ 
+  ws.on('error', (e) => console.error('⚠️ user feed error:', e.message));
+ 
+  ws.on('close', (code, reason) => { 
+    console.log(`user feed closed: ${code} ${reason}`); 
+    clearInterval(pingTimer); 
+    // basic backoff reconnect 
+    setTimeout(connectUserFeed, 1000); 
+  }); 
+} 
+ 
+connectUserFeed(); 
+```
+</CodeGroup>
+
+## Messages
+
+The user feed sends each update as a **bare JSON object** (no tuple envelope). All updates share one envelope; the action is determined by which of `unmatched` / `matched` are populated and by `origin`.
+
+### Common envelope
+
+<CodeGroup>
+```typescript Schema
+{
+  matched:    null | MatchedBlock,
+  unmatched:  null | UnmatchedBlock,
+  origin:     "offer" | "wager",
+
+  gameID:             string,
+  parentGameID:       string | null,
+  eventName:          string,
+  league:             string,
+  sport:              string,
+  live:               boolean,
+  start:              string,   // RFC3339
+  awayRotationNumber: string,
+
+  platform:           string,   // e.g. "api"
+  createdAt:          string,   // RFC3339
+  messageID:          string,   // Redis stream entry id, e.g. "1715361234567-0"
+}
+```
+</CodeGroup>
+
+`messageID` is the Redis stream entry id added by the streaming-api before send. After a reconnect, replay anything you missed via `GET /v2/user/messages?afterID=<lastMessageID>`.
+
+### How to identify the action
+
+- `unmatched.filled === 0 && unmatched.offered > 0` -> order placed
+- `unmatched.offered === 0` -> order cancelled
+- `matched != null && unmatched == null` -> matched as taker
+- `matched != null && unmatched != null` -> matched as maker (partial fill if `unmatched.remaining > 0`)
+
+### Action: order placed
+
+A new offer was put on the book. `unmatched.filled` is `0`, `unmatched.offered > 0`, and `matched` is `null`.
+
+<CodeGroup>
+```json JSON
+{
+  "unmatched": {
+    "filled": 0,
+    "offered": 999,
+    "remaining": 999,
+    "orderID": "62619e6b40e36d0494600f67",
+    "wagerRequestID": "62619e6b40e36d0494600f70",
+    "type": "moneyline",
+    "side": "607349dc22a237cf46b021fb",
+    "odds": -105
+  },
+  "matched": null,
+  "origin": "offer",
+  "gameID": "603eb5d05eca45001243aedc",
+  "parentGameID": null,
+  "eventName": "PHILADELPHIA-76ERS-VS-MIAMI-HEAT",
+  "league": "NBA",
+  "sport": "basketball",
+  "live": false,
+  "start": "2026-04-22T01:00:00.000Z",
+  "awayRotationNumber": "571",
+  "platform": "api",
+  "createdAt": "2026-04-21T18:11:54.614Z",
+  "messageID": "1715361234567-0"
+}
+```
+</CodeGroup>
+
+### Action: order cancelled
+
+The user (or the system on their behalf) cancelled an offer. The distinguishing field is **`unmatched.offered === 0`**.
+
+<CodeGroup>
+```json JSON
+{
+  "unmatched": {
+    "filled": 0,
+    "offered": 0,
+    "remaining": 0,
+    "orderID": "62619e6b40e36d0494600f67",
+    "wagerRequestID": "62619e6b40e36d0494600f70",
+    "type": "spread",
+    "side": "607349dc22a237cf46b021fb",
+    "number": 6.5,
+    "odds": -110
+  },
+  "matched": null,
+  "origin": "offer",
+  "gameID": "603eb5d05eca45001243aedc",
+  "parentGameID": null,
+  "eventName": "PHILADELPHIA-76ERS-VS-MIAMI-HEAT",
+  "league": "NBA",
+  "sport": "basketball",
+  "live": false,
+  "start": "2026-04-22T01:00:00.000Z",
+  "awayRotationNumber": "571",
+  "platform": "api",
+  "createdAt": "2026-04-21T18:12:30.000Z",
+  "messageID": "1715361234890-0"
+}
+```
+</CodeGroup>
+
+### Action: order matched (taker)
+
+The user took someone else's offer. `unmatched` is `null`, `matched` carries the fill, and `origin` is `"wager"`.
+
+<CodeGroup>
+```json JSON
+{
+  "unmatched": null,
+  "matched": {
+    "txID": "62619e6b40e36d0494600f99",
+    "amount": 100.0,
+    "risk": 100.0,
+    "win": 95.24,
+    "odds": -105,
+    "orderID": "62619e6b40e36d0494600f67",
+    "wagerRequestID": "62619e6b40e36d0494600f70",
+    "type": "moneyline",
+    "side": "607349dc22a237cf46b021fb"
+  },
+  "origin": "wager",
+  "gameID": "603eb5d05eca45001243aedc",
+  "parentGameID": null,
+  "eventName": "PHILADELPHIA-76ERS-VS-MIAMI-HEAT",
+  "league": "NBA",
+  "sport": "basketball",
+  "live": false,
+  "start": "2026-04-22T01:00:00.000Z",
+  "awayRotationNumber": "571",
+  "platform": "api",
+  "createdAt": "2026-04-21T18:13:00.000Z",
+  "messageID": "1715361240000-0"
+}
+```
+</CodeGroup>
+
+### Action: order matched (maker, partial fill)
+
+Someone hit the user's posted offer. Both `matched` and `unmatched` are populated; `unmatched.remaining` shows what is still on the book. Because `unmatched` is set, `origin` is `"offer"`.
+
+<CodeGroup>
+```json JSON
+{
+  "unmatched": {
+    "filled": 100,
+    "offered": 500,
+    "remaining": 400,
+    "orderID": "62619e6b40e36d0494600f67",
+    "wagerRequestID": "62619e6b40e36d0494600f70",
+    "type": "spread",
+    "side": "607349dc22a237cf46b021fb",
+    "number": 6.5,
+    "odds": 110
+  },
+  "matched": {
+    "txID": "62619e6b40e36d0494600fa0",
+    "amount": 100,
+    "risk": 100,
+    "win": 110,
+    "odds": 110,
+    "orderID": "62619e6b40e36d0494600f67",
+    "wagerRequestID": "62619e6b40e36d0494600f70",
+    "type": "spread",
+    "side": "607349dc22a237cf46b021fb",
+    "number": 6.5
+  },
+  "origin": "offer",
+  "gameID": "603eb5d05eca45001243aedc",
+  "parentGameID": null,
+  "eventName": "PHILADELPHIA-76ERS-VS-MIAMI-HEAT",
+  "league": "NBA",
+  "sport": "basketball",
+  "live": false,
+  "start": "2026-04-22T01:00:00.000Z",
+  "awayRotationNumber": "571",
+  "platform": "api",
+  "createdAt": "2026-04-21T18:14:00.000Z",
+  "messageID": "1715361250000-0"
+}
+```
+</CodeGroup>
