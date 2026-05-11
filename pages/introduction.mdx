@@ -1,0 +1,65 @@
+---
+title: '4casters API'
+description: 'Programmatic access to the 4casters peer-to-peer betting exchange'
+---
+
+4casters exposes three APIs that share the same auth token and the same underlying account / orderbook / settlement engine. Pick the one that matches what you're building, or mix-and-match — most integrations use REST for setup + history and a WebSocket for live trading.
+
+## Choose your API
+
+<CardGroup cols={3}>
+  <Card title="REST API" icon="globe" href="/pages/rest/introduction">
+    Request / response over HTTPS. Use for login, account state, history, market lookups, and batch place / edit / cancel.
+  </Card>
+  <Card title="Orders WebSocket" icon="bolt" href="/pages/websocket/introduction">
+    Persistent low-latency channel for placing and cancelling orders. Use when you care about round-trip latency.
+  </Card>
+  <Card title="Streaming WebSocket" icon="signal-stream" href="/pages/streaming/introduction">
+    Push feeds for orderbook ticks and per-account fills / settles. Use to keep state in sync without polling.
+  </Card>
+</CardGroup>
+
+## When to use which
+
+| Surface | Best for | Avoid for |
+| --- | --- | --- |
+| **REST** (`https://api.4casters.io`) | Login, account info, bet history, lookups, market browse, batch place / edit / cancel, anything you'd run from a script or backend job. | Tight inner loops where round-trip latency matters. |
+| **Orders WebSocket** (`wss://orders-api.4casters.io/orders/ws`) | Live trading: low-latency place + cancel with a persistent session and `requestID` correlation. | Reading state — it's a write/command channel, not a query API. |
+| **Streaming WebSocket** (`wss://streaming-api.4casters.io/...`) | Real-time orderbook ticks (price feed) and per-account fill / settle events (user feed). | One-shot reads — use REST instead of opening a stream. |
+
+## Authentication
+
+All three APIs share one token.
+
+1. Call [`POST /user/login`](/pages/rest/authentication) on the REST API with your username and password.
+2. Send the returned token on every subsequent request:
+   - **REST**: `Authorization: Bearer <token>` header.
+   - **WebSockets**: `Authorization: <token>` header on the handshake.
+
+Tokens are valid for 30 days and can be refreshed before expiry. See [Authentication](/pages/rest/authentication) for token refresh, signed-cookie auth, and details.
+
+## Conventions
+
+- **Transport**: HTTPS / WSS only.
+- **Encoding**: JSON everywhere.
+- **Response envelope (REST)**: `{ "data": <payload> }` on success; `{ "error": "<message>" }` on HTTP errors.
+- **Identifiers**: Game ids, participant ids, and order ids are MongoDB `ObjectID` strings (24-char hex).
+- **Odds**: American format (negative for favorites, positive for underdogs) unless noted.
+- **Time**: ISO 8601 with `Z` (UTC).
+
+## A typical integration
+
+Most non-trivial clients combine all three:
+
+1. **REST** — `POST /user/login` once, cache the token, then call `GET /user/getMe` and `GET /games/v2/leagues` to bootstrap state.
+2. **Streaming WebSocket** — open the price feed for the markets you care about and the user feed to react to your own fills / settles.
+3. **Orders WebSocket** — open a persistent connection and place / cancel orders with low latency, correlating responses by `requestID`.
+4. **REST** — fall back to `POST /myBets/getMatchedBets`, `/myBets/getOrdersForGame`, etc. for history and reconciliation.
+
+## Need the old docs?
+
+The previous documentation lived as a Postman collection. It's preserved for reference, but these Mintlify docs are now the source of truth — the Postman collection may lag behind for new endpoints, parameters, or response shapes.
+
+<Card title="4Casters API — Postman collection" icon="link" href="https://documenter.getpostman.com/view/6710109/U16gNmHG">
+  View the legacy Postman documentation
+</Card>
