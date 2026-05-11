@@ -49,7 +49,7 @@ Each **order object** includes:
   Required only for `moneyline1x2`. Either `"draw"` or a participant ID — names the outcome you're betting yes/no on. For example, `side: "yes"` + `market: "draw"` means *the match ends in a draw*; `side: "no"` + `market: "<homeTeamId>"` means *the home team does not win*.
 </ResponseField>
 <ResponseField name="orderType" type="string" required>
-  One of `post`, `postArb`, or `fillOrKill`. See [Order types](#order-types) below.
+  One of `limit`, `post`, `postArb`, or `fillAndKill`. See [Order types](#order-types) below.
 </ResponseField>
 <ResponseField name="odds" type="number" required>
   The odds in American format (e.g., +150 or -110).
@@ -62,6 +62,10 @@ Each **order object** includes:
 </ResponseField>
 
 ## Order types
+
+### `limit`
+
+The default order type. Executes against any matching liquidity at your price or better as a taker (with taker commission), and rests any remainder on the book as a maker. A `limit` order can finish fully matched, fully resting, or partially matched with the remainder resting.
 
 ### `post`
 
@@ -80,7 +84,7 @@ Examples:
 
 `postArb` avoids **taker fees** across a normal trade — you are not charged taker fees on this flow the way you would be if you lifted or hit resting liquidity as a taker.
 
-### `fillOrKill`
+### `fillAndKill`
 
 Must execute immediately against available size at your price, or the order is rejected. See the Fill And Kill scenarios in the [examples](#examples) below.
 
@@ -322,7 +326,7 @@ A fill-and-kill order with no match. The server responds with an `error` and `er
 
 ### Scenario 5: postArb vs post when the book would match
 
-`post` rejects an order that would match resting liquidity (for example, best offer **+100** and you try to post **+100**). `postArb` allows that situation when your odds are within **1%** of the order you would match — so the same **+100** post can succeed as `postArb`, and you **avoid** the **taker fees** you would pay across a normal trade if you took that liquidity as a taker. If your price is too far from the resting quote (e.g. best offer **+200** but you send **+190**), `postArb` is rejected; a price around **+198** is near the limit vs **+200**. Use `"orderType": "postArb"` in the order object the same way as `post` or `fillOrKill`.
+`post` rejects an order that would match resting liquidity (for example, best offer **+100** and you try to post **+100**). `postArb` allows that situation when your odds are within **1%** of the order you would match — so the same **+100** post can succeed as `postArb`, and you **avoid** the **taker fees** you would pay across a normal trade if you took that liquidity as a taker. If your price is too far from the resting quote (e.g. best offer **+200** but you send **+190**), `postArb` is rejected; a price around **+198** is near the limit vs **+200**. Use `"orderType": "postArb"` in the order object the same way as `limit`, `post`, or `fillAndKill`.
 
 <CodeGroup>
 ```json JSON
@@ -416,7 +420,7 @@ Errors are returned positionally in the `data` array, matching the index of the 
 - `error_type` is an enum you can rely on for programmatic handling:
     - `validation_error` — payload or state failed validation (e.g., missing fields, bad odds/number, invalid side, inactive game).
     - `rejected_liability` — user/account/liability constraints prevented posting or execution.
-    - `rejected_order_type_rules` — order-type rules forbid execution (e.g., `fillOrKill` found no executable liquidity, so nothing could be filled and the order was rejected; `post` found matches when matches are not allowed; or `postArb` was rejected because your American odds differ from the resting order you would match by **more than 1%**).
+    - `rejected_order_type_rules` — order-type rules forbid execution (e.g., `fillAndKill` found no executable liquidity, so nothing could be filled and the order was rejected; `post` found matches when matches are not allowed; or `postArb` was rejected because your American odds differ from the resting order you would match by **more than 1%**).
     - `system_error` — transient/internal error; retry may succeed.
 
 Example with multiple order places, some of which incurred an error response:
