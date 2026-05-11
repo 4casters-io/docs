@@ -1,0 +1,111 @@
+---
+title: 'Get graded wagers'
+description: 'List settled wagers between two dates with a P&L summary'
+openapi: 'GET /user/getGradedWagers'
+---
+
+Returns all of the caller's **graded (settled) wagers** between two dates, plus a summary of P&L and volume. Dates correspond to the **start time of the game** the wager is on (so `startDate=06-22-2022` returns wagers on games starting after 06-21-2022 00:00 GMT).
+
+## Request
+
+`GET /user/getGradedWagers`
+
+<ParamField query="startDate" type="string">
+  Start date (`MM-DD-YYYY`). Defaults to `10-21-2020`.
+</ParamField>
+<ParamField query="endDate" type="string">
+  End date (`MM-DD-YYYY`). Defaults to today.
+</ParamField>
+
+<CodeGroup>
+```bash curl
+curl "https://api.4casters.io/user/getGradedWagers?startDate=01-01-2024&endDate=02-01-2024" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+</CodeGroup>
+
+## Response
+
+<ResponseField name="data.graded" type="array">
+  Array of graded wagers, sorted descending by game start time.
+  <Expandable title="GradedWager">
+    <ResponseField name="id" type="string">Bet id.</ResponseField>
+    <ResponseField name="txID" type="string">Fill transaction id.</ResponseField>
+    <ResponseField name="ticketNumber" type="string">Display ticket number.</ResponseField>
+    <ResponseField name="type" type="string">`moneyline`, `spread`, `total`, or `moneyline1x2`.</ResponseField>
+    <ResponseField name="outcome" type="string">`winner`, `loser`, `push`, or `refund`.</ResponseField>
+    <ResponseField name="bet" type="number">Original bet size.</ResponseField>
+    <ResponseField name="odds" type="integer">American odds at fill time.</ResponseField>
+    <ResponseField name="spread" type="number">Present for `spread`.</ResponseField>
+    <ResponseField name="total" type="number">Present for `total`.</ResponseField>
+    <ResponseField name="OU" type="string">Present for `total`.</ResponseField>
+    <ResponseField name="participantID" type="string">Present for `moneyline` and `spread`.</ResponseField>
+    <ResponseField name="market" type="string">Present for `moneyline1x2`.</ResponseField>
+    <ResponseField name="side" type="string">For `moneyline1x2` — `yes` or `no`.</ResponseField>
+    <ResponseField name="matchedTime" type="string">ISO 8601 timestamp the fill occurred.</ResponseField>
+    <ResponseField name="settledAt" type="string">ISO 8601 timestamp the bet was graded.</ResponseField>
+    <ResponseField name="createdAt" type="string">ISO 8601 timestamp the order was placed.</ResponseField>
+    <ResponseField name="cancelled" type="boolean" />
+    <ResponseField name="closed" type="boolean" />
+    <ResponseField name="graded" type="boolean">Always `true` here.</ResponseField>
+    <ResponseField name="adminRefund" type="boolean" />
+    <ResponseField name="platform" type="string">Where the order originated, e.g. `api`, `web`, `mobile`.</ResponseField>
+    <ResponseField name="risk" type="string">Risk on the matched portion (string, 2 decimals).</ResponseField>
+    <ResponseField name="win" type="string">Win amount, net of commission.</ResponseField>
+    <ResponseField name="fee" type="string">Commission charged on the matched portion.</ResponseField>
+    <ResponseField name="result" type="string">Net P&L on this wager. Negative when you lost, positive when you won, `0` for push.</ResponseField>
+    <ResponseField name="pinnacleLine" type="object">Snapshot of the comparable Pinnacle line at fill time, when available.</ResponseField>
+    <Snippet file="types/game-summary.mdx" />
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="data.summary" type="object">
+  Aggregated totals over the returned wagers.
+  <Expandable title="summary">
+    <ResponseField name="pnl" type="integer">Sum of `result` (rounded).</ResponseField>
+    <ResponseField name="volume" type="integer">Sum of `min(risk, win)` (rounded).</ResponseField>
+  </Expandable>
+</ResponseField>
+
+### Example
+
+<CodeGroup>
+```json JSON
+{
+  "data": {
+    "graded": [
+      {
+        "id": "64c98e8c0745a206acf18ad7",
+        "txID": "64c99640453fd2ad91206018",
+        "ticketNumber": "5a5494406ef9e2c5988b30bf666ce55e",
+        "type": "total",
+        "outcome": "loser",
+        "bet": 1,
+        "odds": 101,
+        "total": 8.5,
+        "OU": "over",
+        "matchedTime": "2023-08-01T23:33:20.273Z",
+        "settledAt": "2023-08-02T02:26:16.152Z",
+        "createdAt": "2023-08-01T23:33:20.273Z",
+        "graded": true,
+        "platform": "api",
+        "risk": "1.01",
+        "win": "1.00",
+        "fee": "0.01",
+        "result": "-1.01",
+        "pinnacleLine": { "odds": -102, "total": 8.5, "OU": "over" },
+        "game": {
+          "id": "64c7fa454803b0ff0f7f5741",
+          "league": "MLB",
+          "sport": "baseball",
+          "start": "2023-08-01T23:45:00.000Z",
+          "ended": true,
+          "participants": [/* ... */]
+        }
+      }
+    ],
+    "summary": { "pnl": -1, "volume": 1 }
+  }
+}
+```
+</CodeGroup>

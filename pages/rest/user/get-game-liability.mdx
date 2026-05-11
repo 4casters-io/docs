@@ -1,0 +1,38 @@
+---
+title: 'Get game liability'
+description: 'Worst-case loss on a single game'
+openapi: 'GET /user/getGameLiability'
+---
+
+Calculate the caller's **worst-case financial liability** for a single game, taking into account every bet on every market in the game.
+
+The value is always `<= 0` — even a fully hedged book can incur loss from rainouts, suspensions, or disqualifications.
+
+## Request
+
+`GET /user/getGameLiability`
+
+<ParamField query="gameID" type="string" required>The game id to compute liability for.</ParamField>
+
+<CodeGroup>
+```bash curl
+curl "https://api.4casters.io/user/getGameLiability?gameID=657f8ea1ea0ce6f62c1fe37d" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+</CodeGroup>
+
+## Response
+
+<ResponseField name="data.liability" type="number">
+  The worst-case loss in account currency. Always `<= 0`. Returns `0` when the caller has no bets on the game.
+</ResponseField>
+
+### Example
+
+<CodeGroup>
+```json JSON
+{
+  "data": { "liability": -125.50 }
+}
+```
+</CodeGroup>

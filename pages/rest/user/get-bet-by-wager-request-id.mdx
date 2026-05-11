@@ -1,0 +1,44 @@
+---
+title: 'Get bet by wager request ID'
+description: 'Look up every bet derived from a single place request'
+openapi: 'GET /user/getBetByWagerRequestID'
+---
+
+Look up every bet tied to a single `wagerRequestID`. A `wagerRequestID` is server-generated for **each** order in a place request — use it to tie together every fill and resting offer that resulted from a single submitted order.
+
+The response separates results into three buckets:
+
+- `unmatched` — open offers from the request that are still resting on the book. **Always empty for this endpoint** — use [Get bet by user reference](/pages/rest/user/get-bet-by-user-reference) instead if you need open offers in the response.
+- `matched`   — matched (ungraded) bets from the request.
+- `graded`    — graded (settled) bets from the request, including `risk`, `win`, `fee`, and `result`.
+
+## Request
+
+`GET /user/getBetByWagerRequestID`
+
+<ParamField query="wagerRequestID" type="string" required>
+  The `wagerRequestID` returned by `/session/v3/place` (in either the `matched[].wagerRequestID` or `unmatched.wagerRequestID` field).
+</ParamField>
+
+<CodeGroup>
+```bash curl
+curl "https://api.4casters.io/user/getBetByWagerRequestID?wagerRequestID=65f69afec4c141f5ecc5dc0b" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+</CodeGroup>
+
+## Response
+
+<ResponseField name="data.unmatched" type="array">Empty array.</ResponseField>
+<ResponseField name="data.matched" type="array">
+  Matched (ungraded) bets — same shape as [Get matched bets](/pages/rest/user/get-matched-bets#response).
+</ResponseField>
+<ResponseField name="data.graded" type="array">
+  Graded (settled) bets — same shape as [Get graded wagers](/pages/rest/user/get-graded-wagers#response).
+</ResponseField>
+
+## Errors
+
+| Status | Meaning |
+| ------ | ------- |
+| `400`  | `wagerRequestID` is missing or unknown. |

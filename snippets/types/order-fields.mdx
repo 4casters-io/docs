@@ -1,0 +1,46 @@
+<ParamField body="gameID" type="string" required>
+  4casters game id. Get one from `GET /exchange/v2/getGames` or `GET /exchange/v2/getOrderbook`.
+</ParamField>
+
+<ParamField body="type" type="string" required>
+  Market type. One of `moneyline`, `spread`, `total`, `moneyline1x2`. `moneyline1x2` is **soccer only** (three-way money line: home / away / draw).
+</ParamField>
+
+<ParamField body="side" type="string" required>
+  Order side. Meaning depends on `type`:
+  - `moneyline`, `spread` — the participant id you are backing.
+  - `total` — `"over"` or `"under"`.
+  - `moneyline1x2` — `"yes"` or `"no"` on the outcome named by `market`.
+</ParamField>
+
+<ParamField body="market" type="string">
+  **`moneyline1x2` only.** Either `"draw"` or a participant id — names the outcome you're betting yes/no on. Example: `side: "yes"` + `market: "draw"` means *the match ends in a draw*; `side: "no"` + `market: "<homeTeamId>"` means *the home team does not win*.
+</ParamField>
+
+<ParamField body="odds" type="integer" required>
+  Order odds in **American** format (e.g. `-110`, `+150`).
+</ParamField>
+
+<ParamField body="bet" type="number" required>
+  Amount to risk on the bet. An order with `bet: 100, odds: 120` can be filled by other users for a total of **120 at -120**.
+</ParamField>
+
+<ParamField body="number" type="number">
+  Spread or total number. Required for `spread` and `total`. Not used for `moneyline` or `moneyline1x2`.
+</ParamField>
+
+<ParamField body="orderType" type="string">
+  One of `limit`, `post`, `postArb`, `fillAndKill`. Defaults to `limit`.
+  - `limit` — match against any liquidity at your price or better as a taker, rest the remainder as a maker.
+  - `post`  — guarantee maker. Reject if the order would match resting liquidity (`rejected_order_type_rules`, e.g. `"post order cannot have matches"`).
+  - `postArb` — like `post`, but allowed to match if your American odds are within **1%** of the resting order. Avoids taker fees you would otherwise pay across a normal trade.
+  - `fillAndKill` — guarantee taker. Match immediately at your price or reject.
+</ParamField>
+
+<ParamField body="expirationMinutes" type="integer">
+  Auto-cancel after N minutes from placement. Omit to keep the order resting until game start (the default behavior — every open order is cancelled automatically when the game starts).
+</ParamField>
+
+<ParamField body="userReference" type="string">
+  Client-defined identifier preserved on every fill and resting offer derived from this order. Use it to look the order up later via `GET /user/getBetByUserReference`.
+</ParamField>

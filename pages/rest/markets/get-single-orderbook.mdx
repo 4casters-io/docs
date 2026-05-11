@@ -1,0 +1,66 @@
+---
+title: 'Get single orderbook'
+description: 'Read the nested orderbook for one game, plus child markets'
+openapi: 'GET /exchange/getSingleOrderbook'
+---
+
+Returns the **nested** orderbook for a single game — spreads and totals are objects keyed by spread / total number rather than flattened arrays. Also returns any child games (props, alternate periods) and an `orderSummary` of the caller's own resting orders for the league.
+
+For the simpler flat shape, prefer [Get orderbook](/pages/rest/markets/get-orderbook).
+
+## Request
+
+`GET /exchange/getSingleOrderbook`
+
+<ParamField query="gameID" type="string" required>
+  Game id.
+</ParamField>
+
+<CodeGroup>
+```bash curl
+curl "https://api.4casters.io/exchange/getSingleOrderbook?gameID=65b67450503180295ade9216" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+</CodeGroup>
+
+## Response
+
+<ResponseField name="data.game" type="object">
+  Game object with nested-orderbook fields. The standard `Game` fields apply (see [Get games](/pages/rest/markets/get-games#response)), plus:
+
+  <Expandable title="Per-game orderbook fields">
+    <ResponseField name="awayMoneylines" type="array">Resting away-side moneyline orders. Sorted best-price first.</ResponseField>
+    <ResponseField name="homeMoneylines" type="array">Resting home-side moneyline orders.</ResponseField>
+    <ResponseField name="awaySpreads"    type="object">Object keyed by spread number (e.g. `"-3.5"`). Each value is an array of orders.</ResponseField>
+    <ResponseField name="homeSpreads"    type="object">Object keyed by spread number.</ResponseField>
+    <ResponseField name="over"           type="object">Object keyed by total number (e.g. `"220.5"`). Each value is an array of orders.</ResponseField>
+    <ResponseField name="under"          type="object" />
+    <ResponseField name="homeMoneylines1x2" type="object">**Soccer only.** Object with `homeYes` / `homeNo` arrays.</ResponseField>
+    <ResponseField name="awayMoneylines1x2" type="object">**Soccer only.** Object with `awayYes` / `awayNo` arrays.</ResponseField>
+    <ResponseField name="draw1x2"           type="object">**Soccer only.** Object with `drawYes` / `drawNo` arrays.</ResponseField>
+    <ResponseField name="mainHomeSpread"  type="string">The currently-displayed main home spread (the consensus line).</ResponseField>
+    <ResponseField name="mainAwaySpread"  type="number" />
+    <ResponseField name="mainTotal"       type="string" />
+    <ResponseField name="openInterest"    type="number" />
+    <ResponseField name="matchedVolume"   type="number" />
+  </Expandable>
+</ResponseField>
+<ResponseField name="data.orderSummary" type="array">
+  The caller's own resting orders across the entire league (not just this game). Useful for rendering "your offers" badges in a UI.
+</ResponseField>
+<ResponseField name="data.childGames" type="array">
+  Child games (alternate periods, etc.) of the requested game. Same shape as `data.game`.
+</ResponseField>
+<ResponseField name="data.propGames" type="array">
+  Prop games tied to the requested game.
+</ResponseField>
+
+Each individual order has the standard order shape:
+
+<Snippet file="types/orderbook-order.mdx" />
+
+## Errors
+
+| Status | Meaning |
+| ------ | ------- |
+| `400`  | `gameID` missing. |

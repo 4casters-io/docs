@@ -1,0 +1,45 @@
+---
+title: 'Orders heartbeat'
+description: 'Auto-cancel your orders if your client disconnects'
+openapi: 'POST /user/ordersHeartbeat'
+---
+
+A safety mechanism: send a heartbeat with a `timeout` (in seconds). If the next heartbeat is not received within `timeout` seconds, **all of your open orders are cancelled**.
+
+Use this endpoint in any client that places resting orders — if your process crashes or loses connectivity, the heartbeat ensures stale orders get pulled instead of staying on the book.
+
+## Request
+
+`POST /user/ordersHeartbeat`
+
+<ParamField body="timeout" type="integer" required>
+  Cancel-after timeout, in seconds. Must be greater than `5`.
+</ParamField>
+
+<CodeGroup>
+```bash curl
+curl -X POST https://api.4casters.io/user/ordersHeartbeat \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"timeout": 30}'
+```
+
+```json JSON body
+{ "timeout": 30 }
+```
+</CodeGroup>
+
+## Response
+
+The response is forwarded from the orders service:
+
+```json
+{ "data": { /* heartbeat ack payload */ } }
+```
+
+## Errors
+
+| Status | Meaning |
+| ------ | ------- |
+| `400`  | `timeout` missing, not a number, or `<= 5`. |
+| `503`  | Orders service unreachable. |

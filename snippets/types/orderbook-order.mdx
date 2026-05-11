@@ -1,0 +1,18 @@
+<ResponseField name="id" type="string">Order id.</ResponseField>
+<ResponseField name="type" type="string">`moneyline`, `spread`, `total`, or `moneyline1x2`.</ResponseField>
+<ResponseField name="createdBy" type="string">Present **only** when the order belongs to the caller. Useful for filtering your own resting orders out of the orderbook.</ResponseField>
+<ResponseField name="sumUntaken" type="number">Win amount still available on this order — a taker pays risk to claim it at the listed `odds`.</ResponseField>
+<ResponseField name="bet" type="number">The original `bet` (risk) the maker posted.</ResponseField>
+<ResponseField name="odds" type="integer">American odds (negative for favorites, positive for underdogs).</ResponseField>
+<ResponseField name="gameID" type="string">Game id this order belongs to.</ResponseField>
+<ResponseField name="takenRatio" type="number">Fraction of the order that has already been matched, between `0` and `1`.</ResponseField>
+<ResponseField name="expiry" type="string">Cancel-at timestamp (ISO 8601). `null` if no expiry was set.</ResponseField>
+<ResponseField name="createdAt" type="string">Timestamp the order was placed.</ResponseField>
+<ResponseField name="gameStartExpiry" type="boolean">When `true`, the order will be auto-cancelled at game start.</ResponseField>
+<ResponseField name="isPostArb" type="boolean">Present only when the order was placed with `orderType: postArb`.</ResponseField>
+<ResponseField name="participantID" type="string">Present for `moneyline` and `spread` — the participant being backed.</ResponseField>
+<ResponseField name="spread" type="number">Present for `spread`.</ResponseField>
+<ResponseField name="total" type="number">Present for `total`.</ResponseField>
+<ResponseField name="OU" type="string">`over` or `under`. Present for `total`.</ResponseField>
+<ResponseField name="market" type="string">Present for `moneyline1x2` — outcome name (`"draw"` or a participant id).</ResponseField>
+<ResponseField name="side" type="string">For `moneyline1x2` — `yes` or `no`.</ResponseField>

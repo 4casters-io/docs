@@ -1,0 +1,107 @@
+---
+title: 'Get orderbook'
+description: 'Read the orderbook for a league or game (v2, recommended)'
+openapi: 'GET /exchange/v2/getOrderbook'
+---
+
+Returns the orderbook for a league or single game in **flat** form: each market is an array of orders rather than an object keyed by spread / total.
+
+This is the recommended orderbook endpoint. Pair it with the [WebSocket Streaming](/pages/streaming/price-feed) price feed for real-time updates.
+
+## Request
+
+`GET /exchange/v2/getOrderbook`
+
+<ParamField query="league" type="string">
+  League code, e.g. `NBA` (case-insensitive). Required when `gameID` is not provided.
+</ParamField>
+<ParamField query="sport" type="string">
+  Sport name, e.g. `basketball` (case-insensitive). Optional filter when `league` is set.
+</ParamField>
+<ParamField query="gameID" type="string">
+  Single game id. When provided, `league` and `sport` are ignored.
+</ParamField>
+
+<CodeGroup>
+```bash curl (one league)
+curl "https://api.4casters.io/exchange/v2/getOrderbook?league=NBA" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+
+```bash curl (one game)
+curl "https://api.4casters.io/exchange/v2/getOrderbook?gameID=688c0516fbc14da0c202d426" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+</CodeGroup>
+
+## Response
+
+<ResponseField name="data.games" type="array">
+  Each `game` is the standard [Game](/pages/rest/markets/get-games#response) shape with the following additional per-market arrays:
+
+  <Expandable title="Per-game orderbook fields">
+    <ResponseField name="awayMoneylines"    type="array">Resting moneyline orders backing the away team. Sorted best-price first.</ResponseField>
+    <ResponseField name="homeMoneylines"    type="array">Resting moneyline orders backing the home team.</ResponseField>
+    <ResponseField name="awaySpreads"       type="array">Resting away-side spread orders, flattened across spread numbers.</ResponseField>
+    <ResponseField name="homeSpreads"       type="array">Resting home-side spread orders.</ResponseField>
+    <ResponseField name="over"              type="array">Resting `over` orders, flattened across totals.</ResponseField>
+    <ResponseField name="under"             type="array">Resting `under` orders.</ResponseField>
+    <ResponseField name="awayMoneylines1x2" type="array">**Soccer only.** Three-way money line orders backing the away team.</ResponseField>
+    <ResponseField name="homeMoneylines1x2" type="array">**Soccer only.** Three-way money line orders backing the home team.</ResponseField>
+    <ResponseField name="draw1x2"           type="array">**Soccer only.** Three-way money line orders on the draw.</ResponseField>
+    <ResponseField name="openInterest"      type="number">Sum of `bet` across every resting order on the game.</ResponseField>
+    <ResponseField name="matchedVolume"     type="number">Total volume matched on this game.</ResponseField>
+  </Expandable>
+</ResponseField>
+
+Each order in those arrays has the following shape:
+
+<Snippet file="types/orderbook-order.mdx" />
+
+### Example (trimmed)
+
+<CodeGroup>
+```json JSON
+{
+  "data": {
+    "games": [
+      {
+        "id": "67aaba04c32f13ae2e8aa070",
+        "league": "NBA",
+        "sport": "basketball",
+        "start": "2025-02-12T00:10:00.000Z",
+        "ended": false,
+        "live": false,
+        "featured": false,
+        "eventName": "TORONTO RAPTORS VS PHILADELPHIA 76ERS",
+        "isSpecials": false,
+        "periodName": "Full Time",
+        "participants": [/* away, home */],
+        "awayMoneylines": [
+          {
+            "id": "67ab79fc786aa2c2cfe7524f",
+            "type": "moneyline",
+            "sumUntaken": 1151.04,
+            "odds": 330,
+            "bet": 3798.43,
+            "gameID": "67aaba04c32f13ae2e8aa070",
+            "takenRatio": 0,
+            "participantID": "61a3917a8afa5950306490fd",
+            "expiry": "2025-02-12T00:10:06.000Z",
+            "createdAt": "2025-02-11T16:25:32.354Z",
+            "gameStartExpiry": true
+          }
+        ],
+        "homeMoneylines": [/* ... */],
+        "awaySpreads":    [/* ... */],
+        "homeSpreads":    [/* ... */],
+        "over":           [/* ... */],
+        "under":          [/* ... */],
+        "openInterest": 12450.30,
+        "matchedVolume": 27916.55
+      }
+    ]
+  }
+}
+```
+</CodeGroup>

@@ -1,0 +1,91 @@
+---
+title: 'Get matched bets'
+description: 'List bets that are matched but not yet graded'
+openapi: 'GET /user/getMatchedBets'
+---
+
+Returns all of the caller's bets that have been **matched but not yet graded** — i.e. open positions on games that are not yet settled.
+
+## Request
+
+`GET /user/getMatchedBets`
+
+Takes no parameters.
+
+<CodeGroup>
+```bash curl
+curl https://api.4casters.io/user/getMatchedBets \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+</CodeGroup>
+
+## Response
+
+<ResponseField name="data.matchedBets" type="array">
+  Array of matched bets, sorted ascending by game start time.
+  <Expandable title="MatchedBet">
+    <ResponseField name="id" type="string">Bet id.</ResponseField>
+    <ResponseField name="txID" type="string">Transaction id of the fill.</ResponseField>
+    <ResponseField name="type" type="string">`moneyline`, `spread`, `total`, or `moneyline1x2`.</ResponseField>
+    <ResponseField name="bet" type="number">Original bet size.</ResponseField>
+    <ResponseField name="odds" type="integer">American odds at fill time.</ResponseField>
+    <ResponseField name="spread" type="number">Present for `spread`.</ResponseField>
+    <ResponseField name="total" type="number">Present for `total`.</ResponseField>
+    <ResponseField name="OU" type="string">`over` or `under`. Present for `total`.</ResponseField>
+    <ResponseField name="participantID" type="string">Present for `moneyline` and `spread`.</ResponseField>
+    <ResponseField name="market" type="string">Present for `moneyline1x2`.</ResponseField>
+    <ResponseField name="side" type="string">For `moneyline1x2` — `yes` or `no`.</ResponseField>
+    <ResponseField name="userReference" type="string">Optional client-defined identifier passed at place time.</ResponseField>
+    <ResponseField name="createdAt" type="string">ISO 8601 timestamp.</ResponseField>
+    <ResponseField name="matchedTime" type="string">ISO 8601 timestamp the fill occurred.</ResponseField>
+    <ResponseField name="origin" type="string">`offer` (you posted, taker hit you) or `wager` (you took resting liquidity).</ResponseField>
+    <ResponseField name="risk" type="string">Risk on the matched portion (string-formatted, 2 decimals).</ResponseField>
+    <ResponseField name="win" type="string">Win amount net of commission.</ResponseField>
+    <ResponseField name="fee" type="string">Commission charged on the matched portion.</ResponseField>
+    <ResponseField name="graded" type="boolean">Always `false` here.</ResponseField>
+    <ResponseField name="closed" type="boolean">Whether the bet has been closed by an admin action.</ResponseField>
+    <ResponseField name="adminRefund" type="boolean">Whether the bet was refunded by an admin.</ResponseField>
+    <Snippet file="types/game-summary.mdx" />
+  </Expandable>
+</ResponseField>
+
+### Example
+
+<CodeGroup>
+```json JSON
+{
+  "data": {
+    "matchedBets": [
+      {
+        "id": "67f45377c18c6697c172afa4",
+        "txID": "67f45377c18c6697c172afa3",
+        "type": "moneyline",
+        "bet": 50,
+        "odds": -185,
+        "participantID": "5d48bd5198366d41ec7238da",
+        "userReference": "my-ref-123",
+        "createdAt": "2025-09-24T19:30:59.482Z",
+        "matchedTime": "2025-09-24T19:30:59.482Z",
+        "origin": "wager",
+        "risk": "50.27",
+        "win": "27.16",
+        "fee": "0.27",
+        "graded": false,
+        "closed": false,
+        "adminRefund": false,
+        "game": {
+          "id": "688c0516fbc14da0c202d426",
+          "league": "NBA",
+          "sport": "basketball",
+          "start": "2025-09-25T00:10:00.000Z",
+          "ended": false,
+          "eventName": "TORONTO RAPTORS VS PHILADELPHIA 76ERS",
+          "isFutures": false,
+          "participants": [/* ... */]
+        }
+      }
+    ]
+  }
+}
+```
+</CodeGroup>

@@ -1,0 +1,54 @@
+---
+title: 'Get leagues'
+description: 'List leagues with active markets'
+openapi: 'GET /exchange/getLeagues'
+---
+
+Returns every league with active markets on the exchange. Use league codes from this endpoint to fetch games (`/exchange/v2/getGames`) and orderbooks (`/exchange/v2/getOrderbook`).
+
+If the response contains a league name with `LIVE` in it (other than the per-sport live leagues `NFL-LIVE`, `NBA-LIVE`, `NCAAF-LIVE`, `NCAAB-LIVE`), the value `"LIVE"` is appended as an alias for "all in-play games".
+
+## Request
+
+`GET /exchange/getLeagues`
+
+<ParamField query="sport" type="string">
+  Optional sport filter (`basketball`, `baseball`, `hockey`, `football`, `soccer`, `golf`, `tennis`, `mma`, etc.). When `sport=soccer` or `sport=golf`, the value `"all"` is appended to the list.
+</ParamField>
+
+<CodeGroup>
+```bash curl
+curl https://api.4casters.io/exchange/getLeagues \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+</CodeGroup>
+
+## Response
+
+<ResponseField name="data.availableLeagues" type="array">
+  Array of league codes.
+</ResponseField>
+
+### Example
+
+<CodeGroup>
+```json JSON
+{
+  "data": {
+    "availableLeagues": [
+      "CHAMPIONS-LEAGUE",
+      "NBA",
+      "NHL",
+      "BUNDESLIGA",
+      "PREMIER-LEAGUE",
+      "PGA",
+      "LA-LIGA",
+      "NON-UFC",
+      "SERIE-A",
+      "MLS",
+      "UFCMMA"
+    ]
+  }
+}
+```
+</CodeGroup>

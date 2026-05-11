@@ -1,0 +1,62 @@
+---
+title: 'Cancel multiple orders'
+description: 'Cancel a batch of orders by id'
+openapi: 'POST /session/cancelMultiple'
+---
+
+Cancel a batch of orders by id. The result is positional with the input `sessionIDs` array and may contain a mix of successful cancels and per-order failures.
+
+## Request
+
+`POST /session/cancelMultiple`
+
+<ParamField body="sessionIDs" type="array" required>
+  Array of order ids to cancel. Every id must be a valid `ObjectID` — if any one of them is malformed the whole request fails with `400`.
+</ParamField>
+
+<CodeGroup>
+```bash curl
+curl -X POST https://api.4casters.io/session/cancelMultiple \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "sessionIDs": [
+      "65b036dfb31407c2b6bc1cfe",
+      "65b036e0b31407c2b6bc1d08"
+    ]
+  }'
+```
+</CodeGroup>
+
+## Response
+
+<ResponseField name="data" type="array">
+  Per-order cancel results. Same shape as [Cancel an order](/pages/rest/orders/cancel-order#response). On failure, entries include `{ success: false, reason: "..." }` (no `sessionID` field for invalid-id / not-found / not-yours rejections).
+</ResponseField>
+
+### Example
+
+<CodeGroup>
+```json JSON
+{
+  "data": [
+    {
+      "success": true,
+      "sessionID": "65b036dfb31407c2b6bc1cfe",
+      "odds": 125,
+      "filled": 0,
+      "offered": 0,
+      "remaining": 100,
+      "gameID": "65f0c3c24ef07d0008abc123"
+    },
+    { "success": false, "reason": "Not your order" }
+  ]
+}
+```
+</CodeGroup>
+
+## Errors
+
+| Status | Meaning |
+| ------ | ------- |
+| `400`  | `sessionIDs` missing or not an array, or any id malformed. |

@@ -1,0 +1,68 @@
+---
+title: 'Cancel an order'
+description: 'Cancel a single open order'
+openapi: 'POST /session/cancel'
+---
+
+Cancel a single open order by id. Returns the unfilled and filled amounts at cancellation time.
+
+## Request
+
+`POST /session/cancel`
+
+<ParamField body="sessionID" type="string" required>
+  Order id to cancel.
+</ParamField>
+
+<CodeGroup>
+```bash curl
+curl -X POST https://api.4casters.io/session/cancel \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"sessionID": "65b036dfb31407c2b6bc1cfe"}'
+```
+</CodeGroup>
+
+## Response
+
+<ResponseField name="data" type="object">
+  <Expandable title="CancelResult">
+    <ResponseField name="success"      type="boolean" />
+    <ResponseField name="sessionID"    type="string">Order id that was cancelled.</ResponseField>
+    <ResponseField name="description"  type="string">Human-readable order description (e.g. `Lakers -3.5 -110`).</ResponseField>
+    <ResponseField name="odds"         type="integer">American odds of the cancelled order.</ResponseField>
+    <ResponseField name="filled"       type="number">Risk that had already been matched at cancel time.</ResponseField>
+    <ResponseField name="offered"      type="number" />
+    <ResponseField name="remaining"    type="number">Risk that was still unmatched and is now refunded.</ResponseField>
+    <ResponseField name="gameID"       type="string" />
+    <ResponseField name="userReference" type="string" />
+  </Expandable>
+</ResponseField>
+
+### Example
+
+<CodeGroup>
+```json JSON
+{
+  "data": {
+    "success": true,
+    "sessionID": "65b036dfb31407c2b6bc1cfe",
+    "description": "Lakers ML +125",
+    "odds": 125,
+    "filled": 0,
+    "offered": 0,
+    "remaining": 100,
+    "gameID": "65f0c3c24ef07d0008abc123",
+    "userReference": "my-order-1"
+  }
+}
+```
+</CodeGroup>
+
+## Errors
+
+| Status | Meaning |
+| ------ | ------- |
+| `400`  | Invalid order id. |
+| `403`  | Not your order. |
+| `409`  | Order could not be cancelled (e.g. already fully filled). |

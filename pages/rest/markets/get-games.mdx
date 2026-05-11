@@ -1,0 +1,80 @@
+---
+title: 'Get games'
+description: 'List active games for a league'
+openapi: 'GET /exchange/v2/getGames'
+---
+
+Returns all active games for a league. The response does **not** include the orderbook or any prices — call [Get orderbook](/pages/rest/markets/get-orderbook) for that.
+
+## Request
+
+`GET /exchange/v2/getGames`
+
+<ParamField query="league" type="string" required>
+  League code from [Get leagues](/pages/rest/markets/get-leagues). Use the special value `upcoming` to get all upcoming games across leagues.
+</ParamField>
+<ParamField query="sport" type="string">
+  Optional sport filter.
+</ParamField>
+
+<CodeGroup>
+```bash curl
+curl "https://api.4casters.io/exchange/v2/getGames?league=NBA" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+</CodeGroup>
+
+## Response
+
+<ResponseField name="data.games" type="array">
+  <Expandable title="Game">
+    <ResponseField name="id"             type="string">Game id.</ResponseField>
+    <ResponseField name="parentGameID"   type="string">Parent game id, if this is a child market (props, alternate periods).</ResponseField>
+    <ResponseField name="cheapDataUID"   type="string">Stable cross-system identifier for the game (used for line correlation).</ResponseField>
+    <ResponseField name="league"         type="string" />
+    <ResponseField name="sport"          type="string" />
+    <ResponseField name="start"          type="string">ISO 8601 start time.</ResponseField>
+    <ResponseField name="ended"          type="boolean" />
+    <ResponseField name="live"           type="boolean" />
+    <ResponseField name="featured"       type="boolean" />
+    <ResponseField name="eventName"      type="string" />
+    <ResponseField name="tournamentName" type="string" />
+    <ResponseField name="periodName"     type="string">e.g. `Full Time`, `1H`, `Set 1`.</ResponseField>
+    <ResponseField name="isSpecials"     type="boolean">`true` for futures and other specials markets.</ResponseField>
+    <ResponseField name="participants"   type="array">Two-element `[away, home]` array. Each participant has `id`, `longName`, `shortName`, `homeAway`, `mainPitcher`, `rotationNumber`, `futuresSide`.</ResponseField>
+  </Expandable>
+</ResponseField>
+
+### Example
+
+<CodeGroup>
+```json JSON
+{
+  "data": {
+    "games": [
+      {
+        "id": "6266c12172aefcf0033374ce",
+        "parentGameID": null,
+        "cheapDataUID": "32620-79238-2022-04-26",
+        "league": "NHL",
+        "sport": "hockey",
+        "start": "2022-04-26T18:00:00.000Z",
+        "ended": false,
+        "live": false,
+        "featured": false,
+        "participants": [
+          { "id": "60747bc471b5071a80ca0ac8", "longName": "Carolina Hurricanes", "shortName": "CAR", "homeAway": "away", "mainPitcher": null, "rotationNumber": "25", "futuresSide": "" },
+          { "id": "607349daf6d3364eb69604f6", "longName": "New York Rangers",    "shortName": "NEW", "homeAway": "home", "mainPitcher": null, "rotationNumber": "26", "futuresSide": "" }
+        ]
+      }
+    ]
+  }
+}
+```
+</CodeGroup>
+
+## Errors
+
+| Status | Meaning |
+| ------ | ------- |
+| `400`  | `league` is required. |

@@ -1,0 +1,46 @@
+---
+title: 'Cancel all orders for a league'
+description: 'Asynchronously cancel every open order in a league'
+openapi: 'POST /session/cancelAllForLeague'
+---
+
+Schedule cancellation of every open order in a league. This endpoint **dispatches asynchronously** — it acknowledges with `{ ordersReceived: true }` immediately and the cancels happen in the background.
+
+If you need to know which orders were cancelled, follow up with [Get unmatched orders](/pages/rest/user/get-unmatched-orders) or subscribe to the user feed on the [WebSocket Streaming API](/pages/streaming/user-feed).
+
+## Request
+
+`POST /session/cancelAllForLeague`
+
+<ParamField body="league" type="string" required>
+  League code. Get the list from `GET /exchange/getLeagues`. Case-insensitive.
+</ParamField>
+
+<CodeGroup>
+```bash curl
+curl -X POST https://api.4casters.io/session/cancelAllForLeague \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{ "league": "NBA" }'
+```
+</CodeGroup>
+
+## Response
+
+<ResponseField name="data.ordersReceived" type="boolean">
+  Always `true` on success. The cancellations are processed asynchronously.
+</ResponseField>
+
+### Example
+
+<CodeGroup>
+```json JSON
+{ "data": { "ordersReceived": true } }
+```
+</CodeGroup>
+
+## Errors
+
+| Status | Meaning |
+| ------ | ------- |
+| `400`  | `league` missing, not a string, or unknown. |

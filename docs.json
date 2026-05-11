@@ -29,7 +29,62 @@
       },
       {
         "tab": "REST API",
-        "href": "https://documenter.getpostman.com/view/6710109/U16gNmHG"
+        "groups": [
+          {
+            "group": "Getting started",
+            "pages": [
+              "pages/rest/introduction",
+              "pages/rest/authentication"
+            ]
+          },
+          {
+            "group": "User",
+            "pages": [
+              "pages/rest/user/get-me",
+              "pages/rest/user/get-matched-bets",
+              "pages/rest/user/get-unmatched-orders",
+              "pages/rest/user/get-orders-for-game",
+              "pages/rest/user/get-graded-wagers",
+              "pages/rest/user/get-bet-by-id",
+              "pages/rest/user/get-bet-by-wager-request-id",
+              "pages/rest/user/get-bet-by-user-reference",
+              "pages/rest/user/orders-heartbeat",
+              "pages/rest/user/get-game-liability"
+            ]
+          },
+          {
+            "group": "Orders",
+            "pages": [
+              "pages/rest/orders/place-order",
+              "pages/rest/orders/edit-order",
+              "pages/rest/orders/lookup-order",
+              "pages/rest/orders/cancel-order",
+              "pages/rest/orders/cancel-multiple",
+              "pages/rest/orders/cancel-by-reference",
+              "pages/rest/orders/cancel-all-for-game",
+              "pages/rest/orders/cancel-all-for-league",
+              "pages/rest/orders/cancel-all-orders"
+            ]
+          },
+          {
+            "group": "Markets",
+            "pages": [
+              "pages/rest/markets/get-leagues",
+              "pages/rest/markets/get-participants",
+              "pages/rest/markets/get-games",
+              "pages/rest/markets/get-orderbook",
+              "pages/rest/markets/get-single-orderbook",
+              "pages/rest/markets/get-average-price",
+              "pages/rest/markets/get-orderbook-v1"
+            ]
+          },
+          {
+            "group": "Affiliate",
+            "pages": [
+              "pages/rest/affiliate/get-affiliate-commission"
+            ]
+          }
+        ]
       }
     ]
   },

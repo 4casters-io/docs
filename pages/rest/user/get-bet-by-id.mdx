@@ -1,0 +1,76 @@
+---
+title: 'Get bet by ID'
+description: 'Look up a single bet by id or transaction id'
+openapi: 'GET /user/getBetByID'
+---
+
+Look up a single bet (matched, graded, or open offer) belonging to the caller. Pass **either** `id` or `txID`, not both.
+
+## Request
+
+`GET /user/getBetByID`
+
+<ParamField query="id" type="string">
+  Bet `id` from a list endpoint such as `/user/getMatchedBets`.
+</ParamField>
+<ParamField query="txID" type="string">
+  Transaction id, e.g. the `wagerRequestID` or `txID` returned by `/session/v3/place`.
+</ParamField>
+
+You must pass exactly one of `id` or `txID`.
+
+<CodeGroup>
+```bash curl (by txID)
+curl "https://api.4casters.io/user/getBetByID?txID=64824b329556daa319747e31" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+
+```bash curl (by id)
+curl "https://api.4casters.io/user/getBetByID?id=6494ca85c9346058f35b2b1e" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+</CodeGroup>
+
+## Response
+
+The shape of `bet` depends on the bet's current state:
+
+- A **graded** bet returns the [GradedWager](/pages/rest/user/get-graded-wagers#response) shape, including `risk`, `win`, `fee`, and `result`.
+- A **matched** bet returns the [MatchedBet](/pages/rest/user/get-matched-bets#response) shape.
+- An **open offer** returns the [UnmatchedOrder](/pages/rest/user/get-unmatched-orders#response) shape.
+
+Note that, unlike most endpoints, this one returns the bet at the **top level** (not under `data`).
+
+### Example
+
+<CodeGroup>
+```json JSON (open offer)
+{
+  "bet": {
+    "id": "667c1e870c0d22ec36ccb438",
+    "txID": "667c1e870c0d22ec36ccb439",
+    "type": "moneyline",
+    "bet": 222,
+    "graded": false,
+    "closed": false,
+    "createdAt": "2024-06-26T13:58:31.224Z",
+    "origin": "offer",
+    "wagerRequestID": "667c1e870c...",
+    "game": {
+      "id": "6679ee8c9f05a804e064b6ed",
+      "league": "FED-EX-500",
+      "sport": "golf",
+      "start": "2024-06-27T10:45:00.000Z",
+      "ended": false,
+      "participants": [/* ... */]
+    }
+  }
+}
+```
+</CodeGroup>
+
+## Errors
+
+| Status | Meaning |
+| ------ | ------- |
+| `400`  | Both `id` and `txID` missing, or no bet found for the supplied identifier. |

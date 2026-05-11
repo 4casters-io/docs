@@ -1,0 +1,49 @@
+---
+title: 'Get bet by user reference'
+description: 'Look up every bet tied to a client-defined identifier'
+openapi: 'GET /user/getBetByUserReference'
+---
+
+Look up every bet tied to a `userReference`. `userReference` is an optional client-defined string you can attach to an order at place time to track it on your side — this endpoint is the read counterpart.
+
+The response separates results into three buckets:
+
+- `unmatched` — open offers from this reference that are still resting on the book.
+- `matched`   — matched (ungraded) bets from this reference.
+- `graded`    — graded (settled) bets from this reference, including `risk`, `win`, `fee`, and `result`.
+
+## Request
+
+`GET /user/getBetByUserReference`
+
+<ParamField query="userReference" type="string" required>
+  Client-defined reference passed in at place time.
+</ParamField>
+<ParamField query="gameID" type="string" required>
+  Scope the lookup to a single game.
+</ParamField>
+
+<CodeGroup>
+```bash curl
+curl "https://api.4casters.io/user/getBetByUserReference?userReference=my-order-1&gameID=67d1c942215edc7ee0c806ef" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+</CodeGroup>
+
+## Response
+
+<ResponseField name="data.unmatched" type="array">
+  Open orders — same shape as [Get unmatched orders](/pages/rest/user/get-unmatched-orders#response).
+</ResponseField>
+<ResponseField name="data.matched" type="array">
+  Matched (ungraded) bets — same shape as [Get matched bets](/pages/rest/user/get-matched-bets#response).
+</ResponseField>
+<ResponseField name="data.graded" type="array">
+  Graded (settled) bets — same shape as [Get graded wagers](/pages/rest/user/get-graded-wagers#response).
+</ResponseField>
+
+## Errors
+
+| Status | Meaning |
+| ------ | ------- |
+| `408`  | `userReference` or `gameID` missing. |

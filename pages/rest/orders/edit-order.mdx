@@ -1,0 +1,84 @@
+---
+title: 'Edit an order'
+description: 'Change the price or volume of a resting order'
+openapi: 'POST /session/editOrder'
+---
+
+Change the price (`orderOdds`) and/or volume (`orderVolume`) of an existing **limit** order.
+
+For partially-filled orders, 4casters cancels the existing order and submits a new one with the supplied values. The new `orderVolume` does **not** account for previously filled volume — if you originally placed `bet: 10`, $5 was filled, and you edit to `orderVolume: 10`, the previous order is cancelled (refunding $5) and a new order is created for $10 (debiting $10), leaving you net $5 down.
+
+<Note>
+A newer gRPC variant lives at `POST /session/v4/editOrder`. It accepts the same request body and additionally returns `errorType` on validation failures. Prefer it for new integrations once you've confirmed the shape works for you.
+</Note>
+
+## Request
+
+`POST /session/editOrder`
+
+<ParamField body="sessionID" type="string" required>
+  Order id to edit. Get it from `data.unmatched.orderID` of `/session/v3/place` or `id` from `/user/getUnmatched`.
+</ParamField>
+<ParamField body="orderOdds" type="integer">
+  New American odds. Pass `null` to leave odds unchanged.
+</ParamField>
+<ParamField body="orderVolume" type="number">
+  New `bet` amount. Pass `null` to leave volume unchanged.
+</ParamField>
+<ParamField body="orderType" type="string">
+  Defaults to `limit`. See [order types](/pages/rest/orders/place-order#order-types).
+</ParamField>
+<ParamField body="userReference" type="string">
+  Optional. Replaces the existing `userReference` on the order.
+</ParamField>
+<ParamField body="intendedOrderVolume" type="number">
+  Optional. The volume you originally intended to place; used by the server when reconciling partial fills.
+</ParamField>
+<ParamField body="expiryChange" type="string">
+  Optional. New expiration in minutes (string).
+</ParamField>
+<ParamField body="blockIfNoOtherSideOrders" type="boolean">
+  v4 only. Reject the edit if there is no resting opposite-side liquidity.
+</ParamField>
+
+<CodeGroup>
+```bash curl
+curl -X POST https://api.4casters.io/session/editOrder \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "sessionID": "6549b6df6634097d2704716f",
+    "orderOdds": 185,
+    "orderVolume": 100
+  }'
+```
+
+```json JSON body
+{
+  "sessionID": "6549b6df6634097d2704716f",
+  "orderOdds": 185,
+  "orderVolume": 100
+}
+```
+</CodeGroup>
+
+## Response
+
+The result mirrors the [place order](/pages/rest/orders/place-order#response) response shape — a `cancelled` summary plus the new `matched` / `unmatched` outcome:
+
+<ResponseField name="data.cancelled" type="object">
+  Summary of the cancelled-and-replaced original order.
+</ResponseField>
+<ResponseField name="data.matched" type="array">
+  Fills produced by re-submitting at the new price/volume. Same shape as a `MatchedFill` in [place order](/pages/rest/orders/place-order#response).
+</ResponseField>
+<ResponseField name="data.unmatched" type="object">
+  Resting offer for the unfilled remainder of the new order.
+</ResponseField>
+
+## Errors
+
+| Status | Meaning |
+| ------ | ------- |
+| `400`  | Validation error (`v4/editOrder` returns `errorType` for these). |
+| `503`  | Orders service unreachable. |

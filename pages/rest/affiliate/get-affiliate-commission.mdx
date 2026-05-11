@@ -1,0 +1,60 @@
+---
+title: 'Get affiliate commission'
+description: 'Commission paid to you by your invited players'
+openapi: 'GET /affiliate/getAffiliateCommission'
+---
+
+Returns commission paid to the caller by the players they have invited, grouped by player username. With no parameters, returns lifetime earnings; with `fromDate` / `toDate`, restricts the range.
+
+<Note>
+Unlike most endpoints, this one returns the result at the **top level** as `commissionPaid` (not under `data`).
+</Note>
+
+## Request
+
+`GET /affiliate/getAffiliateCommission`
+
+<ParamField query="fromDate" type="string">
+  Start date (`MM-DD-YYYY`). Defaults to `08-02-2021`.
+</ParamField>
+<ParamField query="toDate" type="string">
+  End date (`MM-DD-YYYY`). Defaults to today.
+</ParamField>
+
+<CodeGroup>
+```bash curl (date range)
+curl "https://api.4casters.io/affiliate/getAffiliateCommission?fromDate=10-03-2022&toDate=10-10-2022" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+
+```bash curl (lifetime)
+curl https://api.4casters.io/affiliate/getAffiliateCommission \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+</CodeGroup>
+
+## Response
+
+<ResponseField name="commissionPaid" type="array">
+  Each entry is a single-key object mapping a player's username to the total commission paid by that player in the requested range.
+</ResponseField>
+
+### Example
+
+<CodeGroup>
+```json JSON
+{
+  "commissionPaid": [
+    { "alice":   124.50 },
+    { "bob":      12.00 },
+    { "charlie":  87.34 }
+  ]
+}
+```
+</CodeGroup>
+
+## Errors
+
+| Status | Meaning |
+| ------ | ------- |
+| `400`  | `fromDate` is not parseable. |

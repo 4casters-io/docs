@@ -1,0 +1,48 @@
+---
+title: 'Get orders for a game'
+description: 'List your open orders and matched bets on a single game'
+openapi: 'GET /user/getOrdersForGame'
+---
+
+For a given 4casters game id, returns the caller's open orders and matched (ungraded) bets for that game. Graded bets are not returned by this endpoint — use [Get graded wagers](/pages/rest/user/get-graded-wagers) for those.
+
+## Request
+
+`GET /user/getOrdersForGame`
+
+<ParamField query="gameID" type="string" required>4casters game id.</ParamField>
+
+<CodeGroup>
+```bash curl
+curl "https://api.4casters.io/user/getOrdersForGame?gameID=688c0516fbc14da0c202d426" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+</CodeGroup>
+
+## Response
+
+<ResponseField name="data.unmatched" type="array">
+  Array of open orders on the game, sorted ascending by game start time. Same shape as [Get unmatched orders](/pages/rest/user/get-unmatched-orders).
+</ResponseField>
+<ResponseField name="data.matched" type="array">
+  Array of matched (ungraded) bets on the game. Same shape as [Get matched bets](/pages/rest/user/get-matched-bets).
+</ResponseField>
+
+### Example
+
+<CodeGroup>
+```json JSON
+{
+  "data": {
+    "unmatched": [/* UnmatchedOrder, ... */],
+    "matched":   [/* MatchedBet, ...     */]
+  }
+}
+```
+</CodeGroup>
+
+## Errors
+
+| Status | Meaning |
+| ------ | ------- |
+| `404`  | `gameID` missing or not a valid game id. |

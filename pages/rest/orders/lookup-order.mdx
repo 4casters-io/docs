@@ -1,0 +1,51 @@
+---
+title: 'Look up an order'
+description: 'Get the current state of one of your orders'
+openapi: 'GET /session/lookupOrder'
+---
+
+Get the current state of one of the caller's orders. Returns the order with `matchedRisk` / `unmatchedRisk` accounting and a denormalized snapshot of the underlying game.
+
+## Request
+
+`GET /session/lookupOrder`
+
+<ParamField query="orderID" type="string" required>
+  A 4casters order id. Get one from `data.unmatched.orderID` of `/session/v3/place` or `id` from `/user/getUnmatched`.
+</ParamField>
+
+<CodeGroup>
+```bash curl
+curl "https://api.4casters.io/session/lookupOrder?orderID=ORDER_ID" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+</CodeGroup>
+
+## Response
+
+<ResponseField name="data.order" type="object">
+  <Expandable title="order">
+    <ResponseField name="id" type="string" />
+    <ResponseField name="cancelled" type="boolean" />
+    <ResponseField name="isTheBestOffer" type="boolean">
+      `true` when there is no competing offer on the other side at better odds than this order.
+    </ResponseField>
+    <ResponseField name="odds" type="integer">American odds of this order (sign-flipped from internal storage).</ResponseField>
+    <ResponseField name="type" type="string">`moneyline`, `spread`, `total`, or `moneyline1x2`.</ResponseField>
+    <ResponseField name="OU" type="string">Opposite of the order's side for `total` markets. `null` for non-total.</ResponseField>
+    <ResponseField name="participant" type="string">Participant id you bet on. `null` for `total`.</ResponseField>
+    <ResponseField name="participantLongName" type="string" />
+    <ResponseField name="spread" type="number" />
+    <ResponseField name="total" type="number" />
+    <ResponseField name="matchedRisk" type="string">Risk that has already been matched (string-formatted, 2 decimals).</ResponseField>
+    <ResponseField name="unmatchedRisk" type="string">Remaining risk still resting on the book.</ResponseField>
+    <Snippet file="types/game-summary.mdx" />
+  </Expandable>
+</ResponseField>
+
+## Errors
+
+| Status | Meaning |
+| ------ | ------- |
+| `403`  | Not your order. |
+| `404`  | Invalid order id. |

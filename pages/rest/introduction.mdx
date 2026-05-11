@@ -1,0 +1,59 @@
+---
+title: 'Introduction'
+description: 'Public REST API for the 4casters peer-to-peer betting exchange'
+---
+
+The 4casters REST API lets you log in, query games and the orderbook, place / edit / cancel orders, and read your bet history programmatically. It is the same API that powers the 4casters web app.
+
+## Base URL
+
+All endpoints in this section are rooted at:
+
+```
+https://api.4casters.io
+```
+
+## Conventions
+
+- **Transport**: HTTPS only.
+- **Encoding**: JSON. Send `Content-Type: application/json` on every request that has a body.
+- **Response envelope**: With a couple of well-marked exceptions (`/affiliate/getAffiliateCommission`, `/exchange/getOddsForAveragePrice`), every successful response is wrapped: `{ "data": <payload> }`.
+- **Identifiers**: Game ids, participant ids, and order ids are MongoDB `ObjectID` strings (24-character hex).
+- **Odds**: All odds are American format (negative for favorites, positive for underdogs) unless noted otherwise.
+- **Time**: All timestamps are ISO 8601 with `Z` (UTC).
+
+## Authentication
+
+Almost every endpoint requires authentication. Log in once via [POST `/user/login`](/pages/rest/authentication), then send the returned auth token on every request — see [Authentication](/pages/rest/authentication) for details.
+
+## Per-order errors vs HTTP errors
+
+The "place" and "edit" endpoints accept batches and return per-order results. A successful HTTP `200` response can still contain individual order failures inside `data.createdSessions[i]`. See the per-order error shape on each endpoint page.
+
+HTTP-level errors (`4xx`, `5xx`) are returned as `{ "error": "<message>" }`.
+
+## Rate limiting
+
+Authentication routes (`/user/login`, password reset, signup) are rate-limited per IP. Place / edit / cancel routes are rate-limited per account. If you exceed the limit you'll receive `429 Too Many Requests`.
+
+## Real-time updates
+
+The REST API pairs with the [WebSocket Streaming API](/pages/streaming/introduction) for real-time orderbook ticks and per-account fill / settle events. The auth token returned by `/user/login` works for both.
+
+## Endpoint index
+
+<CardGroup cols={2}>
+  <Card title="Authentication" href="/pages/rest/authentication">Log in and obtain an auth token.</Card>
+  <Card title="User"           href="/pages/rest/user/get-me">Account info, balance, bets, and orders.</Card>
+  <Card title="Orders"         href="/pages/rest/orders/place-order">Place, edit, look up, and cancel orders.</Card>
+  <Card title="Markets"        href="/pages/rest/markets/get-orderbook">Browse leagues, games, participants, and the orderbook.</Card>
+  <Card title="Affiliate"      href="/pages/rest/affiliate/get-affiliate-commission">Affiliate commission.</Card>
+</CardGroup>
+
+## Legacy Postman collection
+
+The previous documentation lived as a Postman collection. It is preserved for reference, but these Mintlify docs are now the source of truth — the Postman collection may lag behind for new endpoints, parameters, or response shapes.
+
+<Card title="4Casters API — Postman collection" icon="link" href="https://documenter.getpostman.com/view/6710109/U16gNmHG">
+  View the legacy Postman documentation
+</Card>

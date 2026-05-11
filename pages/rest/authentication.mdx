@@ -1,0 +1,100 @@
+---
+title: 'Authentication'
+description: 'Log in and authorize requests'
+openapi: 'POST /user/login'
+---
+
+To use any authenticated route you need an auth token. Tokens are obtained by logging in and are valid for **30 days**, after which a fresh login is required.
+
+## Log in
+
+`POST /user/login`
+
+<CodeGroup>
+```bash curl
+curl -X POST https://api.4casters.io/user/login \
+  -H "Content-Type: application/json" \
+  -d '{"username": "your_username", "password": "your_password"}'
+```
+
+```json JSON body
+{
+  "username": "your_username",
+  "password": "your_password"
+}
+```
+</CodeGroup>
+
+### Request
+
+<ParamField body="username" type="string" required>Account username (or email).</ParamField>
+<ParamField body="password" type="string" required>Account password.</ParamField>
+
+### Response
+
+The token is returned both as `data.user.auth` **and** as a signed `auth` cookie (`Set-Cookie`). For most server-side integrations you'll want to capture `data.user.auth` and discard the cookie.
+
+```json
+{
+  "data": {
+    "user": {
+      "id": "5fe37acbb5a23600123662c1",
+      "username": "your_username",
+      "auth": "5cd551d6...",
+      "type": "p2p",
+      "oddsFormat": "american",
+      "displayBalance": 1250.50,
+      "creditLimit": 500,
+      "liability": -125.00,
+      "commissionCharged": 0.01,
+      "hasMarketMakerAccess": false,
+      "isPro": false,
+      "createdAt": "2020-12-23T17:14:09.000Z"
+    }
+  }
+}
+```
+
+See [`User`](/api-reference/openapi.json) in the OpenAPI schema for every field.
+
+### Error responses
+
+| Status | Meaning |
+| ------ | ------- |
+| `400`  | `username` and `password` are required. |
+| `401`  | Username or password is incorrect. |
+| `403`  | Account banned, locked, or closed. |
+| `429`  | Login rate-limit exceeded. |
+
+## Authorizing requests
+
+Pass the token from `data.user.auth` on every subsequent request. Three header / payload formats are accepted, in this order of preference:
+
+<Tabs>
+  <Tab title="Authorization header (recommended)">
+    ```bash
+    curl https://api.4casters.io/user/getMe \
+      -H "Authorization: Bearer 5cd551d6..."
+    ```
+    The `Bearer ` prefix is optional — passing the bare token also works.
+  </Tab>
+  <Tab title="Cookie">
+    The signed `auth` cookie set by `/user/login` is honored automatically on every endpoint when reused on the same client.
+  </Tab>
+  <Tab title="Body field (POST only)">
+    ```json
+    { "token": "5cd551d6...", "...": "..." }
+    ```
+    Provided as a fallback for clients that can't easily set custom headers (e.g. some webhook senders).
+  </Tab>
+</Tabs>
+
+If no token is provided — or the token is unknown / expired — the server responds with `401 InvalidCredentials`.
+
+## Token rotation
+
+Authenticated requests with tokens older than 30 days automatically rotate to a new token. When this happens, the new token is returned in the `X-Auth-Token` response header (and as an updated signed `auth` cookie). Long-lived integrations should watch for this header and persist the new value.
+
+## Logging out
+
+`POST /user/logout` invalidates the current token. Subsequent requests with that token return `401`.

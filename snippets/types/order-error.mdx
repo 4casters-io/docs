@@ -1,0 +1,17 @@
+When the server fails an individual order in a place, edit, or per-order cancel batch, the **per-order** entry is returned as:
+
+```json
+{
+  "error": "<human-readable message>",
+  "errorType": "validation_error | rejected_liability | rejected_order_type_rules | system_error"
+}
+```
+
+Errors are returned **positionally** in the result array, matching the index of the input order. If you receive an error for an order, that order has not been processed and is safe to retry.
+
+- `error` is not standardized — it's a descriptive string and may change.
+- `errorType` is a stable enum you can rely on for programmatic handling:
+  - `validation_error` — payload or state failed validation (missing fields, bad odds/number, invalid side, inactive game).
+  - `rejected_liability` — user / account / liability constraints prevented posting or execution.
+  - `rejected_order_type_rules` — order-type rules forbade execution. Examples: `fillAndKill` had no executable liquidity, `post` would match resting orders, or `postArb` is more than 1% away from the matchable price.
+  - `system_error` — transient internal error; a retry may succeed.

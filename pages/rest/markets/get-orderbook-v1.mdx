@@ -1,0 +1,41 @@
+---
+title: 'Get orderbook (v1, deprecated)'
+description: 'Legacy nested-orderbook endpoint kept for backwards compatibility'
+openapi: 'POST /exchange/getOrderbook'
+---
+
+<Warning>
+**Deprecated.** Use [`GET /exchange/v2/getOrderbook`](/pages/rest/markets/get-orderbook) for the simpler, recommended flat format.
+
+This endpoint is kept for backwards compatibility with older clients.
+</Warning>
+
+Returns the orderbook for an entire league in **nested** form, keyed by spread / total number. Same per-game shape as [Get single orderbook](/pages/rest/markets/get-single-orderbook), but for every game in the league.
+
+## Request
+
+`POST /exchange/getOrderbook`
+
+<ParamField body="leagueRequested" type="string" required>
+  League code (case-insensitive).
+</ParamField>
+
+<CodeGroup>
+```bash curl
+curl -X POST https://api.4casters.io/exchange/getOrderbook \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"leagueRequested": "NBA"}'
+```
+</CodeGroup>
+
+## Response
+
+<ResponseField name="data.market" type="string">Always `null` in this endpoint.</ResponseField>
+<ResponseField name="data.games"  type="array">
+  Array of games with nested-orderbook fields. See [Get single orderbook](/pages/rest/markets/get-single-orderbook#response) for the per-game shape — `awayMoneylines` / `homeMoneylines` arrays plus `awaySpreads` / `homeSpreads` / `over` / `under` objects keyed by spread or total number.
+</ResponseField>
+
+Each individual order in those buckets has the standard order shape:
+
+<Snippet file="types/orderbook-order.mdx" />

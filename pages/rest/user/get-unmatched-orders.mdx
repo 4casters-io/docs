@@ -1,0 +1,94 @@
+---
+title: 'Get unmatched orders'
+description: 'List your open orders resting on the exchange'
+openapi: 'GET /user/getUnmatched'
+---
+
+Returns all of the caller's **open orders** that are currently resting on the exchange and available to be matched.
+
+## Request
+
+`GET /user/getUnmatched`
+
+Takes no parameters.
+
+<CodeGroup>
+```bash curl
+curl https://api.4casters.io/user/getUnmatched \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+</CodeGroup>
+
+## Response
+
+<ResponseField name="data.unmatched" type="array">
+  Array of open orders, sorted ascending by game start time.
+  <Expandable title="UnmatchedOrder">
+    <ResponseField name="id" type="string">Order id.</ResponseField>
+    <ResponseField name="txID" type="string">Transaction id of the order's creation.</ResponseField>
+    <ResponseField name="type" type="string">`moneyline`, `spread`, `total`, or `moneyline1x2`.</ResponseField>
+    <ResponseField name="bet" type="number">Original `bet` (risk).</ResponseField>
+    <ResponseField name="odds" type="integer">American odds.</ResponseField>
+    <ResponseField name="spread" type="number">Present for `spread`.</ResponseField>
+    <ResponseField name="total" type="number">Present for `total`.</ResponseField>
+    <ResponseField name="participantID" type="string">Present for `moneyline` and `spread` — the participant being backed.</ResponseField>
+    <ResponseField name="otherParticipantID" type="string">The opposite participant id (whose side is being offered).</ResponseField>
+    <ResponseField name="filled" type="number">Risk that has already been matched.</ResponseField>
+    <ResponseField name="offered" type="number">Original offer amount (matched + remaining).</ResponseField>
+    <ResponseField name="remaining" type="number">Win amount still available on this order (taker pays risk to claim it).</ResponseField>
+    <ResponseField name="takenRatio" type="number">Fraction of the order that has been matched, between `0` and `1`.</ResponseField>
+    <ResponseField name="expiry" type="string">Cancel-at timestamp (ISO 8601). `null` if no expiry was set.</ResponseField>
+    <ResponseField name="createdAt" type="string">ISO 8601 timestamp.</ResponseField>
+    <ResponseField name="origin" type="string">`offer` or `wager`.</ResponseField>
+    <ResponseField name="userReference" type="string">Client-defined identifier preserved from place time.</ResponseField>
+    <ResponseField name="wagerRequestID" type="string">Server-generated id grouping every fill / offer derived from the original place request.</ResponseField>
+    <ResponseField name="graded" type="boolean">Always `false`.</ResponseField>
+    <ResponseField name="closed" type="boolean" />
+    <ResponseField name="adminRefund" type="boolean" />
+    <Snippet file="types/game-summary.mdx" />
+  </Expandable>
+</ResponseField>
+
+### Example
+
+<CodeGroup>
+```json JSON
+{
+  "data": {
+    "unmatched": [
+      {
+        "id": "62851e3bd54b74e52c39953c",
+        "txID": "62851e3bd54b74e52c39953b",
+        "type": "moneyline",
+        "bet": 100,
+        "odds": 165,
+        "spread": null,
+        "total": null,
+        "participantID": "6165e6e23c65e61a09bf1f73",
+        "otherParticipantID": "626dca8a83899580a06ba87e",
+        "filled": 0,
+        "offered": 100,
+        "remaining": 100,
+        "takenRatio": 0,
+        "expiry": "2022-05-18T23:08:00.000Z",
+        "createdAt": "2022-05-18T16:26:35.601Z",
+        "origin": "offer",
+        "graded": false,
+        "closed": false,
+        "adminRefund": false,
+        "game": {
+          "id": "62823d9d75d894042dfee218",
+          "league": "NHL",
+          "sport": "hockey",
+          "start": "2022-05-18T23:08:00.000Z",
+          "ended": false,
+          "eventName": "NEW YORK RANGERS VS CAROLINA HURRICANES",
+          "isFutures": false,
+          "participants": [/* ... */]
+        }
+      }
+    ]
+  }
+}
+```
+</CodeGroup>

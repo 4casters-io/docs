@@ -1,99 +1,1591 @@
 {
   "openapi": "3.1.0",
   "info": {
-    "title": "OpenAPI Plant Store",
-    "description": "A sample API that uses a plant store as an example to demonstrate features in the OpenAPI specification",
-    "license": {
-      "name": "MIT"
-    },
-    "version": "1.0.0"
+    "title": "4casters REST API",
+    "version": "1.0.0",
+    "description": "Public REST API for the 4casters peer-to-peer betting exchange. Use this API to manage your account, query the orderbook and games, and place / edit / cancel orders.\n\nAll responses (unless noted otherwise) are JSON envelopes of the form `{ \"data\": ... }`.",
+    "contact": {
+      "name": "4casters",
+      "url": "https://4casters.io"
+    }
   },
   "servers": [
     {
-      "url": "http://sandbox.mintlify.com"
+      "url": "https://api.4casters.io",
+      "description": "Production"
     }
   ],
   "security": [
-    {
-      "bearerAuth": []
-    }
+    { "bearerAuth": [] }
+  ],
+  "tags": [
+    { "name": "Authentication", "description": "Login and account session management" },
+    { "name": "User",           "description": "Read account info, bets, and orders" },
+    { "name": "Orders",         "description": "Place, edit, look up, and cancel orders" },
+    { "name": "Markets",        "description": "Browse leagues, games, participants, and orderbooks" },
+    { "name": "Affiliate",      "description": "Affiliate / referral commission" }
   ],
   "paths": {
-    "/": {
-      "sub": {
-        "description": "Channel specific information",
-        "parameters": [
-          {
-            "name": "token",
-            "in": "query",
-            "description": "A valid auth token from the 4casters REST API is needed",
-            "schema": {
-              "type": "string"
+    "/user/login": {
+      "post": {
+        "tags": ["Authentication"],
+        "summary": "Log in",
+        "description": "Initialize a session and obtain an auth token. Auth tokens are valid for 30 days, after which a fresh login is required. The token returned here can also be used to authenticate against the 4casters Streaming WebSocket API.",
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/LoginRequest" },
+              "example": { "username": "your_username", "password": "your_password" }
             }
           }
-        ]
+        },
+        "responses": {
+          "200": {
+            "description": "Login successful. The auth token is returned both as `data.user.auth` and as a signed `auth` cookie.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": { "user": { "$ref": "#/components/schemas/AuthenticatedUser" } }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "description": "Username or password is incorrect" },
+          "403": { "description": "Account banned, locked, or closed" }
+        }
+      }
+    },
+
+    "/user/getMe": {
+      "get": {
+        "tags": ["User"],
+        "summary": "Get current user",
+        "description": "Return the currently-authenticated user's account information including balance, credit limit, current liability, default odds format, and access flags.",
+        "responses": {
+          "200": {
+            "description": "Current user info",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": { "user": { "$ref": "#/components/schemas/User" } }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      }
+    },
+
+    "/user/getMatchedBets": {
+      "get": {
+        "tags": ["User"],
+        "summary": "Get matched (ungraded) bets",
+        "description": "Return all of the caller's bets that have been matched but not yet graded.",
+        "responses": {
+          "200": {
+            "description": "Matched bets list",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "matchedBets": {
+                          "type": "array",
+                          "items": { "$ref": "#/components/schemas/MatchedBet" }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      }
+    },
+
+    "/user/getUnmatched": {
+      "get": {
+        "tags": ["User"],
+        "summary": "Get unmatched orders",
+        "description": "Return all of the caller's open (unmatched) orders that are currently resting on the exchange and available to be matched.",
+        "responses": {
+          "200": {
+            "description": "Unmatched orders list",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "unmatched": {
+                          "type": "array",
+                          "items": { "$ref": "#/components/schemas/UnmatchedOrder" }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      }
+    },
+
+    "/user/getOrdersForGame": {
+      "get": {
+        "tags": ["User"],
+        "summary": "Get orders for a game",
+        "description": "For a given 4casters game ID, return the caller's open (unmatched) orders and matched (ungraded) bets for that game. Graded bets are not returned by this endpoint — use `/user/getGradedWagers` for those.",
+        "parameters": [
+          { "$ref": "#/components/parameters/GameID" }
+        ],
+        "responses": {
+          "200": {
+            "description": "Orders and matched bets for the requested game",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "unmatched": { "type": "array", "items": { "$ref": "#/components/schemas/UnmatchedOrder" } },
+                        "matched":   { "type": "array", "items": { "$ref": "#/components/schemas/MatchedBet"     } }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "404": { "description": "Invalid Game ID" }
+        }
+      }
+    },
+
+    "/user/getGradedWagers": {
+      "get": {
+        "tags": ["User"],
+        "summary": "Get graded wagers",
+        "description": "Return all of the caller's graded (settled) wagers between two dates, plus a summary of P&L and volume. Dates correspond to the **start time of the game** the wager is on (so `startDate=06-22-2022` returns wagers on games starting after 06-21-2022 00:00 GMT).",
+        "parameters": [
+          {
+            "name": "startDate",
+            "in": "query",
+            "required": false,
+            "description": "Start date (`MM-DD-YYYY`). Defaults to `10-21-2020`.",
+            "schema": { "type": "string", "example": "01-01-2024" }
+          },
+          {
+            "name": "endDate",
+            "in": "query",
+            "required": false,
+            "description": "End date (`MM-DD-YYYY`). Defaults to today.",
+            "schema": { "type": "string", "example": "02-01-2024" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Graded wagers and summary",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "graded":  { "type": "array", "items": { "$ref": "#/components/schemas/GradedWager" } },
+                        "summary": { "$ref": "#/components/schemas/GradedSummary" }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      }
+    },
+
+    "/user/getBetByID": {
+      "get": {
+        "tags": ["User"],
+        "summary": "Get bet by ID or txID",
+        "description": "Look up a single bet (matched, graded, or open offer) belonging to the caller. Pass **either** `id` (the bet's `id`, e.g. from `/user/getMatchedBets`) **or** `txID` (the transaction id, e.g. from a `/session/v3/place` response).",
+        "parameters": [
+          { "name": "id",   "in": "query", "required": false, "schema": { "type": "string" }, "description": "Bet `id` from a list endpoint." },
+          { "name": "txID", "in": "query", "required": false, "schema": { "type": "string" }, "description": "Transaction id (e.g. `wagerRequestID` or `txID` returned from place). " }
+        ],
+        "responses": {
+          "200": {
+            "description": "The bet, in matched, graded, or open form depending on its current state.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "bet": {
+                      "oneOf": [
+                        { "$ref": "#/components/schemas/MatchedBet" },
+                        { "$ref": "#/components/schemas/GradedWager" },
+                        { "$ref": "#/components/schemas/UnmatchedOrder" }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": { "description": "Invalid `id` / `txID`" },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      }
+    },
+
+    "/user/getBetByWagerRequestID": {
+      "get": {
+        "tags": ["User"],
+        "summary": "Get bet by wager request ID",
+        "description": "Look up every bet tied to a single `wagerRequestID`. A `wagerRequestID` is server-generated for **each** order in a place request — use it to tie together every fill and resting offer that resulted from a single submitted order.\n\nReturns three arrays:\n\n- `unmatched` — open offers from the request that are still resting on the book (always empty for this endpoint; use `/user/getBetByUserReference` for current open offers).\n- `matched`   — matched (ungraded) bets from the request.\n- `graded`    — graded (settled) bets from the request, including risk, win, fees, and result.",
+        "parameters": [
+          { "name": "wagerRequestID", "in": "query", "required": true, "schema": { "type": "string" }, "description": "The `wagerRequestID` returned by `/session/v3/place`." }
+        ],
+        "responses": {
+          "200": { "$ref": "#/components/responses/CombinedWagers" },
+          "400": { "description": "Invalid Wager Request ID" },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      }
+    },
+
+    "/user/getBetByUserReference": {
+      "get": {
+        "tags": ["User"],
+        "summary": "Get bet by user reference",
+        "description": "Look up every bet tied to a `userReference`. `userReference` is an optional client-defined string you can attach to an order at place time to track it on your side.\n\nReturns three arrays scoped to a single `gameID`:\n\n- `unmatched` — open offers from this reference that are still resting on the book.\n- `matched`   — matched (ungraded) bets from this reference.\n- `graded`    — graded (settled) bets from this reference, including risk, win, fees, and result.",
+        "parameters": [
+          { "name": "userReference", "in": "query", "required": true, "schema": { "type": "string" }, "description": "The client-defined reference passed in at place time." },
+          { "$ref": "#/components/parameters/GameID" }
+        ],
+        "responses": {
+          "200": { "$ref": "#/components/responses/CombinedWagers" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "408": { "description": "Invalid User Reference or Game ID" }
+        }
+      }
+    },
+
+    "/user/ordersHeartbeat": {
+      "post": {
+        "tags": ["User"],
+        "summary": "Send orders heartbeat",
+        "description": "A safety mechanism: send a heartbeat with a `timeout` (in seconds). If the next heartbeat is not received within `timeout` seconds, **all of your open orders are cancelled**. Use this to ensure that orders are pulled if your client loses connectivity.\n\n`timeout` must be greater than 5 seconds.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["timeout"],
+                "properties": {
+                  "timeout": { "type": "integer", "minimum": 6, "description": "Cancel-after timeout, in seconds." }
+                }
+              },
+              "example": { "timeout": 30 }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Heartbeat acknowledged. The response shape is forwarded from the orders service." },
+          "400": { "description": "Invalid timeout (must be > 5)" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "503": { "description": "Orders service unreachable" }
+        }
+      }
+    },
+
+    "/user/getGameLiability": {
+      "get": {
+        "tags": ["User"],
+        "summary": "Get game liability",
+        "description": "Calculate the caller's worst-case financial liability for a single game, taking into account every bet on every market in the game. The value is always `<= 0` — even a fully hedged book can incur loss from rainouts, suspensions, or disqualifications.",
+        "parameters": [
+          { "$ref": "#/components/parameters/GameID" }
+        ],
+        "responses": {
+          "200": {
+            "description": "Liability for the requested game (always `<= 0`).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "liability": { "type": "number", "example": -125.50 }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      }
+    },
+
+    "/session/v3/place": {
+      "post": {
+        "tags": ["Orders"],
+        "summary": "Place orders",
+        "description": "Submit one or more orders. Per-order results are returned in `data.createdSessions`, **positionally** with the input `orders` array. Each entry is either a successful `{ matched, unmatched }` result or an `{ error, errorType }` failure.\n\nSee the dedicated [Place order](/pages/rest/orders/place-order) page for examples and the full set of order-type rules (`limit`, `post`, `postArb`, `fillAndKill`).",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/PlaceOrderRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Per-order results (positional with input).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "createdSessions": {
+                          "type": "array",
+                          "items": { "$ref": "#/components/schemas/PlaceOrderResult" }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "503": { "description": "Orders service unreachable" }
+        }
+      }
+    },
+
+    "/session/editOrder": {
+      "post": {
+        "tags": ["Orders"],
+        "summary": "Edit an order",
+        "description": "Change the price (`orderOdds`) and/or volume (`orderVolume`) of an existing **limit** order. For partially filled orders, 4casters cancels the existing order and submits a new one with the supplied values; the new `orderVolume` does **not** account for previously filled volume.\n\nThe newer gRPC variant `POST /session/v4/editOrder` accepts the same body shape and also returns `errorType` on validation failures.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/EditOrderRequest" },
+              "example": {
+                "sessionID": "6549b6df6634097d2704716f",
+                "orderOdds": 185,
+                "orderVolume": 100
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Edit result. Mirrors the place-order response shape: a `cancelled` summary plus the new `matched` / `unmatched` outcome.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": { "$ref": "#/components/schemas/EditOrderResult" }
+                  }
+                }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "503": { "description": "Orders service unreachable" }
+        }
+      }
+    },
+
+    "/session/lookupOrder": {
+      "get": {
+        "tags": ["Orders"],
+        "summary": "Look up an order",
+        "description": "Get the current state of one of the caller's orders. Returns the order with `matchedRisk` / `unmatchedRisk` accounting and a denormalized snapshot of the underlying game.",
+        "parameters": [
+          { "name": "orderID", "in": "query", "required": true, "schema": { "type": "string" }, "description": "A 4casters order id (e.g. `id` from `/user/getUnmatched`)." }
+        ],
+        "responses": {
+          "200": {
+            "description": "Order details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": { "order": { "$ref": "#/components/schemas/LookupOrderDetail" } }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "description": "Not your order" },
+          "404": { "description": "Invalid Session ID" }
+        }
+      }
+    },
+
+    "/session/cancel": {
+      "post": {
+        "tags": ["Orders"],
+        "summary": "Cancel a single order",
+        "description": "Cancel a single open order by id. Returns the unfilled and filled amounts at cancellation time.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["sessionID"],
+                "properties": {
+                  "sessionID": { "type": "string", "description": "Order id to cancel." }
+                }
+              },
+              "example": { "sessionID": "65b036dfb31407c2b6bc1cfe" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Cancel result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": { "data": { "$ref": "#/components/schemas/CancelResult" } }
+                }
+              }
+            }
+          },
+          "400": { "description": "Invalid Order ID" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "409": { "description": "Order could not be cancelled (e.g. already fully filled)" }
+        }
+      }
+    },
+
+    "/session/cancelMultiple": {
+      "post": {
+        "tags": ["Orders"],
+        "summary": "Cancel multiple orders",
+        "description": "Cancel a batch of orders by id. The `data` array is positional with the input `sessionIDs` and may contain a mix of successful cancels and failures.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["sessionIDs"],
+                "properties": {
+                  "sessionIDs": { "type": "array", "items": { "type": "string" } }
+                }
+              },
+              "example": {
+                "sessionIDs": [
+                  "65b036dfb31407c2b6bc1cfe",
+                  "65b036e0b31407c2b6bc1d08"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Per-order cancel results",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": { "type": "array", "items": { "$ref": "#/components/schemas/CancelResult" } }
+                  }
+                }
+              }
+            }
+          },
+          "400": { "description": "`sessionIDs` missing or not an array" },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      }
+    },
+
+    "/session/cancelByReference": {
+      "post": {
+        "tags": ["Orders"],
+        "summary": "Cancel orders by user reference",
+        "description": "Cancel every open order in the given game whose `userReference` matches one of the supplied references.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["userReferences", "gameID"],
+                "properties": {
+                  "userReferences": { "type": "array", "items": { "type": "string" } },
+                  "gameID": { "type": "string" }
+                }
+              },
+              "example": {
+                "gameID": "6924f82640a7e89c3d3acc41",
+                "userReferences": ["my-order-1", "my-order-2"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Per-order cancel results",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": { "type": "array", "items": { "$ref": "#/components/schemas/CancelResult" } }
+                  }
+                }
+              }
+            }
+          },
+          "400": { "description": "`userReferences` missing or not an array" },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      }
+    },
+
+    "/session/cancelAllOrdersForGame": {
+      "post": {
+        "tags": ["Orders"],
+        "summary": "Cancel all orders for a game",
+        "description": "Cancel every open order on a single game. Optionally restrict to a single market `type`.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["gameID"],
+                "properties": {
+                  "gameID": { "type": "string", "description": "The game whose orders to cancel." },
+                  "type":   { "type": "string", "enum": ["moneyline", "spread", "total"], "description": "Optional. Cancel only orders of this market type." }
+                }
+              },
+              "example": { "gameID": "688c0516fbc14da0c202d426", "type": "spread" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Per-order cancel results",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": { "type": "array", "items": { "$ref": "#/components/schemas/CancelResult" } }
+                  }
+                }
+              }
+            }
+          },
+          "400": { "description": "`gameID` missing or invalid; or `type` invalid" },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      }
+    },
+
+    "/session/cancelAllForLeague": {
+      "post": {
+        "tags": ["Orders"],
+        "summary": "Cancel all orders for a league",
+        "description": "Schedule cancellation of every open order in a league. This endpoint **dispatches asynchronously** — it acknowledges with `{ ordersReceived: true }` immediately and the cancels happen in the background.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["league"],
+                "properties": {
+                  "league": { "type": "string", "description": "League code from `GET /exchange/getLeagues`. Case-insensitive." }
+                }
+              },
+              "example": { "league": "NBA" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Cancellation request accepted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": { "ordersReceived": { "type": "boolean", "example": true } }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": { "description": "League missing or invalid" },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      }
+    },
+
+    "/session/cancelAllOrders": {
+      "post": {
+        "tags": ["Orders"],
+        "summary": "Cancel all orders",
+        "description": "Cancel **every** open order belonging to the caller across every game and league.",
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": { "type": "object" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Per-order cancel results",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": { "type": "array", "items": { "$ref": "#/components/schemas/CancelResult" } }
+                  }
+                }
+              }
+            }
+          },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      }
+    },
+
+    "/exchange/v2/getOrderbook": {
+      "get": {
+        "tags": ["Markets"],
+        "summary": "Get orderbook (v2)",
+        "description": "Return the orderbook for a league or single game in **flat** form: each market is an array of orders rather than an object keyed by spread / total. This is the recommended orderbook endpoint.\n\nProvide either `league` (entire league) or `gameID` (one game).",
+        "parameters": [
+          { "name": "league", "in": "query", "required": false, "schema": { "type": "string" }, "description": "League code, e.g. `NBA` (case-insensitive)." },
+          { "name": "sport",  "in": "query", "required": false, "schema": { "type": "string" }, "description": "Sport name, e.g. `basketball` (case-insensitive). Optional filter when `league` is set." },
+          { "name": "gameID", "in": "query", "required": false, "schema": { "type": "string" }, "description": "Single game id. When provided, `league` and `sport` are ignored." }
+        ],
+        "responses": {
+          "200": {
+            "description": "Orderbook for one or more games",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "games": {
+                          "type": "array",
+                          "items": { "$ref": "#/components/schemas/GameOrderbookFlat" }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      }
+    },
+
+    "/exchange/v2/getGames": {
+      "get": {
+        "tags": ["Markets"],
+        "summary": "Get games",
+        "description": "Return all active games for a league. This response does **not** include the orderbook or any prices — call `GET /exchange/v2/getOrderbook` for that.",
+        "parameters": [
+          { "name": "league", "in": "query", "required": true, "schema": { "type": "string" }, "description": "League code from `GET /exchange/getLeagues`. Use `upcoming` for all upcoming games across leagues." },
+          { "name": "sport",  "in": "query", "required": false, "schema": { "type": "string" }, "description": "Optional sport filter." }
+        ],
+        "responses": {
+          "200": {
+            "description": "Games list",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "games": { "type": "array", "items": { "$ref": "#/components/schemas/Game" } }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": { "description": "`league` is required" },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      }
+    },
+
+    "/exchange/getLeagues": {
+      "get": {
+        "tags": ["Markets"],
+        "summary": "Get leagues",
+        "description": "Return every league with active markets on the exchange. If the response includes a league containing `LIVE` (other than the per-sport live leagues `NFL-LIVE`, `NBA-LIVE`, `NCAAF-LIVE`, `NCAAB-LIVE`), the value `LIVE` is appended as an alias for fetching all in-play games.",
+        "parameters": [
+          { "name": "sport", "in": "query", "required": false, "schema": { "type": "string" }, "description": "Optional sport filter (e.g. `basketball`, `soccer`, `golf`). When `sport=soccer` or `sport=golf`, `all` is appended to the list." }
+        ],
+        "responses": {
+          "200": {
+            "description": "Available leagues",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "availableLeagues": { "type": "array", "items": { "type": "string" }, "example": ["NBA", "NHL", "PREMIER-LEAGUE", "PGA"] }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      }
+    },
+
+    "/exchange/getParticipants": {
+      "get": {
+        "tags": ["Markets"],
+        "summary": "Get participants",
+        "description": "Return a deduplicated list of participants (teams, players, futures sides). When `active=true`, only participants of games starting in the future are returned.",
+        "parameters": [
+          { "name": "active", "in": "query", "required": false, "schema": { "type": "string", "enum": ["true", "false"] }, "description": "When `true`, only return participants of games starting in the future." }
+        ],
+        "responses": {
+          "200": {
+            "description": "Participants list",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "participants": {
+                          "type": "array",
+                          "items": { "$ref": "#/components/schemas/ParticipantSummary" }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      }
+    },
+
+    "/exchange/getOrderbook": {
+      "post": {
+        "tags": ["Markets"],
+        "summary": "Get orderbook (v1, deprecated)",
+        "deprecated": true,
+        "description": "**Deprecated.** Use `GET /exchange/v2/getOrderbook` instead.\n\nReturns the orderbook for an entire league in **nested** form, keyed by spread / total number. Kept for backwards compatibility with older clients.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["leagueRequested"],
+                "properties": {
+                  "leagueRequested": { "type": "string", "description": "League code (case-insensitive)." }
+                }
+              },
+              "example": { "leagueRequested": "NBA" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Nested-orderbook response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "market": { "type": ["string", "null"] },
+                        "games":  { "type": "array", "items": { "$ref": "#/components/schemas/GameOrderbookNested" } }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      }
+    },
+
+    "/exchange/getSingleOrderbook": {
+      "get": {
+        "tags": ["Markets"],
+        "summary": "Get single orderbook",
+        "description": "Return the nested orderbook for a single game, plus any child games (props, alternate periods) and an `orderSummary` of the caller's own resting orders for the league.",
+        "parameters": [
+          { "name": "gameID", "in": "query", "required": true, "schema": { "type": "string" }, "description": "Game id." }
+        ],
+        "responses": {
+          "200": {
+            "description": "Single-game orderbook",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "game":         { "$ref": "#/components/schemas/GameOrderbookNested" },
+                        "orderSummary": { "type": "array", "items": { "type": "object" } },
+                        "childGames":   { "type": "array", "items": { "$ref": "#/components/schemas/GameOrderbookNested" } },
+                        "propGames":    { "type": "array", "items": { "$ref": "#/components/schemas/GameOrderbookNested" } }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": { "description": "Missing required parameter `gameID`" },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      }
+    },
+
+    "/exchange/getOddsForAveragePrice": {
+      "get": {
+        "tags": ["Markets"],
+        "summary": "Get average price",
+        "description": "Return a truncated list of best and average prices for every game in a league. For each game and each market (moneyline / spread / total), the response includes:\n\n- the best price (the price on the top resting offer);\n- the average price you'd pay sweeping at least $500 of liquidity;\n- the maximum bet that could be filled at the best price and the average price.\n\nThe per-market arrays (`awayMoneylines`, `homeMoneylines`, `homeSpreads`, `awaySpreads`, `over`, `under`) are stripped from each game; only the summary `odds` block remains.",
+        "parameters": [
+          { "name": "leagueRequested", "in": "query", "required": true, "schema": { "type": "string" }, "description": "League code (case-insensitive)." }
+        ],
+        "responses": {
+          "200": {
+            "description": "Game best/average prices",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "games": {
+                      "type": "array",
+                      "items": { "$ref": "#/components/schemas/GameAveragePrice" }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      }
+    },
+
+    "/affiliate/getAffiliateCommission": {
+      "get": {
+        "tags": ["Affiliate"],
+        "summary": "Get affiliate commission",
+        "description": "Return commission paid to the caller by the players they have invited, grouped by player username. With no parameters, returns lifetime earnings; with `fromDate` / `toDate`, restricts the range.",
+        "parameters": [
+          { "name": "fromDate", "in": "query", "required": false, "schema": { "type": "string", "example": "10-03-2022" }, "description": "Start date (`MM-DD-YYYY`). Defaults to `08-02-2021`." },
+          { "name": "toDate",   "in": "query", "required": false, "schema": { "type": "string", "example": "10-10-2022" }, "description": "End date (`MM-DD-YYYY`). Defaults to today." }
+        ],
+        "responses": {
+          "200": {
+            "description": "Commission summary",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "commissionPaid": {
+                      "type": "array",
+                      "description": "Each entry is a single-key object mapping a player's username to total commission paid.",
+                      "items": {
+                        "type": "object",
+                        "additionalProperties": { "type": "number" }
+                      },
+                      "example": [{ "alice": 124.50 }, { "bob": 12.00 }]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": { "description": "Invalid `fromDate`" },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
       }
     }
   },
+
   "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "description": "Pass your auth token in the `Authorization` header. The `Bearer` prefix is optional; the server also accepts a signed `auth` cookie or a `token` field in the request body."
+      }
+    },
+
+    "parameters": {
+      "GameID": {
+        "name": "gameID",
+        "in": "query",
+        "required": true,
+        "schema": { "type": "string" },
+        "description": "A 4casters game id (`ObjectID`). Get game ids from `GET /exchange/v2/getGames` or `GET /exchange/v2/getOrderbook`."
+      }
+    },
+
+    "responses": {
+      "BadRequest":   { "description": "Bad request",          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/HttpError" } } } },
+      "Unauthorized": { "description": "Missing or invalid auth token" },
+      "CombinedWagers": {
+        "description": "Three-bucket wager view: open (`unmatched`), filled-but-not-graded (`matched`), and settled (`graded`).",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "data": {
+                  "type": "object",
+                  "properties": {
+                    "unmatched": { "type": "array", "items": { "$ref": "#/components/schemas/UnmatchedOrder" } },
+                    "matched":   { "type": "array", "items": { "$ref": "#/components/schemas/MatchedBet"     } },
+                    "graded":    { "type": "array", "items": { "$ref": "#/components/schemas/GradedWager"    } }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+
     "schemas": {
-      "Plant": {
-        "required": [
-          "name"
-        ],
+      "HttpError": {
         "type": "object",
         "properties": {
-          "name": {
-            "description": "The name of the plant",
-            "type": "string"
-          },
-          "tag": {
-            "description": "Tag to specify the type",
-            "type": "string"
+          "error": { "type": "string", "description": "Human-readable error message." }
+        }
+      },
+
+      "OddsFormat": { "type": "string", "enum": ["american", "decimal"] },
+      "UserType":   { "type": "string", "enum": ["free", "p2p", "marketmaker", "agent"], "description": "Account type." },
+
+      "MarketType": {
+        "type": "string",
+        "enum": ["moneyline", "spread", "total", "moneyline1x2"],
+        "description": "Market type. `moneyline1x2` is **soccer-only** (three-way money line: home / away / draw)."
+      },
+
+      "OrderType": {
+        "type": "string",
+        "enum": ["limit", "post", "postArb", "fillAndKill"],
+        "description": "Order placement strategy.\n\n- `limit` — default. Match against any liquidity at your price or better as a taker, rest the remainder as a maker.\n- `post`  — guarantee maker. Reject if the order would match resting liquidity.\n- `postArb` — like `post`, but allowed to match if the matched odds are within 1% of yours, avoiding taker fees.\n- `fillAndKill` — guarantee taker. Match immediately or reject."
+      },
+
+      "MarketSide": {
+        "type": "string",
+        "description": "Order side. Meaning depends on `type`:\n\n- `moneyline`, `spread` — the participant id you are backing.\n- `total` — `\"over\"` or `\"under\"`.\n- `moneyline1x2` — `\"yes\"` or `\"no\"` on the outcome named by `market`."
+      },
+
+      "ErrorType": {
+        "type": "string",
+        "enum": ["validation_error", "rejected_liability", "rejected_order_type_rules", "system_error"],
+        "description": "Programmatic per-order error class:\n\n- `validation_error` — payload or state failed validation (missing fields, bad odds/number, invalid side, inactive game).\n- `rejected_liability` — user/account/liability constraints prevented posting or execution.\n- `rejected_order_type_rules` — order-type rules forbade execution (e.g. `fillAndKill` had no executable liquidity, `post` would match, or `postArb` is more than 1% away from the resting price).\n- `system_error` — transient/internal error; retry may succeed."
+      },
+
+      "OrderError": {
+        "type": "object",
+        "properties": {
+          "error":     { "type": "string", "description": "Human-readable, non-stable description of the failure." },
+          "errorType": { "$ref": "#/components/schemas/ErrorType" },
+          "error_type": {
+            "type": "string",
+            "deprecated": true,
+            "description": "Legacy alias of `errorType` (still emitted by the WebSocket placeV3 path)."
           }
         }
       },
-      "NewPlant": {
+
+      "LoginRequest": {
+        "type": "object",
+        "required": ["username", "password"],
+        "properties": {
+          "username": { "type": "string" },
+          "password": { "type": "string", "format": "password" }
+        }
+      },
+
+      "AuthenticatedUser": {
         "allOf": [
+          { "$ref": "#/components/schemas/User" },
           {
-            "$ref": "#/components/schemas/Plant"
-          },
-          {
-            "required": [
-              "id"
-            ],
             "type": "object",
             "properties": {
-              "id": {
-                "description": "Identification number of the plant",
-                "type": "integer",
-                "format": "int64"
+              "auth":  { "type": "string", "description": "Auth token. Pass as `Authorization: Bearer <auth>` on subsequent requests." },
+              "email": { "type": "string", "format": "email" },
+              "passwordSecurityChecks": { "type": "object", "description": "Result of password strength checks." }
+            }
+          }
+        ]
+      },
+
+      "User": {
+        "type": "object",
+        "properties": {
+          "id":                   { "type": "string", "description": "User id." },
+          "username":             { "type": "string" },
+          "type":                 { "$ref": "#/components/schemas/UserType" },
+          "oddsFormat":           { "$ref": "#/components/schemas/OddsFormat" },
+          "displayBalance":       { "type": "number", "description": "Current balance (display value)." },
+          "creditLimit":          { "type": "number", "description": "Credit limit (negative for credit accounts)." },
+          "liability":            { "type": "number", "description": "Current open liability across all games." },
+          "commissionCharged":    { "type": "number", "description": "Commission rate charged to this account." },
+          "maxLiability":         { "type": "number", "description": "Account-level cap on liability." },
+          "matchedVolume":        { "type": "object", "description": "Account preferences for displaying matched volume." },
+          "openInterest":         { "type": "object", "description": "Account preferences for displaying open interest." },
+          "isAdmin":              { "type": "boolean" },
+          "hasMarketMakerAccess": { "type": "boolean" },
+          "isPro":                { "type": "boolean" },
+          "isDeposit":            { "type": "boolean" },
+          "isAlphaUser":          { "type": "boolean" },
+          "sportsbookDefault":    { "type": "boolean" },
+          "defaultRotationNumbers": { "type": "boolean" },
+          "displayRotationNumbers": { "type": "boolean" },
+          "viewOddsWithCommission": { "type": "boolean" },
+          "defaultExpiry":        { "type": "integer", "nullable": true, "description": "Default order expiry, in minutes." },
+          "defaultOffer":         { "type": "number",  "nullable": true, "description": "Default offer size when placing orders." },
+          "defaultSendOrderMessage": { "type": "boolean" },
+          "sportsbookMinimumDisplay": { "type": "number" },
+          "showChatLastMessage":  { "type": "boolean" },
+          "yesNoSummary":         { "type": "boolean" },
+          "accessCode":           { "type": "string", "nullable": true },
+          "code":                 { "type": "string", "nullable": true },
+          "p2pCode":              { "type": "string", "nullable": true },
+          "createdAt":            { "type": "string", "format": "date-time" },
+          "emailConfirmation":    { "type": "boolean" }
+        }
+      },
+
+      "PlaceOrderRequest": {
+        "type": "object",
+        "required": ["orders"],
+        "properties": {
+          "orders": { "type": "array", "items": { "$ref": "#/components/schemas/PlaceOrderInput" } }
+        }
+      },
+
+      "PlaceOrderInput": {
+        "type": "object",
+        "required": ["gameID", "type", "side", "odds", "bet"],
+        "properties": {
+          "gameID":            { "type": "string", "description": "4casters game id." },
+          "type":              { "$ref": "#/components/schemas/MarketType" },
+          "side":              { "$ref": "#/components/schemas/MarketSide" },
+          "market":            { "type": "string", "description": "**`moneyline1x2` only.** Either `\"draw\"` or a participant id — names the outcome you're betting yes/no on." },
+          "odds":              { "type": "integer", "description": "Order odds in **American** format (e.g. `-110`, `+150`)." },
+          "bet":               { "type": "number",  "description": "Amount to risk on the bet." },
+          "number":            { "type": "number",  "description": "Spread or total number. Required for `spread` and `total`. Not used for `moneyline` or `moneyline1x2`." },
+          "orderType":         { "$ref": "#/components/schemas/OrderType" },
+          "expirationMinutes": { "type": "integer", "description": "Auto-cancel after N minutes. Omit to keep until game start." },
+          "userReference":     { "type": "string",  "description": "Client-defined identifier preserved on every fill / offer derived from this order." }
+        }
+      },
+
+      "PlaceOrderResult": {
+        "oneOf": [
+          { "$ref": "#/components/schemas/PlaceOrderSuccess" },
+          { "$ref": "#/components/schemas/OrderError"        }
+        ],
+        "description": "Either a successful place result or a per-order error. Returned positionally with the request `orders` array."
+      },
+
+      "PlaceOrderSuccess": {
+        "type": "object",
+        "properties": {
+          "matched":   { "type": "array", "items": { "$ref": "#/components/schemas/MatchedFill" } },
+          "unmatched": { "$ref": "#/components/schemas/UnmatchedOffer" }
+        }
+      },
+
+      "MatchedFill": {
+        "type": "object",
+        "description": "A portion of an order that matched against existing liquidity.",
+        "properties": {
+          "amount":               { "type": "number",  "description": "Stake on the matched portion." },
+          "odds":                 { "type": "integer", "description": "American odds of the fill." },
+          "number":               { "type": "number",  "nullable": true, "description": "Spread or total of the fill (`null` for moneylines)." },
+          "type":                 { "$ref": "#/components/schemas/MarketType" },
+          "side":                 { "$ref": "#/components/schemas/MarketSide" },
+          "market":               { "type": "string",  "description": "Present for `moneyline1x2`." },
+          "orderID":              { "type": "string",  "description": "Order id of the matched offer on the other side." },
+          "txID":                 { "type": "string",  "description": "Transaction id of the fill." },
+          "wagerRequestID":       { "type": "string",  "description": "Server-generated id grouping every fill / offer derived from the input order." },
+          "userReference":        { "type": "string" },
+          "risk":                 { "type": "number" },
+          "win":                  { "type": "number",  "description": "Win amount, net of taker commission." },
+          "winWithoutCommission": { "type": "number",  "description": "Win amount before commission." }
+        }
+      },
+
+      "UnmatchedOffer": {
+        "type": "object",
+        "description": "Resting offer created from the unfilled remainder of a place request. May be empty (`{}`) when the order matched fully.",
+        "properties": {
+          "orderID":         { "type": "string", "description": "Id of the new resting order." },
+          "wagerRequestID":  { "type": "string" },
+          "offered":         { "type": "number" },
+          "odds":            { "type": "integer" },
+          "type":            { "$ref": "#/components/schemas/MarketType" },
+          "side":            { "$ref": "#/components/schemas/MarketSide" },
+          "market":          { "type": "string", "description": "Present for `moneyline1x2`." },
+          "number":          { "type": "number", "nullable": true },
+          "userReference":   { "type": "string" }
+        }
+      },
+
+      "EditOrderRequest": {
+        "type": "object",
+        "required": ["sessionID"],
+        "properties": {
+          "sessionID":            { "type": "string",  "description": "Order id to edit." },
+          "orderOdds":            { "type": "integer", "nullable": true, "description": "New American odds. Pass `null` to leave odds unchanged." },
+          "orderVolume":          { "type": "number",  "nullable": true, "description": "New `bet` amount. Pass `null` to leave volume unchanged. **Does not** account for previously-filled volume." },
+          "orderType":            { "$ref": "#/components/schemas/OrderType" },
+          "userReference":        { "type": "string" },
+          "intendedOrderVolume":  { "type": "number",  "description": "Optional. The volume you originally intended to place; used by the server when reconciling partial fills." },
+          "expiryChange":         { "type": "string",  "description": "Optional. New expiration in minutes (string)." },
+          "blockIfNoOtherSideOrders": { "type": "boolean", "description": "v4 only. Reject the edit if there is no resting opposite-side liquidity." }
+        }
+      },
+
+      "EditOrderResult": {
+        "type": "object",
+        "properties": {
+          "cancelled": { "type": "object", "description": "Summary of the cancelled-and-replaced original order." },
+          "matched":   { "type": "array",  "items": { "$ref": "#/components/schemas/MatchedFill" } },
+          "unmatched": { "$ref": "#/components/schemas/UnmatchedOffer" }
+        }
+      },
+
+      "LookupOrderDetail": {
+        "type": "object",
+        "properties": {
+          "id":                   { "type": "string" },
+          "cancelled":            { "type": "boolean" },
+          "isTheBestOffer":       { "type": "boolean", "description": "True if there is no competing offer on the other side at better odds than this order." },
+          "odds":                 { "type": "integer", "description": "American odds of this order (sign-flipped from internal storage)." },
+          "type":                 { "$ref": "#/components/schemas/MarketType" },
+          "OU":                   { "type": "string", "nullable": true, "description": "Opposite of the order's side for `total` markets. `null` for non-total." },
+          "participant":          { "type": "string", "nullable": true, "description": "Participant id you bet on. `null` for `total`." },
+          "participantLongName":  { "type": "string", "nullable": true },
+          "spread":               { "type": "number", "nullable": true },
+          "total":                { "type": "number", "nullable": true },
+          "matchedRisk":          { "type": "string", "description": "Risk that has already been matched (string-formatted, 2 decimals)." },
+          "unmatchedRisk":        { "type": "string", "description": "Remaining risk still resting on the book." },
+          "game":                 { "$ref": "#/components/schemas/GameSummary" }
+        }
+      },
+
+      "CancelResult": {
+        "type": "object",
+        "properties": {
+          "success":       { "type": "boolean" },
+          "reason":        { "type": "string", "description": "Failure reason. Present only when `success` is `false`." },
+          "sessionID":     { "type": "string", "description": "Order id." },
+          "description":   { "type": "string", "description": "Human-readable order description (e.g. `Lakers -3.5 -110`)." },
+          "odds":          { "type": "integer", "description": "American odds of the cancelled order." },
+          "filled":        { "type": "number" },
+          "offered":       { "type": "number" },
+          "remaining":     { "type": "number" },
+          "gameID":        { "type": "string" },
+          "userReference": { "type": "string" }
+        }
+      },
+
+      "GameSummary": {
+        "type": "object",
+        "properties": {
+          "id":           { "type": "string" },
+          "league":       { "type": "string" },
+          "sport":        { "type": "string" },
+          "start":        { "type": "string", "format": "date-time" },
+          "ended":        { "type": "boolean" },
+          "eventName":    { "type": "string", "nullable": true },
+          "isFutures":    { "type": "boolean" },
+          "participants": { "type": "array", "items": { "$ref": "#/components/schemas/Participant" } }
+        }
+      },
+
+      "Game": {
+        "type": "object",
+        "description": "Game without orderbook data.",
+        "properties": {
+          "id":             { "type": "string" },
+          "parentGameID":   { "type": "string", "nullable": true },
+          "cheapDataUID":   { "type": "string", "description": "Stable cross-system identifier for the game (used for line correlation)." },
+          "league":         { "type": "string" },
+          "sport":          { "type": "string" },
+          "start":          { "type": "string", "format": "date-time" },
+          "ended":          { "type": "boolean" },
+          "live":           { "type": "boolean" },
+          "featured":       { "type": "boolean" },
+          "eventName":      { "type": "string", "nullable": true },
+          "tournamentName": { "type": "string", "nullable": true },
+          "periodName":     { "type": "string", "description": "e.g. `Full Time`, `1H`, `Set 1`." },
+          "isSpecials":     { "type": "boolean", "description": "True for futures and other specials markets." },
+          "participants":   { "type": "array", "items": { "$ref": "#/components/schemas/Participant" } }
+        }
+      },
+
+      "Participant": {
+        "type": "object",
+        "properties": {
+          "id":             { "type": "string" },
+          "longName":       { "type": "string" },
+          "shortName":      { "type": "string" },
+          "homeAway":       { "type": "string", "enum": ["home", "away"] },
+          "mainPitcher":    { "type": "string", "nullable": true },
+          "rotationNumber": { "type": "string", "nullable": true },
+          "futuresSide":    { "type": "string", "nullable": true },
+          "score":          { "type": "number", "description": "Final score; only present for ended games." }
+        }
+      },
+
+      "ParticipantSummary": {
+        "type": "object",
+        "properties": {
+          "participantID": { "type": "string" },
+          "longName":      { "type": "string" },
+          "shortName":     { "type": "string" },
+          "league":        { "type": "string" },
+          "sport":         { "type": "string" }
+        }
+      },
+
+      "OrderbookOrder": {
+        "type": "object",
+        "description": "A single resting order on the book.",
+        "properties": {
+          "id":              { "type": "string" },
+          "type":            { "$ref": "#/components/schemas/MarketType" },
+          "createdBy":       { "type": "string", "description": "Present **only** when the order belongs to the caller." },
+          "sumUntaken":      { "type": "number", "description": "Win amount still available (taker pays risk to claim it)." },
+          "odds":            { "type": "integer", "description": "American odds." },
+          "bet":             { "type": "number",  "description": "Original `bet` amount." },
+          "gameID":          { "type": "string" },
+          "takenRatio":      { "type": "number",  "nullable": true, "description": "Fraction of the order that has been matched." },
+          "expiry":          { "type": "string",  "format": "date-time", "nullable": true },
+          "createdAt":       { "type": "string",  "format": "date-time" },
+          "mockOrder":       { "type": "boolean" },
+          "gameStartExpiry": { "type": "boolean", "description": "True when the order is set to auto-cancel at game start." },
+          "isPostArb":       { "type": "boolean", "description": "Present when the order was placed with `orderType: postArb`." },
+          "participantID":   { "type": "string",  "description": "Present for `moneyline` and `spread`." },
+          "spread":          { "type": "number",  "description": "Present for `spread`." },
+          "total":           { "type": "number",  "description": "Present for `total`." },
+          "OU":              { "type": "string",  "enum": ["over", "under"], "description": "Present for `total`." },
+          "market":          { "type": "string",  "description": "Present for `moneyline1x2`." },
+          "side":            { "type": "string",  "enum": ["yes", "no"], "description": "Present for `moneyline1x2`." }
+        }
+      },
+
+      "GameOrderbookFlat": {
+        "allOf": [
+          { "$ref": "#/components/schemas/Game" },
+          {
+            "type": "object",
+            "description": "v2 orderbook: per-market arrays of orders (totals and spreads are flattened).",
+            "properties": {
+              "homeMoneylines":     { "type": "array", "items": { "$ref": "#/components/schemas/OrderbookOrder" } },
+              "awayMoneylines":     { "type": "array", "items": { "$ref": "#/components/schemas/OrderbookOrder" } },
+              "homeSpreads":        { "type": "array", "items": { "$ref": "#/components/schemas/OrderbookOrder" } },
+              "awaySpreads":        { "type": "array", "items": { "$ref": "#/components/schemas/OrderbookOrder" } },
+              "over":               { "type": "array", "items": { "$ref": "#/components/schemas/OrderbookOrder" } },
+              "under":              { "type": "array", "items": { "$ref": "#/components/schemas/OrderbookOrder" } },
+              "homeMoneylines1x2":  { "type": "array", "items": { "$ref": "#/components/schemas/OrderbookOrder" }, "description": "Soccer only." },
+              "awayMoneylines1x2":  { "type": "array", "items": { "$ref": "#/components/schemas/OrderbookOrder" }, "description": "Soccer only." },
+              "draw1x2":            { "type": "array", "items": { "$ref": "#/components/schemas/OrderbookOrder" }, "description": "Soccer only." },
+              "openInterest":       { "type": "number" },
+              "matchedVolume":      { "type": "number" }
+            }
+          }
+        ]
+      },
+
+      "GameOrderbookNested": {
+        "allOf": [
+          { "$ref": "#/components/schemas/Game" },
+          {
+            "type": "object",
+            "description": "v1 orderbook: spreads and totals are objects keyed by spread / total number; values are arrays of orders.",
+            "properties": {
+              "homeMoneylines": { "type": "array", "items": { "$ref": "#/components/schemas/OrderbookOrder" } },
+              "awayMoneylines": { "type": "array", "items": { "$ref": "#/components/schemas/OrderbookOrder" } },
+              "homeSpreads":    { "type": "object", "additionalProperties": { "type": "array", "items": { "$ref": "#/components/schemas/OrderbookOrder" } }, "description": "Keyed by spread number, e.g. `\"-3.5\"`." },
+              "awaySpreads":    { "type": "object", "additionalProperties": { "type": "array", "items": { "$ref": "#/components/schemas/OrderbookOrder" } } },
+              "over":           { "type": "object", "additionalProperties": { "type": "array", "items": { "$ref": "#/components/schemas/OrderbookOrder" } }, "description": "Keyed by total number, e.g. `\"220.5\"`." },
+              "under":          { "type": "object", "additionalProperties": { "type": "array", "items": { "$ref": "#/components/schemas/OrderbookOrder" } } },
+              "homeMoneylines1x2": { "type": "object" },
+              "awayMoneylines1x2": { "type": "object" },
+              "draw1x2":           { "type": "object" },
+              "mainHomeSpread":    { "type": ["string", "number"], "nullable": true },
+              "mainAwaySpread":    { "type": ["string", "number"], "nullable": true },
+              "mainTotal":         { "type": ["string", "number"], "nullable": true },
+              "openInterest":      { "type": "number" },
+              "matchedVolume":     { "type": "number" }
+            }
+          }
+        ]
+      },
+
+      "GameAveragePrice": {
+        "allOf": [
+          { "$ref": "#/components/schemas/Game" },
+          {
+            "type": "object",
+            "properties": {
+              "matchedVolume": { "type": "number" },
+              "mainHomeSpread": { "type": ["string", "number"], "nullable": true },
+              "mainAwaySpread": { "type": ["string", "number"], "nullable": true },
+              "mainTotal":      { "type": ["string", "number"], "nullable": true },
+              "odds": {
+                "type": "object",
+                "description": "Best/average prices and max bet sizes for moneyline, spread, and total markets.",
+                "properties": {
+                  "averageHomeMoneyline":           { "type": "integer", "nullable": true },
+                  "bestHomeMoneyline":              { "type": "integer", "nullable": true },
+                  "bestHomeMoneylineWithCommission":{ "type": "integer", "nullable": true },
+                  "bestHomeMoneylinePriceLimit":    { "type": "integer", "nullable": true },
+                  "averageAwayMoneyline":           { "type": "integer", "nullable": true },
+                  "bestAwayMoneyline":              { "type": "integer", "nullable": true },
+                  "bestAwayMoneylineWithCommission":{ "type": "integer", "nullable": true },
+                  "bestAwayMoneylinePriceLimit":    { "type": "integer", "nullable": true },
+                  "averageHomeSpread":              { "type": "integer", "nullable": true },
+                  "bestHomeSpread":                 { "type": "integer", "nullable": true },
+                  "bestHomeSpreadWithCommission":   { "type": "integer", "nullable": true },
+                  "bestHomeSpreadPriceLimit":       { "type": "integer", "nullable": true },
+                  "mainHomeSpread":                 { "type": ["string", "number"], "nullable": true },
+                  "averageAwaySpread":              { "type": "integer", "nullable": true },
+                  "bestAwaySpread":                 { "type": "integer", "nullable": true },
+                  "bestAwaySpreadWithCommission":   { "type": "integer", "nullable": true },
+                  "bestAwaySpreadPriceLimit":       { "type": "integer", "nullable": true },
+                  "mainAwaySpread":                 { "type": ["string", "number"], "nullable": true },
+                  "averageOver":                    { "type": "integer", "nullable": true },
+                  "bestOver":                       { "type": "integer", "nullable": true },
+                  "bestOverWithCommission":         { "type": "integer", "nullable": true },
+                  "bestOverPriceLimit":             { "type": "integer", "nullable": true },
+                  "averageUnder":                   { "type": "integer", "nullable": true },
+                  "bestUnder":                      { "type": "integer", "nullable": true },
+                  "bestUnderWithCommission":        { "type": "integer", "nullable": true },
+                  "bestUnderPriceLimit":            { "type": "integer", "nullable": true },
+                  "mainTotal":                      { "type": ["string", "number"], "nullable": true },
+                  "maxMoneyLineBet":                { "type": "integer" },
+                  "homeMoneylineMaxBet":            { "type": "integer" },
+                  "awayMoneylineMaxBet":            { "type": "integer" },
+                  "maxTotalBet":                    { "type": "integer" },
+                  "maxOverBet":                     { "type": "integer" },
+                  "maxUnderBet":                    { "type": "integer" },
+                  "maxSpreadBet":                   { "type": "integer" },
+                  "maxHomeSpreadBet":               { "type": "integer" },
+                  "maxAwaySpreadBet":               { "type": "integer" }
+                }
               }
             }
           }
         ]
       },
-      "Error": {
-        "required": [
-          "error",
-          "message"
-        ],
+
+      "MatchedBet": {
+        "type": "object",
+        "description": "A bet that has been matched but not yet graded.",
+        "properties": {
+          "id":            { "type": "string" },
+          "txID":          { "type": "string" },
+          "type":          { "$ref": "#/components/schemas/MarketType" },
+          "bet":           { "type": "number" },
+          "odds":          { "type": "integer" },
+          "spread":        { "type": "number", "nullable": true },
+          "total":         { "type": "number", "nullable": true },
+          "OU":            { "type": "string", "enum": ["over", "under"], "description": "Present for `total`." },
+          "participantID": { "type": "string", "description": "Present for `moneyline` / `spread`." },
+          "market":        { "type": "string", "description": "Present for `moneyline1x2`." },
+          "side":          { "$ref": "#/components/schemas/MarketSide" },
+          "userReference": { "type": "string" },
+          "createdAt":     { "type": "string", "format": "date-time" },
+          "matchedTime":   { "type": "string", "format": "date-time" },
+          "graded":        { "type": "boolean" },
+          "closed":        { "type": "boolean" },
+          "origin":        { "type": "string", "description": "`offer` or `wager`." },
+          "adminRefund":   { "type": "boolean" },
+          "risk":          { "type": "string" },
+          "win":           { "type": "string" },
+          "fee":           { "type": "string" },
+          "game":          { "$ref": "#/components/schemas/GameSummary" }
+        }
+      },
+
+      "UnmatchedOrder": {
+        "type": "object",
+        "description": "An open order that is currently resting on the exchange.",
+        "properties": {
+          "id":              { "type": "string" },
+          "txID":            { "type": "string" },
+          "type":            { "$ref": "#/components/schemas/MarketType" },
+          "bet":             { "type": "number" },
+          "odds":            { "type": "integer" },
+          "spread":          { "type": "number", "nullable": true },
+          "total":           { "type": "number", "nullable": true },
+          "participantID":   { "type": "string", "description": "Present for `moneyline` / `spread`." },
+          "otherParticipantID": { "type": "string", "description": "The opposite participant id (the one whose side is being offered)." },
+          "expiry":          { "type": "string", "format": "date-time", "nullable": true },
+          "filled":          { "type": "number" },
+          "offered":         { "type": "number" },
+          "remaining":       { "type": "number" },
+          "takenRatio":      { "type": "number" },
+          "createdAt":       { "type": "string", "format": "date-time" },
+          "origin":          { "type": "string", "description": "`offer` or `wager`." },
+          "graded":          { "type": "boolean" },
+          "closed":          { "type": "boolean" },
+          "adminRefund":     { "type": "boolean" },
+          "userReference":   { "type": "string" },
+          "wagerRequestID":  { "type": "string" },
+          "game":            { "$ref": "#/components/schemas/GameSummary" }
+        }
+      },
+
+      "GradedWager": {
+        "type": "object",
+        "description": "A settled wager.",
+        "properties": {
+          "id":            { "type": "string" },
+          "txID":          { "type": "string" },
+          "ticketNumber":  { "type": "string" },
+          "type":          { "$ref": "#/components/schemas/MarketType" },
+          "outcome":       { "type": "string", "enum": ["winner", "loser", "push", "refund"] },
+          "bet":           { "type": "number" },
+          "odds":          { "type": "integer" },
+          "spread":        { "type": "number", "nullable": true },
+          "total":         { "type": "number", "nullable": true },
+          "OU":            { "type": "string", "enum": ["over", "under"] },
+          "participantID": { "type": "string" },
+          "market":        { "type": "string" },
+          "side":          { "$ref": "#/components/schemas/MarketSide" },
+          "matchedTime":   { "type": "string", "format": "date-time" },
+          "settledAt":     { "type": "string", "format": "date-time" },
+          "createdAt":     { "type": "string", "format": "date-time" },
+          "graded":        { "type": "boolean" },
+          "closed":        { "type": "boolean" },
+          "cancelled":     { "type": "boolean" },
+          "adminRefund":   { "type": "boolean" },
+          "platform":      { "type": "string", "example": "api" },
+          "fee":           { "type": "string", "description": "Commission charged on the matched portion." },
+          "risk":          { "type": "string" },
+          "win":           { "type": "string" },
+          "result":        { "type": "string", "description": "Net P&L on this wager (signed)." },
+          "pinnacleLine":  { "type": "object", "description": "Snapshot of the comparable Pinnacle line at fill time, when available." },
+          "game":          { "$ref": "#/components/schemas/GameSummary" }
+        }
+      },
+
+      "GradedSummary": {
         "type": "object",
         "properties": {
-          "error": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "message": {
-            "type": "string"
-          }
+          "pnl":    { "type": "integer", "description": "Sum of `result` across the returned wagers (rounded)." },
+          "volume": { "type": "integer", "description": "Sum of `min(risk, win)` across the returned wagers (rounded)." }
         }
-      }
-    },
-    "securitySchemes": {
-      "bearerAuth": {
-        "type": "http",
-        "scheme": "bearer"
       }
     }
   }

@@ -1,0 +1,49 @@
+---
+title: 'Cancel all orders for a game'
+description: 'Cancel every open order on a single game'
+openapi: 'POST /session/cancelAllOrdersForGame'
+---
+
+Cancel every open order on a single game. Optionally restrict to a single market `type` to leave other markets in place.
+
+## Request
+
+`POST /session/cancelAllOrdersForGame`
+
+<ParamField body="gameID" type="string" required>
+  The game whose orders should be cancelled.
+</ParamField>
+<ParamField body="type" type="string">
+  Optional. Cancel only orders of this market type — one of `moneyline`, `spread`, `total`. When omitted, all market types are cancelled.
+</ParamField>
+
+<CodeGroup>
+```bash curl (one market)
+curl -X POST https://api.4casters.io/session/cancelAllOrdersForGame \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "gameID": "688c0516fbc14da0c202d426",
+    "type": "spread"
+  }'
+```
+
+```bash curl (all markets)
+curl -X POST https://api.4casters.io/session/cancelAllOrdersForGame \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{ "gameID": "688c0516fbc14da0c202d426" }'
+```
+</CodeGroup>
+
+## Response
+
+<ResponseField name="data" type="array">
+  Per-order cancel results. Same shape as [Cancel an order](/pages/rest/orders/cancel-order#response).
+</ResponseField>
+
+## Errors
+
+| Status | Meaning |
+| ------ | ------- |
+| `400`  | `gameID` missing / invalid, or `type` is not one of the allowed values. |
