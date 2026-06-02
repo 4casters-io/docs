@@ -1,0 +1,24 @@
+---
+title: 'Changelog'
+description: 'Notable, client-observable changes to the 4casters APIs.'
+---
+
+This changelog records changes to the 4casters public APIs that are visible to integrators. Internal refactors, performance fixes that do not change behavior, and infrastructure changes are intentionally omitted.
+
+Conventions:
+
+- Newest entries first. Dates are ISO `YYYY-MM-DD`.
+- Each entry is tagged with the affected API surface.
+- Changes are grouped under `Added`, `Changed`, `Fixed`, `Deprecated`, or `Removed` (sections that don't apply are omitted).
+- Breaking changes are tagged `Breaking`.
+
+---
+
+<Update label="2026-04-28" tags={["Streaming API", "Price Feed"]}>
+  ### Added
+  - **Subscribe by `gameID`, `league`, or `sport` on the price feed.** Clients connected to `wss://streaming-api.4casters.io/price-stream` can now send JSON `subscribe`, `unsubscribe`, and `subscribeAll` commands to narrow the feed to specific games, leagues, or sports. See [Subscriptions](/pages/streaming/price-feed#subscriptions) for the full command shape and routing semantics.
+  - **`parentGameID` fanout.** Subscribers of a parent `gameID` also receive updates for child games whose `parentGameID` matches (e.g. F5-MLB derivatives reach subscribers of the parent game).
+
+  ### Changed
+  - **Backwards compatible.** Clients that never send a subscribe command stay in broadcast-all mode and receive every update as before — no integration changes required.
+</Update>

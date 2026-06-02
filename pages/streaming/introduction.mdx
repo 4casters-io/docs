@@ -8,6 +8,8 @@ The 4casters streaming API delivers real-time user and market updates over a raw
 - **User feed**: `wss://streaming-api.4casters.io/v2/user`
 - **Price feed**: `wss://streaming-api.4casters.io/price-stream`
 
+The price feed broadcasts all market updates by default. Clients can optionally narrow the stream to specific games, leagues, or sports — see [Subscriptions](/pages/streaming/price-feed#subscriptions).
+
 ## Auth
 
 Both feeds authenticate with a 4Casters token. Send the token in the

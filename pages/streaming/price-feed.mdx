@@ -16,6 +16,17 @@ function connectPriceFeed() {
  
   ws.on('open', () => { 
     console.log('price stream connected'); 
+
+    // Optional: narrow the feed to specific games / leagues / sports.
+    // Omit this block to receive all market updates (default). 
+    ws.send(JSON.stringify({ 
+      type: 'subscribe', 
+      gameIDs: [], 
+      leagueIDs: ['NBA'], 
+      sportIDs: [], 
+      replace: true, 
+    })); 
+
     pingTimer = setInterval(() => { 
       if (ws.readyState === WebSocket.OPEN) ws.ping(); 
       if (Date.now() - lastPong > 30000) { 
@@ -48,6 +59,76 @@ connectPriceFeed();
 
 ## Ping/Pong
 Both feeds support standard WebSocket `ping/pong`. You may proactively `ping()` on an interval and track `pong` to verify liveness.
+
+## Subscriptions
+
+By default a connected client receives every market update across all sports and leagues. To narrow the firehose, send one of the following commands as a JSON text frame after the socket is `open`. Commands take effect for the lifetime of the connection.
+
+A client that never sends a subscribe command stays in broadcast-all mode, so existing integrations keep working without changes.
+
+### Subscribe by gameID, league, or sport
+
+Install a filter. `gameIDs` are 24-character Mongo ObjectID hex strings; `leagueIDs` are short codes like `NBA` / `MLB` / `EPL`; `sportIDs` are lowercase tokens like `basketball` / `baseball` / `soccer`.
+
+<CodeGroup>
+```json Replace (recommended)
+{
+  "type": "subscribe",
+  "gameIDs": ["62619dce25e2fb049a71cc2e"],
+  "leagueIDs": ["NBA"],
+  "sportIDs": [],
+  "replace": true
+}
+```
+```json Additive
+{
+  "type": "subscribe",
+  "gameIDs": [],
+  "leagueIDs": ["MLB"],
+  "sportIDs": [],
+  "replace": false
+}
+```
+</CodeGroup>
+
+- `replace: true` clears any existing subscriptions on this connection and installs the new lists. Switches the connection into filtered mode.
+- `replace: false` adds the new keys to whatever the connection is already subscribed to.
+
+You will receive an update if its `gameID`, `parentGameID`, `league`, or `sport` matches any of your subscriptions.
+
+### Unsubscribe
+
+Remove specific keys. The connection stays in its current mode (filtered or subscribe-all).
+
+<CodeGroup>
+```json JSON
+{
+  "type": "unsubscribe",
+  "gameIDs": [],
+  "leagueIDs": ["MLB"],
+  "sportIDs": []
+}
+```
+</CodeGroup>
+
+### Subscribe to everything
+
+Explicit catch-all. Useful if you previously narrowed via `subscribe` and want to re-broaden without reconnecting. Clears any per-key subscriptions on the connection.
+
+<CodeGroup>
+```json JSON
+{ "type": "subscribeAll" }
+```
+</CodeGroup>
+
+### Routing semantics
+
+- A `gameID` subscription also receives updates for child games whose `parentGameID` matches (e.g. F5-MLB derivatives reach subscribers of the parent game).
+- League IDs are case-insensitive — `mlb` and `MLB` are equivalent.
+- Sport IDs are case-insensitive — `baseball` and `Baseball` are equivalent.
+- Empty strings inside the arrays are ignored.
+- `subscribe` with `replace: false` **and** all-empty arrays is a no-op (a buggy client can't accidentally blackhole itself by sending an empty additive subscribe).
+- `subscribe` with `replace: true` **and** all-empty arrays is the legitimate "clear all my subs" path — the connection enters filtered mode with zero subscriptions and receives nothing until you subscribe again or send `subscribeAll`.
 
 ## Messages
 
