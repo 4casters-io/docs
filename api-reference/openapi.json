@@ -410,7 +410,7 @@
       "post": {
         "tags": ["Orders"],
         "summary": "Edit an order",
-        "description": "Change the price (`orderOdds`) and/or volume (`orderVolume`) of an existing **limit** order. For partially filled orders, 4casters cancels the existing order and submits a new one with the supplied values; the new `orderVolume` does **not** account for previously filled volume.\n\nThe newer gRPC variant `POST /session/v4/editOrder` accepts the same body shape and also returns `errorType` on validation failures.",
+        "description": "Change the price (`orderOdds`) and volume (`orderVolume`) of an existing **limit** order. Both are required — the edit replaces the order outright. An edit is a cancel-then-replace: the original order is cancelled and a brand-new order is created with a **new** `orderID` (returned in `data.unmatched.orderID`); the old `sessionID` is no longer valid. The new `orderVolume` does **not** account for previously filled volume.\n\nThe newer gRPC variant `POST /session/v4/editOrder` accepts the same body shape, additionally supports `intendedOrderVolume` and `blockIfNoOtherSideOrders`, and returns `errorType` on validation failures.",
         "requestBody": {
           "required": true,
           "content": {
@@ -1239,15 +1239,15 @@
 
       "EditOrderRequest": {
         "type": "object",
-        "required": ["sessionID"],
+        "required": ["sessionID", "orderOdds", "orderVolume"],
         "properties": {
           "sessionID":            { "type": "string",  "description": "Order id to edit." },
-          "orderOdds":            { "type": "integer", "nullable": true, "description": "New American odds. Pass `null` to leave odds unchanged." },
-          "orderVolume":          { "type": "number",  "nullable": true, "description": "New `bet` amount. Pass `null` to leave volume unchanged. **Does not** account for previously-filled volume." },
+          "orderOdds":            { "type": "number",  "description": "New American odds. Absolute value between 100 and 100000, at most one decimal place." },
+          "orderVolume":          { "type": "number",  "description": "New `bet` amount (your stake). Must be greater than 0. **Does not** account for previously-filled volume." },
           "orderType":            { "$ref": "#/components/schemas/OrderType" },
           "userReference":        { "type": "string" },
-          "intendedOrderVolume":  { "type": "number",  "description": "Optional. The volume you originally intended to place; used by the server when reconciling partial fills." },
-          "expiryChange":         { "type": "string",  "description": "Optional. New expiration in minutes (string)." },
+          "intendedOrderVolume":  { "type": "number",  "description": "`v4/editOrder` only. Optimistic-concurrency guard: the remaining open volume you believe the order has. If it differs from the actual remaining volume by more than $1, the edit aborts after the cancel step — the order is cancelled, nothing is re-placed, and the 200 response has no `unmatched` object." },
+          "expiryChange":         { "type": "number",  "description": "Optional. Expiration in minutes for the replacement order. Not inherited from the original order: omit for no explicit expiry (live games default to 5 minutes); pass 0 on a pre-game order to expire at game start." },
           "blockIfNoOtherSideOrders": { "type": "boolean", "description": "v4 only. Reject the edit if there is no resting opposite-side liquidity." }
         }
       },
@@ -1255,9 +1255,25 @@
       "EditOrderResult": {
         "type": "object",
         "properties": {
-          "cancelled": { "type": "object", "description": "Summary of the cancelled-and-replaced original order." },
-          "matched":   { "type": "array",  "items": { "$ref": "#/components/schemas/MatchedFill" } },
-          "unmatched": { "$ref": "#/components/schemas/UnmatchedOffer" }
+          "cancelled": {
+            "type": "object",
+            "description": "Summary of the cancelled original order. `orderID` is the OLD order id. If `success` is `false`, the cancel failed and no new order was placed.",
+            "properties": {
+              "success":       { "type": "boolean" },
+              "orderID":       { "type": "string",  "description": "Id of the cancelled (old) order." },
+              "odds":          { "type": "number",  "description": "American odds of the cancelled order." },
+              "filled":        { "type": "number" },
+              "offered":       { "type": "number" },
+              "remaining":     { "type": "number",  "description": "Volume still open at cancel time." },
+              "side":          { "type": "string" },
+              "number":        { "type": "number",  "nullable": true },
+              "gameID":        { "type": "string" },
+              "userReference": { "type": "string" },
+              "description":   { "type": "string" }
+            }
+          },
+          "matched":   { "type": "array",  "items": { "$ref": "#/components/schemas/MatchedFill" }, "description": "Immediate fills of the replacement order. `orderID` on a fill identifies the counterparty's resting order — use `txID` as the fill identifier." },
+          "unmatched": { "allOf": [{ "$ref": "#/components/schemas/UnmatchedOffer" }], "description": "The new resting order; `unmatched.orderID` is the NEW order id. Empty (`{}`) when the new order matched fully; absent entirely when the edit stopped after the cancel step (cancel failed, or v4 `intendedOrderVolume` mismatch)." }
         }
       },
 

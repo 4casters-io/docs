@@ -4,12 +4,16 @@ description: 'Change the price or volume of a resting order'
 openapi: 'POST /session/editOrder'
 ---
 
-Change the price (`orderOdds`) and/or volume (`orderVolume`) of an existing **limit** order.
+Change the price (`orderOdds`) and volume (`orderVolume`) of an existing **limit** order. Both values are required — the edit replaces the order outright, so send the full new price and stake even if only one of them changed.
 
-For partially-filled orders, 4casters cancels the existing order and submits a new one with the supplied values. The new `orderVolume` does **not** account for previously filled volume — if you originally placed `bet: 10`, $5 was filled, and you edit to `orderVolume: 10`, the previous order is cancelled (refunding $5) and a new order is created for $10 (debiting $10), leaving you net $5 down.
+An edit is a **cancel-then-replace**: 4casters cancels the existing order and submits a brand-new one with the supplied values. The replacement gets a **new order id** (returned as `data.unmatched.orderID`); the old `sessionID` is no longer valid for lookups, cancels, or further edits. The new order runs through normal matching on entry, so it can fill (partially or fully) immediately.
+
+The new `orderVolume` does **not** account for previously filled volume — if you originally placed `bet: 10`, $5 was filled, and you edit to `orderVolume: 10`, the previous order is cancelled (refunding $5) and a new order is created for $10 (debiting $10), leaving you net $5 down.
+
+The game, market, side, and line are inherited from the order being edited — you do not resend them.
 
 <Note>
-A newer gRPC variant lives at `POST /session/v4/editOrder`. It accepts the same request body and additionally returns `errorType` on validation failures. Prefer it for new integrations once you've confirmed the shape works for you.
+A newer gRPC variant lives at `POST /session/v4/editOrder`. It accepts the same request body, additionally supports `intendedOrderVolume` and `blockIfNoOtherSideOrders`, and returns `errorType` on validation failures. Prefer it for new integrations once you've confirmed the shape works for you.
 </Note>
 
 ## Request
@@ -19,11 +23,11 @@ A newer gRPC variant lives at `POST /session/v4/editOrder`. It accepts the same 
 <ParamField body="sessionID" type="string" required>
   Order id to edit. Get it from `data.unmatched.orderID` of `/session/v3/place` or `id` from `/user/getUnmatched`.
 </ParamField>
-<ParamField body="orderOdds" type="integer">
-  New American odds. Pass `null` to leave odds unchanged.
+<ParamField body="orderOdds" type="number" required>
+  New American odds. Absolute value between 100 and 100000, at most one decimal place.
 </ParamField>
-<ParamField body="orderVolume" type="number">
-  New `bet` amount. Pass `null` to leave volume unchanged.
+<ParamField body="orderVolume" type="number" required>
+  New `bet` amount (your stake). Must be greater than 0. **Does not** account for previously-filled volume — see above.
 </ParamField>
 <ParamField body="orderType" type="string">
   Defaults to `limit`. See [order types](/pages/rest/orders/place-order#order-types).
@@ -31,14 +35,14 @@ A newer gRPC variant lives at `POST /session/v4/editOrder`. It accepts the same 
 <ParamField body="userReference" type="string">
   Optional. Replaces the existing `userReference` on the order.
 </ParamField>
-<ParamField body="intendedOrderVolume" type="number">
-  Optional. The volume you originally intended to place; used by the server when reconciling partial fills.
+<ParamField body="expiryChange" type="number">
+  Optional. Expiration in minutes for the replacement order. Expiry is **not** inherited from the original order: omit it and the new order has no explicit expiry (on live games it defaults to 5 minutes). Pass `0` on a pre-game order to expire at game start.
 </ParamField>
-<ParamField body="expiryChange" type="string">
-  Optional. New expiration in minutes (string).
+<ParamField body="intendedOrderVolume" type="number">
+  `v4/editOrder` only. Optimistic-concurrency guard: the remaining open volume you *believe* the order has (e.g. what you last displayed to a user). If it differs from the actual remaining volume by more than $1 at edit time — meaning the order was taken from while you were deciding — the edit stops after the cancel step. See [Concurrency guard](#concurrency-guard-v4).
 </ParamField>
 <ParamField body="blockIfNoOtherSideOrders" type="boolean">
-  v4 only. Reject the edit if there is no resting opposite-side liquidity.
+  `v4/editOrder` only. Reject the edit if there is no resting opposite-side liquidity.
 </ParamField>
 
 <CodeGroup>
@@ -67,18 +71,28 @@ curl -X POST https://api.4casters.io/session/editOrder \
 The result mirrors the [place order](/pages/rest/orders/place-order#response) response shape — a `cancelled` summary plus the new `matched` / `unmatched` outcome:
 
 <ResponseField name="data.cancelled" type="object">
-  Summary of the cancelled-and-replaced original order.
+  Summary of the cancelled original order. `orderID` here is the **old** order id; `filled` / `remaining` report its state at cancel time. If `success` is `false`, the cancel failed (e.g. the order was already fully taken) and **no new order was placed**.
 </ResponseField>
 <ResponseField name="data.matched" type="array">
-  Fills produced by re-submitting at the new price/volume. Same shape as a `MatchedFill` in [place order](/pages/rest/orders/place-order#response).
+  Fills produced by re-submitting at the new price/volume. Same shape as a `MatchedFill` in [place order](/pages/rest/orders/place-order#response). Note `orderID` on a fill identifies the *counterparty's* resting order — use `txID` as the fill identifier.
 </ResponseField>
 <ResponseField name="data.unmatched" type="object">
-  Resting offer for the unfilled remainder of the new order.
+  Resting offer for the unfilled remainder of the new order. **`unmatched.orderID` is the new order id** — track, cancel, and edit with it from now on. Empty (`{}`) when the new order matched fully.
 </ResponseField>
+
+## Concurrency guard (v4)
+
+When `intendedOrderVolume` is supplied to `v4/editOrder` and it differs from the order's actual remaining volume by more than $1, the edit **aborts after the cancel**:
+
+- The original order is cancelled and stays cancelled — you have no resting order.
+- No replacement order is placed.
+- The response is still a `200`, with `cancelled.success: true`, an empty `matched`, and **no `unmatched` object at all**. `cancelled.remaining` reports the volume that was actually still open.
+
+Treat that response as "the order changed while you were editing — you are now flat; re-place if you still want the position." Do not retry the edit (the order no longer exists). Detection: a completed edit always has either fills in `matched` or an `unmatched` object (possibly `{}`); `unmatched` missing entirely means the cancel-only path was taken.
 
 ## Errors
 
 | Status | Meaning |
 | ------ | ------- |
 | `400`  | Validation error (`v4/editOrder` returns `errorType` for these). |
-| `503`  | Orders service unreachable. |
+| `503`  | Orders service unreachable. Safe to retry. |
