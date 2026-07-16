@@ -84,6 +84,8 @@ The user feed sends each update as a **bare JSON object** (no tuple envelope). A
 - `matched != null && unmatched == null` -> matched as taker
 - `matched != null && unmatched != null` -> matched as maker (partial fill if `unmatched.remaining > 0`)
 
+Updates for orders placed with `orderType: "postArb"` also carry `isPostArb: true` inside `matched` / `unmatched` (on placed, filled, and cancelled updates); the field is omitted otherwise.
+
 ### Side and market semantics by bet type
 
 The meaning of `side` (and which extra fields appear) inside `matched` / `unmatched` depends on `type`:
