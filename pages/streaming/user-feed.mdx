@@ -377,8 +377,8 @@ Treat `availableMessages` as best-effort only. Since an unknown number of messag
 2. On disconnect, reconnect the WebSocket immediately and start **buffering** incoming live messages.
 3. As soon as the socket is open, call `/v2/user/messages` with `afterID=<your cursor>` (no `beforeID` — the replay may overlap the buffer, which is handled next).
 4. On `success`: apply the replayed messages in order, advancing your cursor.
-5. On `cache_expired`: an unknown number of messages were lost — do a full state resync via REST instead (e.g. [get unmatched orders](/pages/rest/user/get-unmatched-orders) and [get matched bets](/pages/rest/user/get-matched-bets)).
-6. Drain the buffer, **skipping any message whose `messageID` is not greater than your cursor** (those were already applied via replay), then go live. If you fell back to a full resync, **drop the buffer instead** — the REST snapshot already reflects those events — and just advance your cursor past the newest buffered `messageID`.
+5. On `cache_expired`: an unknown number of messages were lost — do a full state resync via REST instead (e.g. [get unmatched orders](/pages/rest/user/get-unmatched-orders) and [get matched bets](/pages/rest/user/get-matched-bets)), then anchor your cursor at the tail of `availableMessages`. If nothing was retained, **clear the cursor and resync again on the next reconnect** — replaying from a cursor older than the snapshot would double-apply events.
+6. Drain the buffer, **skipping any message whose `messageID` is not greater than your cursor** (those were already applied via replay), then go live. If you fell back to a full resync, **drop the buffer instead** — the REST snapshot already reflects those events — and advance your cursor to the newest buffered `messageID` if that is newer than your anchor. The cursor must only ever move forward.
 
 `messageID`s are ordered (`<unix-ms>-<seq>`), so "greater than" is a numeric comparison of the two parts. The replay window is bounded by server-side stream retention — reconnect promptly rather than relying on long look-back.
 
@@ -394,8 +394,12 @@ const token = process.env.FOURCASTERS_TOKEN;
 const HOST = 'streaming-api.4casters.io';
 
 // Your replay cursor. Persist it durably (disk/db) so replay also works
-// across process restarts, not just socket drops.
+// across process restarts, not just socket drops. null means "no valid
+// replay anchor" — nothing to replay on a fresh start, full resync on a
+// reconnect (see hasState below).
 let cursor = null;
+// True once any state has been applied (messages or a REST snapshot).
+let hasState = false;
 
 // messageIDs are "<unix-ms>-<seq>"; compare numerically part by part.
 function isAfterCursor(messageID) {
@@ -405,11 +409,17 @@ function isAfterCursor(messageID) {
   return ms > cMs || (ms === cMs && seq > cSeq);
 }
 
+// The cursor only ever moves forward.
+function advanceCursor(messageID) {
+  if (isAfterCursor(messageID)) cursor = messageID;
+}
+
 function processMessage(msg) {
   // Business logic goes here. `msg` is the same envelope everywhere —
   // live and replayed messages are identical in shape.
   console.log('user update:', msg.origin, msg.messageID);
-  cursor = msg.messageID;
+  advanceCursor(msg.messageID);
+  hasState = true;
 }
 
 // Returns true if it had to fall back to a full REST resync.
@@ -438,7 +448,12 @@ async function replayGap() {
   // then fast-forward the cursor past whatever is still retained.
   console.warn('replay window expired - falling back to full resync');
   await fullResyncViaRest(); // your implementation
+  hasState = true;
+  // Anchor the cursor at the retained tip. If nothing was retained there
+  // is no valid anchor — clear the cursor so the next reconnect resyncs
+  // again instead of replaying from a stale position.
   const retained = body.availableMessages;
+  cursor = null;
   if (retained.length > 0) {
     cursor = retained[retained.length - 1].messageID;
   }
@@ -461,20 +476,32 @@ function connect() {
       console.log('user feed connected');
       let resynced = false;
       try {
-        // First ever connect (cursor === null): nothing to replay.
-        if (cursor !== null) resynced = await replayGap();
+        if (cursor !== null) {
+          resynced = await replayGap();
+        } else if (hasState) {
+          // We hold state but have no valid replay anchor (a previous
+          // resync could not establish one) — resync rather than risk
+          // missing the gap. A truly fresh start has nothing to recover.
+          await fullResyncViaRest();
+          resynced = true;
+        }
       } catch (e) {
         console.error('replay failed, resyncing:', e.message);
         await fullResyncViaRest();
+        hasState = true;
+        // The old cursor predates the snapshot — replaying from it later
+        // would double-apply events the snapshot already covers.
+        cursor = null;
         resynced = true;
       } finally {
         const pending = buffer.splice(0);
         if (resynced) {
           // The REST snapshot already reflects everything up to now —
           // applying buffered messages on top would double-apply them.
-          // Just advance the cursor past the buffer.
+          // Just advance the cursor to the buffer tip if that is newer
+          // than the anchor the resync established.
           if (pending.length > 0) {
-            cursor = pending[pending.length - 1].messageID;
+            advanceCursor(pending[pending.length - 1].messageID);
           }
         } else {
           // Drain live messages that arrived during replay, skipping any
