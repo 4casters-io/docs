@@ -380,10 +380,11 @@ Treat `availableMessages` as best-effort only. Since an unknown number of messag
 5. On `cache_expired`: too much history was lost — do a full state resync via REST instead (e.g. [get unmatched orders](/pages/rest/user/get-unmatched-orders) and [get matched bets](/pages/rest/user/get-matched-bets)), then set your cursor to the tail of `availableMessages`.
 6. Drain the buffer, then go live.
 
-Two rules make this safe:
+Three rules make this safe:
 
 - **Run every message — replayed, buffered, or live — through one cursor check**: skip it unless its `messageID` is greater than your cursor, then advance the cursor. This handles replay overlapping socket delivery that is still in flight.
 - **Never replay from a cursor older than a snapshot you have applied** — that would re-apply events the snapshot already covers. After a resync, your cursor is whatever the snapshot is known to cover (the `availableMessages` tail, or the newest message delivered before the snapshot); if that leaves no cursor at all, resync again on the next reconnect.
+- **If both replay and resync fail, reconnect and retry — never go live over an unfilled gap.** Processing live messages would advance the cursor past the gap and lose it permanently.
 
 One overlap is unavoidable: a message that lands while the snapshot is being taken may also be reflected in it, and may still be delivered afterwards — by the socket or by a later replay (REST responses carry no stream position). Handle notifications idempotently — dedupe fills by `txID`, orders by `orderID`.
 
@@ -476,17 +477,26 @@ function connect() {
     openTask = (async () => {
       console.log('user feed connected');
       try {
-        if (cursor === null) await resync(); // first run, or no valid anchor
-        else await replayGap();
+        if (cursor === null) {
+          await resync(); // first run, or no valid anchor
+        } else {
+          await replayGap().catch((e) => {
+            console.error('replay failed, resyncing:', e.message);
+            return resync();
+          });
+        }
       } catch (e) {
-        console.error('replay failed, resyncing:', e.message);
-        await resync();
-      } finally {
-        // Drain messages buffered during replay/resync. processMessage
-        // skips anything the replay or snapshot already covered.
-        buffer.splice(0).forEach(processMessage);
-        live = true;
+        // Recovery failed entirely. Going live would advance the cursor
+        // over the unfilled gap and lose it for good — reconnect and
+        // retry from the same cursor instead.
+        console.error('recovery failed, reconnecting:', e.message);
+        ws.terminate();
+        return;
       }
+      // Drain messages buffered during recovery. processMessage skips
+      // anything the replay or snapshot already covered.
+      buffer.splice(0).forEach(processMessage);
+      live = true;
     })();
   });
 
