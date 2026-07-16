@@ -16,7 +16,7 @@ Conventions:
 
 <Update label="2026-07-15" tags={["Streaming API", "User Feed"]}>
   ### Fixed
-  - **`GET /v2/user/messages` replay now returns messages.** The v2 user feed replay endpoint previously always returned empty `messages` / `availableMessages` lists, so gap recovery after a dropped connection silently returned nothing. Replayed messages now arrive in exactly the shape the WebSocket delivers (same fields, `messageID` included). See [Replaying missed messages](/pages/streaming/user-feed#replaying-missed-messages).
+  - **`GET /v2/user/messages` replay now returns messages.** The v2 user feed replay endpoint previously always returned empty lists, so gap recovery after a dropped connection silently did nothing. Replayed messages arrive in exactly the shape the WebSocket delivers. See [Replaying missed messages](/pages/streaming/user-feed#replaying-missed-messages).
 </Update>
 
 <Update label="2026-04-28" tags={["Streaming API", "Price Feed"]}>
