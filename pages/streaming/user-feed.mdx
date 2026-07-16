@@ -75,7 +75,7 @@ The user feed sends each update as a **bare JSON object** (no tuple envelope). A
 ```
 </CodeGroup>
 
-`messageID` is the Redis stream entry id added by the streaming-api before send. After a reconnect, replay anything you missed via `GET /v2/user/messages?afterID=<lastMessageID>`.
+`messageID` is the stream entry id added by the streaming-api before send. Persist the latest one you have processed — it is your replay cursor. See [Replaying missed messages](#replaying-missed-messages) below.
 
 ### How to identify the action
 
@@ -83,6 +83,19 @@ The user feed sends each update as a **bare JSON object** (no tuple envelope). A
 - `unmatched.offered === 0` -> order cancelled
 - `matched != null && unmatched == null` -> matched as taker
 - `matched != null && unmatched != null` -> matched as maker (partial fill if `unmatched.remaining > 0`)
+
+### Side and market semantics by bet type
+
+The meaning of `side` (and which extra fields appear) inside `matched` / `unmatched` depends on `type`:
+
+| `type` | `side` | `number` | `market` |
+|---|---|---|---|
+| `moneyline` | participant ObjectID hex | — | — |
+| `spread` | participant ObjectID hex | spread line (e.g. `6.5`) | — |
+| `total` | `"over"` / `"under"` | total line (e.g. `209.5`) | — |
+| `moneyline1x2` | `"yes"` / `"no"` | — | participant ObjectID hex (home or away) or `"draw"` |
+
+`market` is only present on `moneyline1x2` updates: it names the 3-way outcome the market is about (home team, away team, or the draw), and `side` says whether the bet is yes or no on that outcome. All fields are from **your** perspective — as maker you see your posted side; as taker you see the side you took.
 
 ### Action: order placed
 
@@ -231,5 +244,277 @@ Someone hit the user's posted offer. Both `matched` and `unmatched` are populate
   "createdAt": "2026-04-21T18:14:00.000Z",
   "messageID": "1715361250000-0"
 }
+```
+</CodeGroup>
+
+### Action: order matched (moneyline1x2)
+
+Fills on 3-way soccer markets carry the **`market` + `side` pair** described above instead of a participant-hex `side`. Here the user took "yes" on the home team at +120 (a bet that Arsenal wins):
+
+<CodeGroup>
+```json JSON (taker)
+{
+  "unmatched": null,
+  "matched": {
+    "txID": "685e321440e36d0494601b07",
+    "amount": 100.0,
+    "risk": 100.0,
+    "win": 120.0,
+    "odds": 120,
+    "orderID": "685e2f1c40e36d0494601a22",
+    "wagerRequestID": "685e321440e36d0494601b00",
+    "type": "moneyline1x2",
+    "side": "yes",
+    "market": "607349dc22a237cf46b021fb"
+  },
+  "origin": "wager",
+  "gameID": "685e21aa0be1b7d5a3f9c4d2",
+  "parentGameID": null,
+  "eventName": "ARSENAL-VS-CHELSEA",
+  "league": "EPL",
+  "sport": "soccer",
+  "live": false,
+  "start": "2026-07-04T19:00:00.000Z",
+  "awayRotationNumber": "3012",
+  "platform": "api",
+  "createdAt": "2026-07-03T14:25:02.114Z",
+  "messageID": "1751552702114-0"
+}
+```
+```json JSON (maker, partial fill)
+{
+  "unmatched": {
+    "filled": 100,
+    "offered": 500,
+    "remaining": 400,
+    "orderID": "685e2f1c40e36d0494601a22",
+    "wagerRequestID": "685e2f1c40e36d0494601a19",
+    "type": "moneyline1x2",
+    "side": "no",
+    "market": "607349dc22a237cf46b021fb",
+    "odds": -120
+  },
+  "matched": {
+    "txID": "685e321440e36d0494601b07",
+    "amount": 120.0,
+    "risk": 120.0,
+    "win": 100.0,
+    "odds": -120,
+    "orderID": "685e2f1c40e36d0494601a22",
+    "wagerRequestID": "685e2f1c40e36d0494601a19",
+    "type": "moneyline1x2",
+    "side": "no",
+    "market": "607349dc22a237cf46b021fb"
+  },
+  "origin": "offer",
+  "gameID": "685e21aa0be1b7d5a3f9c4d2",
+  "parentGameID": null,
+  "eventName": "ARSENAL-VS-CHELSEA",
+  "league": "EPL",
+  "sport": "soccer",
+  "live": false,
+  "start": "2026-07-04T19:00:00.000Z",
+  "awayRotationNumber": "3012",
+  "platform": "api",
+  "createdAt": "2026-07-03T14:25:02.114Z",
+  "messageID": "1751552702114-1"
+}
+```
+</CodeGroup>
+
+Note the two perspectives of the same fill: the taker sees `side: "yes"` at `+120`, the maker sees `side: "no"` at `-120` on the same `market`.
+
+## Replaying missed messages
+
+The v2 user feed supports **gap recovery after a dropped connection**. Every message carries a `messageID` (a monotonically increasing stream entry id, e.g. `"1751552702114-0"`). If your connection drops, you can fetch exactly the messages you missed instead of doing a full state resync.
+
+### Endpoint
+
+```
+GET https://streaming-api.4casters.io/v2/user/messages?afterID=<messageID>&beforeID=<messageID>
+```
+
+Authentication is the same as the WebSocket: token in the `Authorization` header, `Auth` header, or `token` query parameter. Only messages belonging to the authenticated user are returned.
+
+| Parameter | Required | Meaning |
+|---|---|---|
+| `afterID` | yes | The `messageID` of the **last message you processed** before the drop. Results start strictly after it. |
+| `beforeID` | no | Exclusive upper bound. Pass the `messageID` of the **first message received on your new connection** to close the gap exactly. Omit to read to the end of the retained history. |
+
+### Response: `success`
+
+Your `afterID` was still present in the retained history, so the returned list is a **complete** gap-fill — nothing between `afterID` and `beforeID` was lost:
+
+```json
+{
+  "status": "success",
+  "messages": [
+    { "...": "feed messages in order, each with its messageID" }
+  ]
+}
+```
+
+Apply the messages in order, update your cursor to the last `messageID`, and resume processing live messages.
+
+### Response: `cache_expired`
+
+Your `afterID` has aged out of the retained history, so the server **cannot prove the replay is complete**:
+
+```json
+{
+  "status": "cache_expired",
+  "availableMessages": [
+    { "...": "whatever is still retained, oldest first" }
+  ]
+}
+```
+
+Treat `availableMessages` as best-effort only. Since an unknown number of messages may have been lost before the retention window, the safe recovery is a full state resync via the REST API (e.g. [get unmatched orders](/pages/rest/user/get-unmatched-orders) and [get matched bets](/pages/rest/user/get-matched-bets)), then resume from the live feed.
+
+### Recommended reconnect flow
+
+1. During normal operation, persist the `messageID` of every message you process — it is your cursor.
+2. On disconnect, reconnect the WebSocket immediately and start **buffering** incoming live messages.
+3. As soon as the socket is open, call `/v2/user/messages` with `afterID=<your cursor>` (no `beforeID` — the replay may overlap the buffer, which is handled next).
+4. On `success`: apply the replayed messages in order, advancing your cursor.
+5. On `cache_expired`: too much history was lost — do a full state resync via REST instead (e.g. [get unmatched orders](/pages/rest/user/get-unmatched-orders) and [get matched bets](/pages/rest/user/get-matched-bets)), then set your cursor to the tail of `availableMessages`.
+6. Drain the buffer, then go live.
+
+Three rules make this safe:
+
+- **Run every message — replayed, buffered, or live — through one cursor check**: skip it unless its `messageID` is greater than your cursor, then advance the cursor. This handles replay overlapping socket delivery that is still in flight.
+- **Never replay from a cursor older than a snapshot you have applied** — that would re-apply events the snapshot already covers. After a resync, your cursor is whatever the snapshot is known to cover (the `availableMessages` tail, or the newest message delivered before the snapshot); if that leaves no cursor at all, resync again on the next reconnect.
+- **If both replay and resync fail, reconnect and retry — never go live over an unfilled gap.** Processing live messages would advance the cursor past the gap and lose it permanently.
+
+One overlap is unavoidable: a message that lands while the snapshot is being taken may also be reflected in it, and may still be delivered afterwards — by the socket or by a later replay (REST responses carry no stream position). Handle notifications idempotently — dedupe fills by `txID`, orders by `orderID`.
+
+`messageID`s are ordered (`<unix-ms>-<seq>`), so "greater than" is a numeric comparison of the two parts. The replay window is bounded by server-side stream retention — reconnect promptly rather than relying on long look-back.
+
+### Example: reconnecting client with replay
+
+A complete Node.js client implementing the flow above (keepalive ping/pong omitted for brevity — see the quickstart at the top of this page):
+
+<CodeGroup>
+```javascript JavaScript
+// user_feed_replay_client.js
+const WebSocket = require('ws');
+const token = process.env.FOURCASTERS_TOKEN;
+const HOST = 'streaming-api.4casters.io';
+
+// Your replay cursor: the messageID of the last message you processed.
+// Persist it durably (disk/db) so replay also works across process
+// restarts. null means "no valid anchor" — load full state instead of
+// replaying.
+let cursor = null;
+
+// messageIDs are "<unix-ms>-<seq>"; compare numerically part by part.
+function isAfterCursor(messageID) {
+  if (!cursor) return true;
+  const [ms, seq] = messageID.split('-').map(Number);
+  const [cMs, cSeq] = cursor.split('-').map(Number);
+  return ms > cMs || (ms === cMs && seq > cSeq);
+}
+
+function processMessage(msg) {
+  // Replay can overlap live delivery, so every message — live, buffered,
+  // or replayed — passes through this check. The cursor only moves forward.
+  if (!isAfterCursor(msg.messageID)) return;
+  cursor = msg.messageID;
+  // Business logic goes here. `msg` is the same envelope everywhere.
+  console.log('user update:', msg.origin, msg.messageID);
+}
+
+function connect() {
+  const ws = new WebSocket(`wss://${HOST}/v2/user`, {
+    headers: { Authorization: token },
+  });
+
+  let live = false; // false while replay/resync is in flight
+  const buffer = [];
+
+  // Full state resync via REST (e.g. GET /user/getUnmatchedOrders and
+  // GET /user/getMatchedBets). Everything up to `anchor` — or, failing
+  // that, the newest message already delivered on this socket — is
+  // reflected in the snapshot, so the cursor jumps there: replaying it
+  // again would apply it twice. If neither exists the cursor stays null
+  // and the next reconnect resyncs again.
+  async function resync(anchor = null) {
+    const tip = buffer[buffer.length - 1];
+    await fullResyncViaRest(); // your implementation
+    cursor = anchor ?? (tip ? tip.messageID : null);
+  }
+
+  async function replayGap() {
+    const params = new URLSearchParams({ afterID: cursor });
+    const res = await fetch(`https://${HOST}/v2/user/messages?${params}`, {
+      headers: { Authorization: token },
+    });
+    if (!res.ok) throw new Error(`replay request failed: ${res.status}`);
+    const body = await res.json();
+
+    if (body.status === 'success') {
+      // Complete gap-fill: nothing between the cursor and now was lost.
+      body.messages.forEach(processMessage);
+      return;
+    }
+    if (body.status !== 'cache_expired') {
+      throw new Error(`unexpected replay status: ${body.status}`);
+    }
+
+    // cache_expired: the cursor aged out of the retained history, so an
+    // unknown number of messages may be lost. Resync instead, anchored
+    // at the newest entry the server still retains.
+    console.warn('replay window expired - falling back to full resync');
+    const retained = body.availableMessages;
+    await resync(retained.length ? retained[retained.length - 1].messageID : null);
+  }
+
+  // Settles when the open handler is done, so a reconnect never starts a
+  // second replay while this one is in flight.
+  let openTask = Promise.resolve();
+
+  ws.on('open', () => {
+    openTask = (async () => {
+      console.log('user feed connected');
+      try {
+        if (cursor === null) {
+          await resync(); // first run, or no valid anchor
+        } else {
+          await replayGap().catch((e) => {
+            console.error('replay failed, resyncing:', e.message);
+            return resync();
+          });
+        }
+      } catch (e) {
+        // Recovery failed entirely. Going live would advance the cursor
+        // over the unfilled gap and lose it for good — reconnect and
+        // retry from the same cursor instead.
+        console.error('recovery failed, reconnecting:', e.message);
+        ws.terminate();
+        return;
+      }
+      // Drain messages buffered during recovery. processMessage skips
+      // anything the replay or snapshot already covered.
+      buffer.splice(0).forEach(processMessage);
+      live = true;
+    })();
+  });
+
+  ws.on('message', (buf) => {
+    const msg = JSON.parse(buf.toString());
+    if (live) processMessage(msg);
+    else buffer.push(msg);
+  });
+
+  ws.on('close', async (code, reason) => {
+    console.log(`user feed closed: ${code} ${reason} - reconnecting`);
+    await openTask.catch(() => {});
+    setTimeout(connect, 1000);
+  });
+
+  ws.on('error', (e) => console.error('user feed error:', e.message));
+}
+
+connect();
 ```
 </CodeGroup>
