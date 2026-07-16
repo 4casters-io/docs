@@ -84,6 +84,8 @@ Examples:
 
 `postArb` avoids **taker fees** across a normal trade — you are not charged taker fees on this flow the way you would be if you lifted or hit resting liquidity as a taker.
 
+Orders placed as `postArb` are flagged with `isPostArb: true` on their [user feed](/pages/streaming/user-feed) and [price feed](/pages/streaming/price-feed) updates; the field is omitted for other order types. The place response itself does not include the flag.
+
 ### `fillAndKill`
 
 Must execute immediately against available size at your price, or the order is rejected. See the Fill And Kill scenarios in the [examples](#examples) below.

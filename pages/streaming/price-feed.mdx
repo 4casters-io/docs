@@ -138,6 +138,8 @@ Every message on `/price-stream` arrives as a 2-tuple `[type, payload]`. Three m
 
 Emitted whenever an order in any market changes (new, edited, filled, or cancelled). The payload only includes `sideOrders` the receiving user is allowed to see (own orders plus matchable counterparties).
 
+`sideOrders` entries for orders placed with `orderType: "postArb"` include `isPostArb: true`; the field is omitted otherwise.
+
 <CodeGroup>
 ```json JSON
 [
@@ -175,7 +177,6 @@ Emitted whenever an order in any market changes (new, edited, filled, or cancell
         "total": 8.5,
         "spread": null,
         "gameStartExpiry": false,
-        "isPostArb": false,
         "expiry": "2022-04-21T23:40:12.000Z",
         "createdAt": "2022-04-21T18:11:54.614Z"
       }
