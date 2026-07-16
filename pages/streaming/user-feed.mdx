@@ -378,7 +378,7 @@ Treat `availableMessages` as best-effort only. Since an unknown number of messag
 3. As soon as the socket is open, call `/v2/user/messages` with `afterID=<your cursor>` (no `beforeID` — the replay may overlap the buffer, which is handled next).
 4. On `success`: apply the replayed messages in order, advancing your cursor.
 5. On `cache_expired`: an unknown number of messages were lost — do a full state resync via REST instead (e.g. [get unmatched orders](/pages/rest/user/get-unmatched-orders) and [get matched bets](/pages/rest/user/get-matched-bets)).
-6. Drain the buffer, **skipping any message whose `messageID` is not greater than your cursor** (those were already applied via replay), then go live.
+6. Drain the buffer, **skipping any message whose `messageID` is not greater than your cursor** (those were already applied via replay), then go live. If you fell back to a full resync, **drop the buffer instead** — the REST snapshot already reflects those events — and just advance your cursor past the newest buffered `messageID`.
 
 `messageID`s are ordered (`<unix-ms>-<seq>`), so "greater than" is a numeric comparison of the two parts. The replay window is bounded by server-side stream retention — reconnect promptly rather than relying on long look-back.
 
@@ -412,6 +412,7 @@ function processMessage(msg) {
   cursor = msg.messageID;
 }
 
+// Returns true if it had to fall back to a full REST resync.
 async function replayGap() {
   const params = new URLSearchParams({ afterID: cursor });
   const res = await fetch(`https://${HOST}/v2/user/messages?${params}`, {
@@ -423,7 +424,12 @@ async function replayGap() {
   if (body.status === 'success') {
     // Complete gap-fill: nothing between the cursor and now was lost.
     body.messages.forEach(processMessage);
-    return;
+    return false;
+  }
+  if (body.status !== 'cache_expired') {
+    // Unknown response shape — treat it as a failed replay, not a cache
+    // miss, so the caller falls back to a full resync.
+    throw new Error(`unexpected replay status: ${body.status}`);
   }
 
   // cache_expired: the cursor aged out of the retained history, so an
@@ -436,6 +442,7 @@ async function replayGap() {
   if (retained.length > 0) {
     cursor = retained[retained.length - 1].messageID;
   }
+  return true;
 }
 
 function connect() {
@@ -445,26 +452,40 @@ function connect() {
 
   let live = false; // false while a replay is in flight
   const buffer = [];
+  // Settles when the open handler (replay + buffer drain) is done, so a
+  // reconnect never starts a second replay while this one is in flight.
+  let openTask = Promise.resolve();
 
-  ws.on('open', async () => {
-    console.log('user feed connected');
-    if (cursor === null) {
-      live = true; // first ever connect: nothing to replay
-      return;
-    }
-    try {
-      await replayGap();
-    } catch (e) {
-      console.error('replay failed, resyncing:', e.message);
-      await fullResyncViaRest();
-    } finally {
-      // Drain live messages that arrived during replay, skipping any
-      // the replay already covered.
-      buffer.splice(0).forEach((msg) => {
-        if (isAfterCursor(msg.messageID)) processMessage(msg);
-      });
-      live = true;
-    }
+  ws.on('open', () => {
+    openTask = (async () => {
+      console.log('user feed connected');
+      let resynced = false;
+      try {
+        // First ever connect (cursor === null): nothing to replay.
+        if (cursor !== null) resynced = await replayGap();
+      } catch (e) {
+        console.error('replay failed, resyncing:', e.message);
+        await fullResyncViaRest();
+        resynced = true;
+      } finally {
+        const pending = buffer.splice(0);
+        if (resynced) {
+          // The REST snapshot already reflects everything up to now —
+          // applying buffered messages on top would double-apply them.
+          // Just advance the cursor past the buffer.
+          if (pending.length > 0) {
+            cursor = pending[pending.length - 1].messageID;
+          }
+        } else {
+          // Drain live messages that arrived during replay, skipping any
+          // the replay already covered.
+          pending.forEach((msg) => {
+            if (isAfterCursor(msg.messageID)) processMessage(msg);
+          });
+        }
+        live = true;
+      }
+    })();
   });
 
   ws.on('message', (buf) => {
@@ -473,8 +494,11 @@ function connect() {
     else buffer.push(msg);
   });
 
-  ws.on('close', (code, reason) => {
+  ws.on('close', async (code, reason) => {
     console.log(`user feed closed: ${code} ${reason} - reconnecting`);
+    // Wait for any in-flight replay to settle so the next connection
+    // doesn't run a second replay from the same cursor concurrently.
+    await openTask.catch(() => {});
     setTimeout(connect, 1000);
   });
 
