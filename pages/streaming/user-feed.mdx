@@ -385,7 +385,7 @@ Two rules make this safe:
 - **Run every message — replayed, buffered, or live — through one cursor check**: skip it unless its `messageID` is greater than your cursor, then advance the cursor. This handles replay overlapping socket delivery that is still in flight.
 - **Never replay from a cursor older than a snapshot you have applied** — that would re-apply events the snapshot already covers. After a resync, your cursor is whatever the snapshot is known to cover (the `availableMessages` tail, or the newest message delivered before the snapshot); if that leaves no cursor at all, resync again on the next reconnect.
 
-One overlap is unavoidable: a message that lands while the snapshot is being taken may also be reflected in it (REST responses carry no stream position). Handle notifications idempotently — dedupe fills by `txID`, orders by `orderID`.
+One overlap is unavoidable: a message that lands while the snapshot is being taken may also be reflected in it, and may still be delivered afterwards — by the socket or by a later replay (REST responses carry no stream position). Handle notifications idempotently — dedupe fills by `txID`, orders by `orderID`.
 
 `messageID`s are ordered (`<unix-ms>-<seq>`), so "greater than" is a numeric comparison of the two parts. The replay window is bounded by server-side stream retention — reconnect promptly rather than relying on long look-back.
 
