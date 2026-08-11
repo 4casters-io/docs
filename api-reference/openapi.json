@@ -1510,9 +1510,8 @@
           "closed":        { "type": "boolean" },
           "origin":        { "type": "string", "description": "`offer` or `wager`." },
           "adminRefund":   { "type": "boolean" },
-          "risk":          { "type": "string" },
-          "win":           { "type": "string" },
-          "fee":           { "type": "string" },
+          "risk":          { "type": "string", "description": "Risk on the matched portion, inclusive of the commission charged on a loss." },
+          "win":           { "type": "string", "description": "Win amount net of the commission charged on a win." },
           "game":          { "$ref": "#/components/schemas/GameSummary" }
         }
       },
