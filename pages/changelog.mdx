@@ -14,6 +14,11 @@ Conventions:
 
 ---
 
+<Update label="2026-07-30" tags={["REST API"]}>
+  ### Added
+  - **`GET /exchange/getMatchedVolume`.** New endpoint returning total sitewide matched volume for an inclusive range of ET calendar days. Each matched bet counts both sides' stakes (risk + win, pre-commission); ranges ending today include a live aggregate of the current day. See [Get matched volume](/pages/rest/markets/get-matched-volume).
+</Update>
+
 <Update label="2026-07-15" tags={["Streaming API", "User Feed"]}>
   ### Fixed
   - **`GET /v2/user/messages` replay now returns messages.** The v2 user feed replay endpoint previously always returned empty lists, so gap recovery after a dropped connection silently did nothing. Replayed messages arrive in exactly the shape the WebSocket delivers. See [Replaying missed messages](/pages/streaming/user-feed#replaying-missed-messages).

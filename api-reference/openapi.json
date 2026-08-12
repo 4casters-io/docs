@@ -971,6 +971,43 @@
       }
     },
 
+    "/exchange/getMatchedVolume": {
+      "get": {
+        "tags": ["Markets"],
+        "summary": "Get matched volume",
+        "description": "Return total sitewide matched volume for an inclusive range of US-Eastern (ET) calendar days.\n\nEvery matched bet contributes the stakes of **both** sides to the total: the taker's stake plus the maker's stake (derived from the taker odds). Equivalently, from either party's perspective each match contributes `risk + win` — your stake plus your potential profit, which is exactly the counterparty's stake. Commission is not included.\n\nPast days are read from a finalized daily archive; a range that ends today (or later — the end is clamped to today) additionally includes a live aggregate of today's matches, so today's portion updates in real time.",
+        "parameters": [
+          { "name": "startDate", "in": "query", "required": true, "schema": { "type": "string", "format": "date", "example": "2026-08-01" }, "description": "First ET calendar day of the range (`YYYY-MM-DD`, inclusive)." },
+          { "name": "endDate",   "in": "query", "required": true, "schema": { "type": "string", "format": "date", "example": "2026-08-11" }, "description": "Last ET calendar day of the range (`YYYY-MM-DD`, inclusive). Dates after today are clamped to today. Must not be before `startDate`." }
+        ],
+        "responses": {
+          "200": {
+            "description": "Total matched volume for the range",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "startDate":     { "type": "string", "format": "date", "description": "Echo of the requested start date." },
+                        "endDate":       { "type": "string", "format": "date", "description": "Echo of the requested end date (before clamping)." },
+                        "matchedVolume": { "type": "number", "description": "Total matched volume in USD: the sum of both sides' stakes (risk + win) of every bet matched in the range." }
+                      }
+                    }
+                  },
+                  "example": { "data": { "startDate": "2026-08-10", "endDate": "2026-08-11", "matchedVolume": 6447933.01 } }
+                }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      }
+    },
+
     "/affiliate/getAffiliateCommission": {
       "get": {
         "tags": ["Affiliate"],
