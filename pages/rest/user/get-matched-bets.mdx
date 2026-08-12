@@ -39,9 +39,8 @@ curl https://api.4casters.io/user/getMatchedBets \
     <ResponseField name="createdAt" type="string">ISO 8601 timestamp.</ResponseField>
     <ResponseField name="matchedTime" type="string">ISO 8601 timestamp the fill occurred.</ResponseField>
     <ResponseField name="origin" type="string">`offer` (you posted, taker hit you) or `wager` (you took resting liquidity).</ResponseField>
-    <ResponseField name="risk" type="string">Risk on the matched portion (string-formatted, 2 decimals).</ResponseField>
-    <ResponseField name="win" type="string">Win amount net of commission.</ResponseField>
-    <ResponseField name="fee" type="string">Commission charged on the matched portion.</ResponseField>
+    <ResponseField name="risk" type="string">Risk on the matched portion (string-formatted, 2 decimals). Includes the commission you'd pay on a loss.</ResponseField>
+    <ResponseField name="win" type="string">Win amount net of the commission you'd pay on a win. There is no separate `fee` field on matched bets — commission is charged at grading and only appears on graded wagers; until then it is reflected in `risk`/`win`.</ResponseField>
     <ResponseField name="graded" type="boolean">Always `false` here.</ResponseField>
     <ResponseField name="closed" type="boolean">Whether the bet has been closed by an admin action.</ResponseField>
     <ResponseField name="adminRefund" type="boolean">Whether the bet was refunded by an admin.</ResponseField>
@@ -69,7 +68,6 @@ curl https://api.4casters.io/user/getMatchedBets \
         "origin": "wager",
         "risk": "50.27",
         "win": "27.16",
-        "fee": "0.27",
         "graded": false,
         "closed": false,
         "adminRefund": false,
