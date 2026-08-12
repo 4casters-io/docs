@@ -62,9 +62,15 @@ curl "https://api.4casters.io/exchange/getMatchedVolume?startDate=2026-08-10&end
 }
 ```
 
+## Rate limits
+
+There is no endpoint-specific limit — only the [global per-IP limit](/pages/rest/introduction#rate-limiting) (3,000 requests per rolling minute) applies. For dashboards, polling once every few seconds is more than fine; note that finalized days never change, so only ranges that include today benefit from re-polling at all.
+
 ## Errors
 
 | Status | Meaning |
 |---|---|
 | `400` | Missing or malformed `startDate` / `endDate` (must be `YYYY-MM-DD`), or `startDate` after `endDate`. |
 | `401` | Missing or invalid auth token. |
+| `429` | Global per-IP rate limit exceeded. Honor the `Retry-After` header. |
+| `503` | Server-side 15-second timeout was hit. Safe to retry. |
