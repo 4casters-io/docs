@@ -34,7 +34,17 @@ HTTP-level errors (`4xx`, `5xx`) are returned as `{ "error": "<message>" }`.
 
 ## Rate limiting
 
-Authentication routes (`/user/login`, password reset, signup) are rate-limited per IP. Place / edit / cancel routes are rate-limited per account. If you exceed the limit you'll receive `429 Too Many Requests`.
+Three layers of rate limiting apply:
+
+- **Global, per IP** — every request to the API counts against a per-IP budget of **3,000 requests per rolling 60-second window** (a sustained ~50 requests/second). Exceeding it returns `429` with a `Retry-After` header (seconds) and body `{ "error": "Too many requests. Please try again later." }`.
+- **Authentication routes** (`/user/login`, password reset, signup) have additional per-IP and per-account throttling.
+- **Place / edit / cancel routes** are additionally rate-limited per account.
+
+Read endpoints have no per-account limit — only the global per-IP ceiling applies.
+
+## Timeouts
+
+Requests that take longer than **15 seconds** server-side are aborted and return `503` with body `{ "error": { "message": "Network Error", "code": 503 } }`.
 
 ## Real-time updates
 

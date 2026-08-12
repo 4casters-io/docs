@@ -81,6 +81,7 @@
               "pages/rest/markets/get-orderbook",
               "pages/rest/markets/get-single-orderbook",
               "pages/rest/markets/get-average-price",
+              "pages/rest/markets/get-matched-volume",
               "pages/rest/markets/get-orderbook-v1"
             ]
           },

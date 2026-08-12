@@ -1,0 +1,76 @@
+---
+title: 'Get matched volume'
+description: 'Total sitewide matched volume over a date range'
+openapi: 'GET /exchange/getMatchedVolume'
+---
+
+Returns the total sitewide matched volume for an inclusive range of **US-Eastern (ET) calendar days**.
+
+## How volume is calculated
+
+Every matched bet contributes the stakes of **both sides** of the match:
+
+- the **taker's stake** (the amount matched), plus
+- the **maker's stake**, derived from the taker odds — at positive taker odds it's `stake × odds / 100`, at negative taker odds it's `stake × −100 / odds`.
+
+Equivalently, from either party's perspective each matched bet contributes **`risk + win`** — your stake plus your potential profit, because your potential profit is exactly the counterparty's stake. A $100 take at +150 counts as $250 of volume ($100 taker side + $150 maker side).
+
+<Note>
+Volume uses the raw pre-commission stakes. The `risk` / `win` fields on [Get matched bets](/pages/rest/user/get-matched-bets) have commission baked in, so summing those will differ slightly from this endpoint.
+</Note>
+
+## Freshness
+
+Finished ET days are read from a finalized daily archive. If the range ends today (an `endDate` past today is clamped to today), a live aggregate of today's matches is added on top, so the current day's portion updates in real time as bets match.
+
+## Request
+
+`GET /exchange/getMatchedVolume`
+
+<ParamField query="startDate" type="string" required>
+  First ET calendar day of the range, `YYYY-MM-DD` (inclusive).
+</ParamField>
+
+<ParamField query="endDate" type="string" required>
+  Last ET calendar day of the range, `YYYY-MM-DD` (inclusive). Must not be before `startDate`. Dates after today are clamped to today.
+</ParamField>
+
+<CodeGroup>
+```bash curl
+curl "https://api.4casters.io/exchange/getMatchedVolume?startDate=2026-08-10&endDate=2026-08-11" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+</CodeGroup>
+
+## Response
+
+<ResponseField name="data" type="object">
+  <Expandable title="data">
+    <ResponseField name="startDate" type="string">Echo of the requested start date.</ResponseField>
+    <ResponseField name="endDate" type="string">Echo of the requested end date (before clamping).</ResponseField>
+    <ResponseField name="matchedVolume" type="number">Total matched volume in USD: the sum of both sides' stakes (risk + win) of every bet matched in the range.</ResponseField>
+  </Expandable>
+</ResponseField>
+
+```json Example response
+{
+  "data": {
+    "startDate": "2026-08-10",
+    "endDate": "2026-08-11",
+    "matchedVolume": 6447933.012757301
+  }
+}
+```
+
+## Rate limits
+
+There is no endpoint-specific limit — only the [global per-IP limit](/pages/rest/introduction#rate-limiting) (3,000 requests per rolling minute) applies. For dashboards, polling once every few seconds is more than fine; note that finalized days never change, so only ranges that include today benefit from re-polling at all.
+
+## Errors
+
+| Status | Meaning |
+|---|---|
+| `400` | Missing or malformed `startDate` / `endDate` (must be `YYYY-MM-DD`), or `startDate` after `endDate`. |
+| `401` | Missing or invalid auth token. |
+| `429` | Global per-IP rate limit exceeded. Honor the `Retry-After` header. |
+| `503` | Server-side 15-second timeout was hit. Safe to retry. |
