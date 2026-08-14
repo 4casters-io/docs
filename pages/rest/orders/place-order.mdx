@@ -41,7 +41,7 @@ curl -X POST https://api.4casters.io/session/v3/place \
       "odds": -110,
       "bet": 100,
       "number": 3.5,
-      "orderType": "limit | post | postArb | fillAndKill",
+      "orderType": "limit | post | postArb | fillAndKill | fillOrKill",
       "expirationMinutes": 10,
       "userReference": "OPTIONAL_CLIENT_SIDE_IDENTIFIER"
     }
@@ -81,7 +81,24 @@ Orders placed as `postArb` are flagged with `isPostArb: true` on their [user fee
 
 ### `fillAndKill`
 
-Must execute immediately against available size at your price, or the order is rejected. See the Fill And Kill scenarios in the [examples](#examples) below.
+Execute immediately as a taker against whatever size is available at your price or better, and cancel any remainder. A `fillAndKill` never rests on the book.
+
+A **partial** fill is a successful outcome: if you send `bet: 1000` and only $400 of matchable liquidity exists, you are filled for $400 and the remaining $600 is cancelled — the response is a success, not an error. The order is rejected (`rejected_order_type_rules`, `"fill and kill has no matches"`) only when there is no matchable liquidity at all. See the Fill And Kill scenarios in the [examples](#examples) below.
+
+### `fillOrKill`
+
+All-or-nothing. Your **entire** `bet` must match immediately at your price or better, otherwise the whole order is rejected — including any fills it made along the way, which are rolled back. A `fillOrKill` never rests on the book, and you are never left partially filled.
+
+Use it when a partial position is worse than no position, for example when the order is one leg of a hedge you can only execute in full.
+
+Rejections carry `errorType: rejected_order_type_rules` with one of two messages, which distinguish "nothing was there" from "not enough was there":
+
+- `"fill or kill has no matches"` — no matchable liquidity at your price.
+- `"fill or kill matched but not fully"` — some liquidity matched, but not your full size. Those fills were rolled back.
+
+<Note>
+  A residual smaller than the **$10** minimum order size counts as complete: a `fillOrKill` for $1,000 that matches $992 succeeds, because the $8 that could not be filled is below the size that could ever rest on the book. Anything larger than $10 unmatched rejects the order.
+</Note>
 
 ## Response
 
@@ -248,7 +265,44 @@ A `fillAndKill` with no match returns a per-order error.
 ```
 </CodeGroup>
 
-### Scenario 5 — `postArb` vs `post` when the book would match
+### Scenario 5 — Fill or Kill, not enough liquidity
+
+`fillOrKill` is the all-or-nothing counterpart to `fillAndKill`. Where a `fillAndKill` for $1,000 against $400 of liquidity fills $400 and cancels the rest, a `fillOrKill` rejects the whole order and rolls back that $400 — you are never left partially filled.
+
+<CodeGroup>
+```json Request
+{
+  "orders": [
+    {
+      "gameID": "688c0516fbc14da0c202d426",
+      "type": "moneyline",
+      "side": "5c12bc1ce0daba000f47ba8b",
+      "odds": -110,
+      "bet": 1000,
+      "orderType": "fillOrKill",
+      "userReference": "docs-fillorkill-partial"
+    }
+  ]
+}
+```
+
+```json Response
+{
+  "data": {
+    "createdSessions": [
+      {
+        "error": "fill or kill matched but not fully",
+        "errorType": "rejected_order_type_rules"
+      }
+    ]
+  }
+}
+```
+</CodeGroup>
+
+With no matchable liquidity at all, the same order is rejected with `"fill or kill has no matches"` instead.
+
+### Scenario 6 — `postArb` vs `post` when the book would match
 
 `post` rejects an order that would match resting liquidity (for example, best offer **+100** and you try to post **+100**). `postArb` allows that situation when your odds are within **1%** of the order you would match — so the same **+100** post can succeed as `postArb`, and you avoid the taker fees you'd pay across a normal trade. If your price is too far from the resting quote (e.g. best offer **+200** but you send **+190**), `postArb` is rejected.
 
@@ -270,7 +324,7 @@ A `fillAndKill` with no match returns a per-order error.
 ```
 </CodeGroup>
 
-### Scenario 6 — `moneyline1x2` (soccer three-way)
+### Scenario 7 — `moneyline1x2` (soccer three-way)
 
 `moneyline1x2` is the soccer three-way market — home / away / draw — placed as a yes/no bet on the outcome named by `market`. Below, **yes on the draw** at +250.
 

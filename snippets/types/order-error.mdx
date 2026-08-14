@@ -13,5 +13,5 @@ Errors are returned **positionally** in the result array, matching the index of 
 - `errorType` is a stable enum you can rely on for programmatic handling:
   - `validation_error` — payload or state failed validation (missing fields, bad odds/number, invalid side, inactive game).
   - `rejected_liability` — user / account / liability constraints prevented posting or execution.
-  - `rejected_order_type_rules` — order-type rules forbade execution. Examples: `fillAndKill` had no executable liquidity, `post` would match resting orders, or `postArb` is more than 1% away from the matchable price.
+  - `rejected_order_type_rules` — order-type rules forbade execution. Examples: `fillAndKill` had no executable liquidity, `fillOrKill` could not be filled in full, `post` would match resting orders, or `postArb` is more than 1% away from the matchable price.
   - `system_error` — transient internal error; a retry may succeed.
