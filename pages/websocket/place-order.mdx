@@ -49,7 +49,7 @@ Each **order object** includes:
   Required only for `moneyline1x2`. Either `"draw"` or a participant ID — names the outcome you're betting yes/no on. For example, `side: "yes"` + `market: "draw"` means *the match ends in a draw*; `side: "no"` + `market: "<homeTeamId>"` means *the home team does not win*.
 </ResponseField>
 <ResponseField name="orderType" type="string" required>
-  One of `limit`, `post`, `postArb`, or `fillAndKill`. See [Order types](#order-types) below.
+  One of `limit`, `post`, `postArb`, `fillAndKill`, or `fillOrKill`. See [Order types](#order-types) below.
 </ResponseField>
 <ResponseField name="odds" type="number" required>
   The odds in American format (e.g., +150 or -110).
@@ -88,7 +88,24 @@ Orders placed as `postArb` are flagged with `isPostArb: true` on their [user fee
 
 ### `fillAndKill`
 
-Must execute immediately against available size at your price, or the order is rejected. See the Fill And Kill scenarios in the [examples](#examples) below.
+Execute immediately as a taker against whatever size is available at your price or better, and cancel any remainder. A `fillAndKill` never rests on the book.
+
+A **partial** fill is a successful outcome: send `bet: 1000` into $400 of matchable liquidity and you are filled for $400 with the remaining $600 cancelled — a success, not an error. The order is rejected (`"fill and kill has no matches"`) only when there is no matchable liquidity at all. See the Fill And Kill scenarios in the [examples](#examples) below.
+
+### `fillOrKill`
+
+All-or-nothing. Your **entire** `bet` must match immediately at your price or better, otherwise the whole order is rejected — including any fills it made along the way, which are rolled back. A `fillOrKill` never rests on the book, and you are never left partially filled.
+
+Use it when a partial position is worse than no position, for example when the order is one leg of a hedge you can only execute in full.
+
+Rejections carry `errorType: rejected_order_type_rules` with one of two messages, distinguishing "nothing was there" from "not enough was there":
+
+- `"fill or kill has no matches"` — no matchable liquidity at your price.
+- `"fill or kill matched but not fully"` — some liquidity matched, but not your full size. Those fills were rolled back.
+
+<Note>
+  A residual of **$10 or less** counts as complete: a `fillOrKill` for $1,000 that matches $992 succeeds, because the $8 that could not be filled is below the minimum size that could ever rest on the book. A residual larger than $10 rejects the order.
+</Note>
 
 ## Response
 
@@ -326,9 +343,49 @@ A fill-and-kill order with no match. The server responds with an `error` and `er
 ```
 </CodeGroup>
 
-### Scenario 5: postArb vs post when the book would match
+### Scenario 5: Fill or Kill order that cannot be filled in full
 
-`post` rejects an order that would match resting liquidity (for example, best offer **+100** and you try to post **+100**). `postArb` allows that situation when your odds are within **1%** of the order you would match — so the same **+100** post can succeed as `postArb`, and you **avoid** the **taker fees** you would pay across a normal trade if you took that liquidity as a taker. If your price is too far from the resting quote (e.g. best offer **+200** but you send **+190**), `postArb` is rejected; a price around **+198** is near the limit vs **+200**. Use `"orderType": "postArb"` in the order object the same way as `limit`, `post`, or `fillAndKill`.
+`fillOrKill` is the all-or-nothing counterpart to `fillAndKill`. Where a `fillAndKill` for $1,000 against $400 of liquidity fills $400 and cancels the rest, a `fillOrKill` rejects the whole order and rolls back that $400 — you are never left partially filled.
+
+<CodeGroup>
+```json JSON
+[
+  "placeV3",
+  {
+    "orders": [
+      {
+        "gameID": "688c0516fbc14da0c202d426",
+        "type": "moneyline",
+        "side": "5c12bc1ce0daba000f47ba8b",
+        "odds": -110,
+        "bet": 1000,
+        "orderType": "fillOrKill",
+        "userReference": "docs-fillorkill-partial"
+      }
+    ],
+    "requestID": "fillorkill-1758738106999"
+  }
+]
+```
+
+```json JSON
+{
+  "data": [
+    {
+      "error": "fill or kill matched but not fully",
+      "error_type": "rejected_order_type_rules"
+    }
+  ],
+  "requestID": "fillorkill-1758738106999"
+}
+```
+</CodeGroup>
+
+With no matchable liquidity at all, the same order is rejected with `"fill or kill has no matches"` instead.
+
+### Scenario 6: postArb vs post when the book would match
+
+`post` rejects an order that would match resting liquidity (for example, best offer **+100** and you try to post **+100**). `postArb` allows that situation when your odds are within **1%** of the order you would match — so the same **+100** post can succeed as `postArb`, and you **avoid** the **taker fees** you would pay across a normal trade if you took that liquidity as a taker. If your price is too far from the resting quote (e.g. best offer **+200** but you send **+190**), `postArb` is rejected; a price around **+198** is near the limit vs **+200**. Use `"orderType": "postArb"` in the order object the same way as `limit`, `post`, `fillAndKill`, or `fillOrKill`.
 
 <CodeGroup>
 ```json JSON
@@ -352,7 +409,7 @@ A fill-and-kill order with no match. The server responds with an `error` and `er
 ```
 </CodeGroup>
 
-### Scenario 6: `moneyline1x2` (soccer three-way)
+### Scenario 7: `moneyline1x2` (soccer three-way)
 
 `moneyline1x2` is the soccer three-way market — home / away / draw — placed as a yes/no bet on the outcome named by `market`. Below, **yes on the draw** at +250.
 
@@ -422,7 +479,7 @@ Errors are returned positionally in the `data` array, matching the index of the 
 - `error_type` is an enum you can rely on for programmatic handling:
     - `validation_error` — payload or state failed validation (e.g., missing fields, bad odds/number, invalid side, inactive game).
     - `rejected_liability` — user/account/liability constraints prevented posting or execution.
-    - `rejected_order_type_rules` — order-type rules forbid execution (e.g., `fillAndKill` found no executable liquidity, so nothing could be filled and the order was rejected; `post` found matches when matches are not allowed; or `postArb` was rejected because your American odds differ from the resting order you would match by **more than 1%**).
+    - `rejected_order_type_rules` — order-type rules forbid execution (e.g., `fillAndKill` found no executable liquidity, so nothing could be filled and the order was rejected; `fillOrKill` could not be filled in full; `post` found matches when matches are not allowed; or `postArb` was rejected because your American odds differ from the resting order you would match by **more than 1%**).
     - `system_error` — transient/internal error; retry may succeed.
 
 Example with multiple order places, some of which incurred an error response:

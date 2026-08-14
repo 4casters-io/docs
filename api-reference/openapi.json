@@ -369,7 +369,7 @@
       "post": {
         "tags": ["Orders"],
         "summary": "Place orders",
-        "description": "Submit one or more orders. Per-order results are returned in `data.createdSessions`, **positionally** with the input `orders` array. Each entry is either a successful `{ matched, unmatched }` result or an `{ error, errorType }` failure.\n\nSee the dedicated [Place order](/pages/rest/orders/place-order) page for examples and the full set of order-type rules (`limit`, `post`, `postArb`, `fillAndKill`).",
+        "description": "Submit one or more orders. Per-order results are returned in `data.createdSessions`, **positionally** with the input `orders` array. Each entry is either a successful `{ matched, unmatched }` result or an `{ error, errorType }` failure.\n\nSee the dedicated [Place order](/pages/rest/orders/place-order) page for examples and the full set of order-type rules (`limit`, `post`, `postArb`, `fillAndKill`, `fillOrKill`).",
         "requestBody": {
           "required": true,
           "content": {
@@ -1109,8 +1109,8 @@
 
       "OrderType": {
         "type": "string",
-        "enum": ["limit", "post", "postArb", "fillAndKill"],
-        "description": "Order placement strategy.\n\n- `limit` — default. Match against any liquidity at your price or better as a taker, rest the remainder as a maker.\n- `post`  — guarantee maker. Reject if the order would match resting liquidity.\n- `postArb` — like `post`, but allowed to match if the matched odds are within 1% of yours, avoiding taker fees.\n- `fillAndKill` — guarantee taker. Match immediately or reject."
+        "enum": ["limit", "post", "postArb", "fillAndKill", "fillOrKill"],
+        "description": "Order placement strategy.\n\n- `limit` — default. Match against any liquidity at your price or better as a taker, rest the remainder as a maker.\n- `post`  — guarantee maker. Reject if the order would match resting liquidity.\n- `postArb` — like `post`, but allowed to match if the matched odds are within 1% of yours, avoiding taker fees.\n- `fillAndKill` — guarantee taker. Match whatever size is available at your price or better and cancel the remainder; never rests. A partial fill is a success; rejected only when there is no matchable liquidity at all.\n- `fillOrKill` — all-or-nothing taker. Match the entire `bet` immediately or the whole order is rejected and any partial fills are rolled back; never rests."
       },
 
       "MarketSide": {
@@ -1121,7 +1121,7 @@
       "ErrorType": {
         "type": "string",
         "enum": ["validation_error", "rejected_liability", "rejected_order_type_rules", "system_error"],
-        "description": "Programmatic per-order error class:\n\n- `validation_error` — payload or state failed validation (missing fields, bad odds/number, invalid side, inactive game).\n- `rejected_liability` — user/account/liability constraints prevented posting or execution.\n- `rejected_order_type_rules` — order-type rules forbade execution (e.g. `fillAndKill` had no executable liquidity, `post` would match, or `postArb` is more than 1% away from the resting price).\n- `system_error` — transient/internal error; retry may succeed."
+        "description": "Programmatic per-order error class:\n\n- `validation_error` — payload or state failed validation (missing fields, bad odds/number, invalid side, inactive game).\n- `rejected_liability` — user/account/liability constraints prevented posting or execution.\n- `rejected_order_type_rules` — order-type rules forbade execution (e.g. `fillAndKill` had no executable liquidity, `fillOrKill` could not be filled in full, `post` would match, or `postArb` is more than 1% away from the resting price).\n- `system_error` — transient/internal error; retry may succeed."
       },
 
       "OrderError": {

@@ -14,6 +14,14 @@ Conventions:
 
 ---
 
+<Update label="2026-08-13" tags={["REST API", "Orders API"]}>
+  ### Added
+  - **`fillOrKill` order type.** All-or-nothing taker order: the entire `bet` must match immediately or the whole order is rejected and any partial fills are rolled back, so you are never left partially filled. Supported on both the REST and WebSocket place endpoints. See [Order types](/pages/rest/orders/place-order#order-types).
+
+  ### Fixed
+  - **`fillAndKill` documentation corrected.** It was described as "match immediately at your price or reject", which read as all-or-nothing. `fillAndKill` actually fills whatever size is available and cancels the remainder — a **partial** fill is a successful outcome, and the order is rejected only when there is no matchable liquidity at all. Behavior is unchanged; only the documentation was wrong. Use the new `fillOrKill` if you need true all-or-nothing execution.
+</Update>
+
 <Update label="2026-07-30" tags={["REST API"]}>
   ### Added
   - **`GET /exchange/getMatchedVolume`.** New endpoint returning total sitewide matched volume for an inclusive range of ET calendar days. Each matched bet counts both sides' stakes (risk + win, pre-commission); ranges ending today include a live aggregate of the current day. See [Get matched volume](/pages/rest/markets/get-matched-volume).
