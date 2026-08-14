@@ -12,7 +12,7 @@ Returns all of the caller's **graded (settled) wagers** between two dates, plus 
 - **Settled wagers never change once graded.** Re-pulling weeks of history on a schedule returns byte-identical data every time. If you are watching for *new* settlements, poll a short trailing window (a day or two), not your whole history.
 - **Omitting both dates defaults to your entire account history** (from `10-21-2020` to today). Avoid this on any account with meaningful volume.
 - **For open, ungraded positions use [Get matched bets](/pages/rest/user/get-matched-bets)** — it is the right endpoint for tracking live exposure and is far cheaper.
-- Very large ranges can exceed the [15-second server-side timeout](/pages/rest/introduction#timeouts). Narrow the range rather than retrying.
+- This endpoint has **no server-side timeout** ([details](/pages/rest/introduction#timeouts)) — a very wide range will not fail fast, it will just take a long time and return a very large body. Narrow the range rather than waiting it out.
 </Warning>
 
 ## Request

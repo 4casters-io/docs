@@ -366,7 +366,9 @@ Orders placed on a game marked as live follow these rules:
 
 ## Handling timeouts and indeterminate places
 
-A place that times out on your side is **indeterminate, not failed**. The server may still be processing it, and the order may still reach the book — the [15-second server-side abort](/pages/rest/introduction#timeouts) is best effort, so a slow place can complete successfully well after your client has given up.
+A place that times out on your side is **indeterminate, not failed**. The server may still be processing it, and the order may still reach the book.
+
+This is not an edge case: **place endpoints have no server-side time limit** (see [Timeouts](/pages/rest/introduction#timeouts)). Under heavy load a place can take tens of seconds and still succeed with a `200`, long after your client has given up on it. Your client-side timeout is the only one in play, and it is not a signal about what the server did.
 
 If you treat that as a failure and either drop it or immediately re-send, you get one of two bad outcomes:
 

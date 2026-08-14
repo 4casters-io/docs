@@ -44,9 +44,11 @@ Read endpoints have no per-account limit — only the global per-IP ceiling appl
 
 ## Timeouts
 
-Requests that take longer than **15 seconds** server-side are normally aborted and return `503` with body `{ "error": { "message": "Network Error", "code": 503 } }`.
+**Market / orderbook read endpoints** (`/exchange/*`) are aborted after **15 seconds** server-side and return `503` with body `{ "error": { "message": "Network Error", "code": 503 } }`.
 
-Treat that as best effort rather than a guarantee. The abort is a timer, and under heavy load a request can occasionally run past 15 seconds and still complete successfully with a `200`.
+Treat that as best effort rather than a guarantee. The abort is a timer, and under heavy load it can fire late — a request may run past 15 seconds and still complete successfully with a `200`.
+
+**Other endpoints — including `/user/*` history reads and `/session/*` order placement — have no server-side time limit.** A slow request on those routes is not cut off at 15 seconds; it runs to completion, bounded only by the load balancer at 120 seconds. In practice this means a large history pull or a place issued during heavy load can take far longer than 15 seconds and still return `200`.
 
 <Warning>
 **A client-side timeout does not mean the request failed.** If your HTTP client gives up, the server may still be processing the request and may still apply it. This matters most for writes: a place that timed out on your side can still land an order on the book.
