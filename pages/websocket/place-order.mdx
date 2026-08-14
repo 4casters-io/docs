@@ -131,6 +131,10 @@ The server responds with your `requestID` and a list of per-order results.
 ```
 </CodeGroup>
 
+<Note>
+If the socket drops before the response arrives, the place is **indeterminate, not failed** — it may still have been applied. Send a unique `userReference` on every order and reconcile with [`GET /user/getBetByUserReference`](/pages/rest/user/get-bet-by-user-reference) on reconnect rather than assuming the order never landed. See [Handling timeouts and indeterminate places](/pages/rest/orders/place-order#handling-timeouts-and-indeterminate-places) for the full pattern.
+</Note>
+
 ## Examples
 
 ### Scenario 1: Match orders with no leftover liquidity

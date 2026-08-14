@@ -6,6 +6,15 @@ openapi: 'GET /user/getGradedWagers'
 
 Returns all of the caller's **graded (settled) wagers** between two dates, plus a summary of P&L and volume. Dates correspond to the **start time of the game** the wager is on (so `startDate=06-22-2022` returns wagers on games starting after 06-21-2022 00:00 GMT).
 
+<Warning>
+**This endpoint returns every matching wager in a single response — there is no pagination and no server-side cap.** Response size scales with your bet count: an active API account can produce tens of megabytes for a multi-week range. Large pulls are slow for you and expensive for the exchange, so keep the range as narrow as your use case allows.
+
+- **Settled wagers never change once graded.** Re-pulling weeks of history on a schedule returns byte-identical data every time. If you are watching for *new* settlements, poll a short trailing window (a day or two), not your whole history.
+- **Omitting both dates defaults to your entire account history** (from `10-21-2020` to today). Avoid this on any account with meaningful volume.
+- **For open, ungraded positions use [Get matched bets](/pages/rest/user/get-matched-bets)** — it is the right endpoint for tracking live exposure and is far cheaper.
+- Very large ranges can exceed the [15-second server-side timeout](/pages/rest/introduction#timeouts). Narrow the range rather than retrying.
+</Warning>
+
 ## Request
 
 `GET /user/getGradedWagers`
