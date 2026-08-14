@@ -364,6 +364,32 @@ Orders placed on a game marked as live follow these rules:
     - If the odds improve, it matches instantly.
     - If the odds decrease, it does not match.
 
+## Handling timeouts and indeterminate places
+
+A place that times out on your side is **indeterminate, not failed**. The server may still be processing it, and the order may still reach the book.
+
+This is not an edge case: **place endpoints have no server-side time limit** (see [Timeouts](/pages/rest/introduction#timeouts)). Under heavy load a place can take tens of seconds and still succeed with a `200`, long after your client has given up on it. Your client-side timeout is the only one in play, and it is not a signal about what the server did.
+
+If you treat that as a failure and either drop it or immediately re-send, you get one of two bad outcomes:
+
+- **An untracked order.** The place lands, but you never recorded the returned `orderID`, so the order rests on the book outside your bookkeeping until it fills or expires.
+- **A duplicate.** You re-quote the same market while the original is still in flight, and both land — double your intended size on that market.
+
+### Recommended pattern
+
+1. **Always send a unique `userReference`** on every order. It is yours to define and it is the only handle you control before the response comes back.
+2. **On timeout, reconcile — do not assume.** Query [`GET /user/getBetByUserReference`](/pages/rest/user/get-bet-by-user-reference) with that reference and the `gameID`. The response tells you whether the order is resting (`unmatched`), filled (`matched`), or absent.
+3. **Only re-send when reconciliation shows nothing landed.** Reuse the same `userReference` on the retry so the next reconciliation is unambiguous.
+4. **Key your own order tracking on `userReference`, not on the returned `orderID`.** An orderID you never received is an order you cannot cancel; a reference you generated is one you can always look up.
+
+<Note>
+The same reasoning applies to cancels: a timed-out cancel may still have taken effect. Re-read your open orders ([`GET /user/getUnmatched`](/pages/rest/user/get-unmatched-orders)) rather than assuming the order is still live.
+</Note>
+
+<Warning>
+If you run a dead-man switch via [`POST /user/ordersHeartbeat`](/pages/rest/user/orders-heartbeat), remember that it cancels **all** of your open orders when the heartbeat lapses — including any order you lost track of. Stopping your heartbeat is a valid way to flatten after an unrecoverable reconciliation failure.
+</Warning>
+
 ## Per-order errors
 
 <Snippet file="types/order-error.mdx" />
