@@ -104,7 +104,7 @@ Rejections carry `errorType: rejected_order_type_rules` with one of two messages
 - `"fill or kill matched but not fully"` — some liquidity matched, but not your full size. Those fills were rolled back.
 
 <Note>
-  A residual smaller than the **$10** minimum order size counts as complete: a `fillOrKill` for $1,000 that matches $992 succeeds, because the $8 that could not be filled is below the size that could ever rest on the book. Anything larger than $10 unmatched rejects the order.
+  A residual of **$10 or less** counts as complete: a `fillOrKill` for $1,000 that matches $992 succeeds, because the $8 that could not be filled is below the minimum size that could ever rest on the book. A residual larger than $10 rejects the order.
 </Note>
 
 ## Response
