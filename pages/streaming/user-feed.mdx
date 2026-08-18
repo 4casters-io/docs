@@ -94,7 +94,7 @@ the side you took, as maker you see your posted side.
 | `odds` | integer | always | American odds of your side of the fill. |
 | `type` | string | always | `moneyline`, `spread`, `total`, or `moneyline1x2`. |
 | `side` | string | always | See [side and market semantics](#side-and-market-semantics-by-bet-type). |
-| `number` | number | conditional | The spread or total line. Absent or `null` on `moneyline` and `moneyline1x2`. |
+| `number` | number | conditional | The spread or total line. Omitted entirely on `moneyline` and `moneyline1x2`. |
 | `market` | string | conditional | `moneyline1x2` only. |
 | `userReference` | string \| null | always | Echoes the `userReference` you sent on the order. `null` if you sent none. |
 | `isPostArb` | boolean | conditional | `true` on fills of `postArb` orders; omitted otherwise. |
@@ -125,16 +125,26 @@ i.e. what you posted, not what the book offers others.
 |---|---|---|---|
 | `orderID` | string | always | Id of the order. |
 | `wagerRequestID` | string | always | Id of the place request that created the order. |
-| `filled` | number | always | Risk of yours matched so far. `0` on a fresh placement. |
+| `filled` | number | always | **On a fill: the risk matched by this event alone**, not the running total. `0` on a placement. On a cancellation it is instead the cumulative risk matched before the cancel landed. |
 | `offered` | number | always | Total risk the order offered. `0` identifies a cancellation. |
 | `remaining` | number | always | Risk still resting on the book. `0` means fully matched. |
 | `odds` | integer | always | American odds of your side of the order. |
 | `type` | string | always | `moneyline`, `spread`, `total`, or `moneyline1x2`. |
 | `side` | string | always | See [side and market semantics](#side-and-market-semantics-by-bet-type). |
-| `number` | number | conditional | The spread or total line. Absent or `null` on `moneyline` and `moneyline1x2`. |
+| `number` | number | conditional | The spread or total line. Omitted entirely on `moneyline` and `moneyline1x2`. |
 | `market` | string | conditional | `moneyline1x2` only. |
 | `userReference` | string | conditional | Echoes the `userReference` you sent; omitted if the order carried none. |
 | `isPostArb` | boolean | conditional | `true` for `postArb` orders; omitted otherwise. |
+
+<Warning>
+  `filled` and `remaining` are not the same kind of number. `remaining` is running state — what is
+  left on the book right now — but on a fill `filled` describes only that event. Across several
+  partial fills they do not add up: `filled + remaining` equals `offered` on the first fill and
+  drifts apart after that.
+
+  To track how much of a resting order has been matched, use `offered - remaining`, or accumulate
+  `filled` yourself. Do not mix the two.
+</Warning>
 
 ### How to identify the action
 
