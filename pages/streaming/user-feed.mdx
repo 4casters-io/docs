@@ -77,6 +77,65 @@ The user feed sends each update as a **bare JSON object** (no tuple envelope). A
 
 `messageID` is the stream entry id added by the streaming-api before send. Persist the latest one you have processed — it is your replay cursor. See [Replaying missed messages](#replaying-missed-messages) below.
 
+### The `matched` block
+
+Present whenever the update represents a fill (`matched != null`). Every field below is sent on
+every fill unless marked conditional. All values are from **your** perspective — as taker you see
+the side you took, as maker you see your posted side.
+
+| Field | Type | Sent | Meaning |
+|---|---|---|---|
+| `txID` | string | always | Id of the bet. Dedupe fills on this — it is the same `txID` returned by [get matched bets](/pages/rest/user/get-matched-bets). |
+| `orderID` | string | always | Id of the order this fill came off. As maker, your resting order; as taker, the order you hit. |
+| `wagerRequestID` | string | always | Id of the place request behind the fill. As taker, your own request; as maker, the request that originally posted your order. |
+| `amount` | number | always | Stake **excluding** commission. Equal to `risk` on a maker fill, but **not** on a taker fill — see below. |
+| `risk` | number | always | What you stand to lose on this fill. As taker, inclusive of the commission charged on a loss; as maker, no commission applies. |
+| `win` | number | always | What you stand to win on this fill. As taker, net of the commission charged on a win; as maker, no commission applies. |
+| `odds` | integer | always | American odds of your side of the fill. |
+| `type` | string | always | `moneyline`, `spread`, `total`, or `moneyline1x2`. |
+| `side` | string | always | See [side and market semantics](#side-and-market-semantics-by-bet-type). |
+| `number` | number | conditional | The spread or total line. Absent or `null` on `moneyline` and `moneyline1x2`. |
+| `market` | string | conditional | `moneyline1x2` only. |
+| `userReference` | string \| null | always | Echoes the `userReference` you sent on the order. `null` if you sent none. |
+| `isPostArb` | boolean | conditional | `true` on fills of `postArb` orders; omitted otherwise. |
+
+<Warning>
+  **Do not derive `win` from `risk`.** `risk` and `win` are each rounded to 2dp independently from
+  the unrounded stake, so `risk x odds` can disagree with `win` by a cent. Book the `win` value as
+  sent; if it is missing, treat the message as malformed rather than reconstructing it.
+
+  **Do not treat `amount` as a synonym for `risk`.** On a taker fill `amount` excludes the
+  commission charged on a loss and `risk` includes it. Booking `amount` as your risk will
+  under-count commission on every take.
+</Warning>
+
+<Note>
+  The same quantities over REST ([get matched bets](/pages/rest/user/get-matched-bets)) are
+  string-formatted to 2 decimals rather than numbers, and are computed with a slightly different
+  commission and rounding order. Reconcile with a cent of tolerance rather than exact equality.
+</Note>
+
+### The `unmatched` block
+
+Present whenever the update concerns an order resting on (or leaving) the book — placements,
+cancellations, and the maker side of a fill. Odds and sides are from the **maker's** perspective,
+i.e. what you posted, not what the book offers others.
+
+| Field | Type | Sent | Meaning |
+|---|---|---|---|
+| `orderID` | string | always | Id of the order. |
+| `wagerRequestID` | string | always | Id of the place request that created the order. |
+| `filled` | number | always | Risk of yours matched so far. `0` on a fresh placement. |
+| `offered` | number | always | Total risk the order offered. `0` identifies a cancellation. |
+| `remaining` | number | always | Risk still resting on the book. `0` means fully matched. |
+| `odds` | integer | always | American odds of your side of the order. |
+| `type` | string | always | `moneyline`, `spread`, `total`, or `moneyline1x2`. |
+| `side` | string | always | See [side and market semantics](#side-and-market-semantics-by-bet-type). |
+| `number` | number | conditional | The spread or total line. Absent or `null` on `moneyline` and `moneyline1x2`. |
+| `market` | string | conditional | `moneyline1x2` only. |
+| `userReference` | string | conditional | Echoes the `userReference` you sent; omitted if the order carried none. |
+| `isPostArb` | boolean | conditional | `true` for `postArb` orders; omitted otherwise. |
+
 ### How to identify the action
 
 - `unmatched.filled === 0 && unmatched.offered > 0` -> order placed
