@@ -94,7 +94,7 @@ the side you took, as maker you see your posted side.
 | `odds` | integer | always | American odds of your side of the fill. |
 | `type` | string | always | `moneyline`, `spread`, `total`, or `moneyline1x2`. |
 | `side` | string | always | See [side and market semantics](#side-and-market-semantics-by-bet-type). |
-| `number` | number | conditional | The spread or total line. Absent or `null` on `moneyline` and `moneyline1x2`. |
+| `number` | number | conditional | The spread or total line. Omitted entirely on `moneyline` and `moneyline1x2`. |
 | `market` | string | conditional | `moneyline1x2` only. |
 | `userReference` | string \| null | always | Echoes the `userReference` you sent on the order. `null` if you sent none. |
 | `isPostArb` | boolean | conditional | `true` on fills of `postArb` orders; omitted otherwise. |
@@ -131,7 +131,7 @@ i.e. what you posted, not what the book offers others.
 | `odds` | integer | always | American odds of your side of the order. |
 | `type` | string | always | `moneyline`, `spread`, `total`, or `moneyline1x2`. |
 | `side` | string | always | See [side and market semantics](#side-and-market-semantics-by-bet-type). |
-| `number` | number | conditional | The spread or total line. Absent or `null` on `moneyline` and `moneyline1x2`. |
+| `number` | number | conditional | The spread or total line. Omitted entirely on `moneyline` and `moneyline1x2`. |
 | `market` | string | conditional | `moneyline1x2` only. |
 | `userReference` | string | conditional | Echoes the `userReference` you sent; omitted if the order carried none. |
 | `isPostArb` | boolean | conditional | `true` for `postArb` orders; omitted otherwise. |
