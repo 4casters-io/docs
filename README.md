@@ -1,4 +1,21 @@
-# Mintlify Starter Kit
+# 4casters API documentation — the public site assembly
+
+This repo is what docs.4casters.io is built from. It holds three things:
+
+1. **`sources/`** — the services' own API documents (`/openapi.json`,
+   `/asyncapi.json`), snapshotted automatically by the docs reconciler. Never
+   hand-edited; see `sources/README.md`.
+2. **Prose** that belongs to no single service (`pages/`).
+3. **`docs.json`** — the navigation: which sources and pages make up the site.
+
+Mintlify renders whatever is on `main`. Deploying the docs = a commit on
+`main`: the reconciler's snapshot commits, a human's prose commit, or
+`4c docs snapshot`.
+
+The hand-written endpoint pages under `pages/rest/` and the hand-written
+`api-reference/openapi.json` are legacy: they disappear endpoint by endpoint
+as the services document themselves.
+
 
 Use the starter kit to get your docs deployed and ready to customize.
 

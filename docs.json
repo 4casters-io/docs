@@ -94,6 +94,10 @@
         ]
       },
       {
+        "tab": "API Reference",
+        "openapi": "/sources/core-api.openapi.json"
+      },
+      {
         "tab": "Changelog",
         "pages": [
           "pages/changelog"

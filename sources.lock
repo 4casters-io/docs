@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "sources": [
+    {
+      "name": "core-api",
+      "url": "https://api.4casters.io/openapi.json",
+      "file": "sources/core-api.openapi.json",
+      "hash": "97dbddb11ad03414dc662173c7d0ea6aaeedcd0c27eb426613fd62bd7cf92d29",
+      "observedAt": "2026-08-21T18:43:08.373Z",
+      "pinned": false
+    }
+  ],
+  "combined": "c4559539d7f6b968fc32139ebe90bf1fd2c4b5a5b38b6d050eb9abb161bd110b",
+  "snapshotAt": "2026-08-21T18:43:08.373Z"
+}
