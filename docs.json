@@ -94,6 +94,10 @@
         ]
       },
       {
+        "tab": "API Reference",
+        "openapi": "https://api.4casters.io/openapi.json"
+      },
+      {
         "tab": "Changelog",
         "pages": [
           "pages/changelog"
