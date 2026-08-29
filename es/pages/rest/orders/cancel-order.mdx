@@ -1,0 +1,68 @@
+---
+title: 'Cancelar una orden'
+description: 'Cancela una sola orden abierta'
+openapi: 'POST /session/cancel'
+---
+
+Cancela una sola orden abierta por id. Devuelve los importes no cruzados y cruzados en el momento de la cancelación.
+
+## Solicitud
+
+`POST /session/cancel`
+
+<ParamField body="sessionID" type="string" required>
+  Id de la orden a cancelar.
+</ParamField>
+
+<CodeGroup>
+```bash curl
+curl -X POST https://api.4casters.io/session/cancel \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"sessionID": "65b036dfb31407c2b6bc1cfe"}'
+```
+</CodeGroup>
+
+## Respuesta {#response}
+
+<ResponseField name="data" type="object">
+  <Expandable title="CancelResult">
+    <ResponseField name="success"      type="boolean" />
+    <ResponseField name="sessionID"    type="string">Id de la orden que se canceló.</ResponseField>
+    <ResponseField name="description"  type="string">Descripción legible de la orden (p. ej. `Lakers -3.5 -110`).</ResponseField>
+    <ResponseField name="odds"         type="integer">Cuotas americanas de la orden cancelada.</ResponseField>
+    <ResponseField name="filled"       type="number">Riesgo que ya se había cruzado en el momento de la cancelación.</ResponseField>
+    <ResponseField name="offered"      type="number" />
+    <ResponseField name="remaining"    type="number">Riesgo que aún no estaba cruzado y ahora se reembolsa.</ResponseField>
+    <ResponseField name="gameID"       type="string" />
+    <ResponseField name="userReference" type="string" />
+  </Expandable>
+</ResponseField>
+
+### Ejemplo
+
+<CodeGroup>
+```json JSON
+{
+  "data": {
+    "success": true,
+    "sessionID": "65b036dfb31407c2b6bc1cfe",
+    "description": "Lakers ML +125",
+    "odds": 125,
+    "filled": 0,
+    "offered": 0,
+    "remaining": 100,
+    "gameID": "65f0c3c24ef07d0008abc123",
+    "userReference": "my-order-1"
+  }
+}
+```
+</CodeGroup>
+
+## Errores
+
+| Estado | Significado |
+| ------ | ------- |
+| `400`  | Id de orden inválido. |
+| `403`  | No es tu orden. |
+| `409`  | No se pudo cancelar la orden (p. ej. ya estaba totalmente cruzada). |

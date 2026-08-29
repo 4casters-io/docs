@@ -9,98 +9,300 @@
   },
   "favicon": "/favicon.png",
   "navigation": {
-    "tabs": [
+    "languages": [
       {
-        "tab": "Introduction",
-        "pages": [
-          "pages/introduction"
-        ]
-      },
-      {
-        "tab": "WebSocket Streaming",
-        "pages": [
-          "pages/streaming/introduction",
-          "pages/streaming/user-feed",
-          "pages/streaming/price-feed"
-        ]
-      },
-      {
-        "tab": "Orders API",
-        "pages": [
-          "pages/websocket/introduction",
-          "pages/websocket/heartbeat",
-          "pages/websocket/place-order",
-          "pages/websocket/cancel-orders"
-        ]
-      },
-      {
-        "tab": "REST API",
-        "groups": [
+        "language": "en",
+        "default": true,
+        "tabs": [
           {
-            "group": "Getting started",
+            "tab": "Introduction",
             "pages": [
-              "pages/rest/introduction",
-              "pages/rest/authentication"
+              "pages/introduction"
             ]
           },
           {
-            "group": "User",
+            "tab": "WebSocket Streaming",
             "pages": [
-              "pages/rest/user/get-me",
-              "pages/rest/user/get-matched-bets",
-              "pages/rest/user/get-unmatched-orders",
-              "pages/rest/user/get-orders-for-game",
-              "pages/rest/user/get-graded-wagers",
-              "pages/rest/user/get-bet-by-id",
-              "pages/rest/user/get-bet-by-wager-request-id",
-              "pages/rest/user/get-bet-by-user-reference",
-              "pages/rest/user/orders-heartbeat",
-              "pages/rest/user/get-game-liability"
+              "pages/streaming/introduction",
+              "pages/streaming/user-feed",
+              "pages/streaming/price-feed"
             ]
           },
           {
-            "group": "Orders",
+            "tab": "Orders API",
             "pages": [
-              "pages/rest/orders/place-order",
-              "pages/rest/orders/edit-order",
-              "pages/rest/orders/lookup-order",
-              "pages/rest/orders/cancel-order",
-              "pages/rest/orders/cancel-multiple",
-              "pages/rest/orders/cancel-by-reference",
-              "pages/rest/orders/cancel-all-for-game",
-              "pages/rest/orders/cancel-all-for-league",
-              "pages/rest/orders/cancel-all-orders"
+              "pages/websocket/introduction",
+              "pages/websocket/heartbeat",
+              "pages/websocket/place-order",
+              "pages/websocket/cancel-orders"
             ]
           },
           {
-            "group": "Markets",
-            "pages": [
-              "pages/rest/markets/get-leagues",
-              "pages/rest/markets/get-participants",
-              "pages/rest/markets/get-games",
-              "pages/rest/markets/get-orderbook",
-              "pages/rest/markets/get-single-orderbook",
-              "pages/rest/markets/get-average-price",
-              "pages/rest/markets/get-matched-volume",
-              "pages/rest/markets/get-orderbook-v1"
+            "tab": "REST API",
+            "groups": [
+              {
+                "group": "Getting started",
+                "pages": [
+                  "pages/rest/introduction",
+                  "pages/rest/authentication"
+                ]
+              },
+              {
+                "group": "User",
+                "pages": [
+                  "pages/rest/user/get-me",
+                  "pages/rest/user/get-matched-bets",
+                  "pages/rest/user/get-unmatched-orders",
+                  "pages/rest/user/get-orders-for-game",
+                  "pages/rest/user/get-graded-wagers",
+                  "pages/rest/user/get-bet-by-id",
+                  "pages/rest/user/get-bet-by-wager-request-id",
+                  "pages/rest/user/get-bet-by-user-reference",
+                  "pages/rest/user/orders-heartbeat",
+                  "pages/rest/user/get-game-liability"
+                ]
+              },
+              {
+                "group": "Orders",
+                "pages": [
+                  "pages/rest/orders/place-order",
+                  "pages/rest/orders/edit-order",
+                  "pages/rest/orders/lookup-order",
+                  "pages/rest/orders/cancel-order",
+                  "pages/rest/orders/cancel-multiple",
+                  "pages/rest/orders/cancel-by-reference",
+                  "pages/rest/orders/cancel-all-for-game",
+                  "pages/rest/orders/cancel-all-for-league",
+                  "pages/rest/orders/cancel-all-orders"
+                ]
+              },
+              {
+                "group": "Markets",
+                "pages": [
+                  "pages/rest/markets/get-leagues",
+                  "pages/rest/markets/get-participants",
+                  "pages/rest/markets/get-games",
+                  "pages/rest/markets/get-orderbook",
+                  "pages/rest/markets/get-single-orderbook",
+                  "pages/rest/markets/get-average-price",
+                  "pages/rest/markets/get-matched-volume",
+                  "pages/rest/markets/get-orderbook-v1"
+                ]
+              },
+              {
+                "group": "Affiliate",
+                "pages": [
+                  "pages/rest/affiliate/get-affiliate-commission"
+                ]
+              }
             ]
           },
           {
-            "group": "Affiliate",
+            "tab": "API Reference",
+            "openapi": "/sources/core-api.openapi.json"
+          },
+          {
+            "tab": "Changelog",
             "pages": [
-              "pages/rest/affiliate/get-affiliate-commission"
+              "pages/changelog"
             ]
           }
         ]
       },
       {
-        "tab": "API Reference",
-        "openapi": "/sources/core-api.openapi.json"
+        "language": "es",
+        "tabs": [
+          {
+            "tab": "Introducción",
+            "pages": [
+              "es/pages/introduction"
+            ]
+          },
+          {
+            "tab": "Streaming WebSocket",
+            "pages": [
+              "es/pages/streaming/introduction",
+              "es/pages/streaming/user-feed",
+              "es/pages/streaming/price-feed"
+            ]
+          },
+          {
+            "tab": "API de órdenes",
+            "pages": [
+              "es/pages/websocket/introduction",
+              "es/pages/websocket/heartbeat",
+              "es/pages/websocket/place-order",
+              "es/pages/websocket/cancel-orders"
+            ]
+          },
+          {
+            "tab": "API REST",
+            "groups": [
+              {
+                "group": "Primeros pasos",
+                "pages": [
+                  "es/pages/rest/introduction",
+                  "es/pages/rest/authentication"
+                ]
+              },
+              {
+                "group": "Usuario",
+                "pages": [
+                  "es/pages/rest/user/get-me",
+                  "es/pages/rest/user/get-matched-bets",
+                  "es/pages/rest/user/get-unmatched-orders",
+                  "es/pages/rest/user/get-orders-for-game",
+                  "es/pages/rest/user/get-graded-wagers",
+                  "es/pages/rest/user/get-bet-by-id",
+                  "es/pages/rest/user/get-bet-by-wager-request-id",
+                  "es/pages/rest/user/get-bet-by-user-reference",
+                  "es/pages/rest/user/orders-heartbeat",
+                  "es/pages/rest/user/get-game-liability"
+                ]
+              },
+              {
+                "group": "Órdenes",
+                "pages": [
+                  "es/pages/rest/orders/place-order",
+                  "es/pages/rest/orders/edit-order",
+                  "es/pages/rest/orders/lookup-order",
+                  "es/pages/rest/orders/cancel-order",
+                  "es/pages/rest/orders/cancel-multiple",
+                  "es/pages/rest/orders/cancel-by-reference",
+                  "es/pages/rest/orders/cancel-all-for-game",
+                  "es/pages/rest/orders/cancel-all-for-league",
+                  "es/pages/rest/orders/cancel-all-orders"
+                ]
+              },
+              {
+                "group": "Mercados",
+                "pages": [
+                  "es/pages/rest/markets/get-leagues",
+                  "es/pages/rest/markets/get-participants",
+                  "es/pages/rest/markets/get-games",
+                  "es/pages/rest/markets/get-orderbook",
+                  "es/pages/rest/markets/get-single-orderbook",
+                  "es/pages/rest/markets/get-average-price",
+                  "es/pages/rest/markets/get-matched-volume",
+                  "es/pages/rest/markets/get-orderbook-v1"
+                ]
+              },
+              {
+                "group": "Afiliados",
+                "pages": [
+                  "es/pages/rest/affiliate/get-affiliate-commission"
+                ]
+              }
+            ]
+          },
+          {
+            "tab": "Referencia de API",
+            "openapi": "/sources/core-api.openapi.json"
+          },
+          {
+            "tab": "Registro de cambios",
+            "pages": [
+              "es/pages/changelog"
+            ]
+          }
+        ]
       },
       {
-        "tab": "Changelog",
-        "pages": [
-          "pages/changelog"
+        "language": "zh",
+        "tabs": [
+          {
+            "tab": "简介",
+            "pages": [
+              "zh/pages/introduction"
+            ]
+          },
+          {
+            "tab": "WebSocket 推送",
+            "pages": [
+              "zh/pages/streaming/introduction",
+              "zh/pages/streaming/user-feed",
+              "zh/pages/streaming/price-feed"
+            ]
+          },
+          {
+            "tab": "订单 API",
+            "pages": [
+              "zh/pages/websocket/introduction",
+              "zh/pages/websocket/heartbeat",
+              "zh/pages/websocket/place-order",
+              "zh/pages/websocket/cancel-orders"
+            ]
+          },
+          {
+            "tab": "REST API",
+            "groups": [
+              {
+                "group": "入门",
+                "pages": [
+                  "zh/pages/rest/introduction",
+                  "zh/pages/rest/authentication"
+                ]
+              },
+              {
+                "group": "用户",
+                "pages": [
+                  "zh/pages/rest/user/get-me",
+                  "zh/pages/rest/user/get-matched-bets",
+                  "zh/pages/rest/user/get-unmatched-orders",
+                  "zh/pages/rest/user/get-orders-for-game",
+                  "zh/pages/rest/user/get-graded-wagers",
+                  "zh/pages/rest/user/get-bet-by-id",
+                  "zh/pages/rest/user/get-bet-by-wager-request-id",
+                  "zh/pages/rest/user/get-bet-by-user-reference",
+                  "zh/pages/rest/user/orders-heartbeat",
+                  "zh/pages/rest/user/get-game-liability"
+                ]
+              },
+              {
+                "group": "订单",
+                "pages": [
+                  "zh/pages/rest/orders/place-order",
+                  "zh/pages/rest/orders/edit-order",
+                  "zh/pages/rest/orders/lookup-order",
+                  "zh/pages/rest/orders/cancel-order",
+                  "zh/pages/rest/orders/cancel-multiple",
+                  "zh/pages/rest/orders/cancel-by-reference",
+                  "zh/pages/rest/orders/cancel-all-for-game",
+                  "zh/pages/rest/orders/cancel-all-for-league",
+                  "zh/pages/rest/orders/cancel-all-orders"
+                ]
+              },
+              {
+                "group": "市场",
+                "pages": [
+                  "zh/pages/rest/markets/get-leagues",
+                  "zh/pages/rest/markets/get-participants",
+                  "zh/pages/rest/markets/get-games",
+                  "zh/pages/rest/markets/get-orderbook",
+                  "zh/pages/rest/markets/get-single-orderbook",
+                  "zh/pages/rest/markets/get-average-price",
+                  "zh/pages/rest/markets/get-matched-volume",
+                  "zh/pages/rest/markets/get-orderbook-v1"
+                ]
+              },
+              {
+                "group": "联盟",
+                "pages": [
+                  "zh/pages/rest/affiliate/get-affiliate-commission"
+                ]
+              }
+            ]
+          },
+          {
+            "tab": "API 参考",
+            "openapi": "/sources/core-api.openapi.json"
+          },
+          {
+            "tab": "更新日志",
+            "pages": [
+              "zh/pages/changelog"
+            ]
+          }
         ]
       }
     ]

@@ -1,0 +1,47 @@
+<ParamField body="gameID" type="string" required>
+  Id de juego de 4casters. Obtén uno con `GET /exchange/v2/getGames` o `GET /exchange/v2/getOrderbook`.
+</ParamField>
+
+<ParamField body="type" type="string" required>
+  Tipo de mercado. Uno de `moneyline`, `spread`, `total`, `moneyline1x2`. `moneyline1x2` es **solo fútbol** (moneyline a tres vías: local / visitante / empate).
+</ParamField>
+
+<ParamField body="side" type="string" required>
+  Lado de la orden. El significado depende de `type`:
+  - `moneyline`, `spread` — el id del participante al que apoyas.
+  - `total` — `"over"` o `"under"`.
+  - `moneyline1x2` — `"yes"` o `"no"` sobre el resultado indicado por `market`.
+</ParamField>
+
+<ParamField body="market" type="string">
+  **Solo `moneyline1x2`.** `"draw"` o un id de participante — nombra el resultado sobre el que apuestas yes/no. Ejemplo: `side: "yes"` + `market: "draw"` significa *el partido termina en empate*; `side: "no"` + `market: "<homeTeamId>"` significa *el equipo local no gana*.
+</ParamField>
+
+<ParamField body="odds" type="integer" required>
+  Cuotas de la orden en formato **americano** (p. ej. `-110`, `+150`).
+</ParamField>
+
+<ParamField body="bet" type="number" required>
+  Importe a arriesgar en la apuesta. Una orden con `bet: 100, odds: 120` puede ser cruzada por otros usuarios por un total de **120 a -120**.
+</ParamField>
+
+<ParamField body="number" type="number">
+  Número de spread o de total. Obligatorio para `spread` y `total`. No se usa en `moneyline` ni `moneyline1x2`.
+</ParamField>
+
+<ParamField body="orderType" type="string">
+  Uno de `limit`, `post`, `postArb`, `fillAndKill`, `fillOrKill`. El valor por defecto es `limit`.
+  - `limit` — cruza contra cualquier liquidez a tu precio o mejor como taker y deja el resto en el libro como maker.
+  - `post`  — garantiza maker. Se rechaza si la orden cruzaría liquidez en espera (`rejected_order_type_rules`, p. ej. `"post order cannot have matches"`).
+  - `postArb` — como `post`, pero puede cruzar si tus cuotas americanas están dentro del **1 %** de la orden en espera. Evita las comisiones de taker que pagarías en un cruce normal.
+  - `fillAndKill` — garantiza taker. Cruza el tamaño disponible a tu precio o mejor y cancela el resto; nunca queda en el libro. Un cruce **parcial** es un éxito. Solo se rechaza cuando no hay liquidez cruzable.
+  - `fillOrKill` — taker de todo o nada. Cruza tu `bet` **entero** de inmediato o se rechaza toda la orden y se revierten los cruces parciales; nunca queda en el libro.
+</ParamField>
+
+<ParamField body="expirationMinutes" type="integer">
+  Autocancelar después de N minutos desde la colocación. Omítelo para dejar la orden en el libro hasta el inicio del juego (el comportamiento por defecto: toda orden abierta se cancela automáticamente cuando empieza el juego).
+</ParamField>
+
+<ParamField body="userReference" type="string">
+  Identificador definido por el cliente que se conserva en cada cruce y oferta en espera derivada de esta orden. Úsalo para consultar la orden más adelante con `GET /user/getBetByUserReference`.
+</ParamField>

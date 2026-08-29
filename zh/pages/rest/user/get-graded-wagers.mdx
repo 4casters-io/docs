@@ -1,0 +1,111 @@
+---
+title: '获取已结算注单'
+description: '列出两个日期之间的已结算注单及盈亏汇总'
+openapi: 'api-reference/openapi.json GET /user/getGradedWagers'
+---
+
+返回调用方在两个日期之间的全部**已结算（已判定）注单**，以及盈亏和成交量汇总。日期对应注单所属赛事的**开赛时间**（因此 `startDate=06-22-2022` 返回开赛时间晚于 06-21-2022 00:00 GMT 的注单）。
+
+## 请求 {#request}
+
+`GET /user/getGradedWagers`
+
+<ParamField query="startDate" type="string">
+  开始日期（`MM-DD-YYYY`）。默认为 `10-21-2020`。
+</ParamField>
+<ParamField query="endDate" type="string">
+  结束日期（`MM-DD-YYYY`）。默认为今天。
+</ParamField>
+
+<CodeGroup>
+```bash curl
+curl "https://api.4casters.io/user/getGradedWagers?startDate=01-01-2024&endDate=02-01-2024" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+</CodeGroup>
+
+## 响应 {#response}
+
+<ResponseField name="data.graded" type="array">
+  已结算注单数组，按开赛时间降序排列。
+  <Expandable title="GradedWager">
+    <ResponseField name="id" type="string">投注 ID。</ResponseField>
+    <ResponseField name="txID" type="string">成交事务 ID。</ResponseField>
+    <ResponseField name="ticketNumber" type="string">展示用票据号。</ResponseField>
+    <ResponseField name="type" type="string">`moneyline`、`spread`、`total` 或 `moneyline1x2`。</ResponseField>
+    <ResponseField name="outcome" type="string">`winner`、`loser`、`push` 或 `refund`。</ResponseField>
+    <ResponseField name="bet" type="number">原始投注额。</ResponseField>
+    <ResponseField name="odds" type="integer">成交时的美式赔率。</ResponseField>
+    <ResponseField name="spread" type="number">出现在 `spread` 上。</ResponseField>
+    <ResponseField name="total" type="number">出现在 `total` 上。</ResponseField>
+    <ResponseField name="OU" type="string">出现在 `total` 上。</ResponseField>
+    <ResponseField name="participantID" type="string">出现在 `moneyline` 和 `spread` 上。</ResponseField>
+    <ResponseField name="market" type="string">出现在 `moneyline1x2` 上。</ResponseField>
+    <ResponseField name="side" type="string">用于 `moneyline1x2` — `yes` 或 `no`。</ResponseField>
+    <ResponseField name="matchedTime" type="string">成交发生的 ISO 8601 时间戳。</ResponseField>
+    <ResponseField name="settledAt" type="string">注单被判定的 ISO 8601 时间戳。</ResponseField>
+    <ResponseField name="createdAt" type="string">下单的 ISO 8601 时间戳。</ResponseField>
+    <ResponseField name="cancelled" type="boolean" />
+    <ResponseField name="closed" type="boolean" />
+    <ResponseField name="graded" type="boolean">此处始终为 `true`。</ResponseField>
+    <ResponseField name="adminRefund" type="boolean" />
+    <ResponseField name="platform" type="string">订单来源，例如 `api`、`web`、`mobile`。</ResponseField>
+    <ResponseField name="risk" type="string">已撮合部分的风险额（字符串，两位小数）。</ResponseField>
+    <ResponseField name="win" type="string">扣除佣金后的可赢金额。</ResponseField>
+    <ResponseField name="fee" type="string">已撮合部分收取的佣金。</ResponseField>
+    <ResponseField name="result" type="string">该注单的净盈亏。亏损为负，盈利为正，走水为 `0`。</ResponseField>
+    <ResponseField name="pinnacleLine" type="object">成交时可比的 Pinnacle 盘口快照（如有）。</ResponseField>
+    <Snippet file="zh/types/game-summary.mdx" />
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="data.summary" type="object">
+  返回注单的汇总合计。
+  <Expandable title="summary">
+    <ResponseField name="pnl" type="integer">`result` 之和（已四舍五入）。</ResponseField>
+    <ResponseField name="volume" type="integer">`min(risk, win)` 之和（已四舍五入）。</ResponseField>
+  </Expandable>
+</ResponseField>
+
+### 示例 {#example}
+
+<CodeGroup>
+```json JSON
+{
+  "data": {
+    "graded": [
+      {
+        "id": "64c98e8c0745a206acf18ad7",
+        "txID": "64c99640453fd2ad91206018",
+        "ticketNumber": "5a5494406ef9e2c5988b30bf666ce55e",
+        "type": "total",
+        "outcome": "loser",
+        "bet": 1,
+        "odds": 101,
+        "total": 8.5,
+        "OU": "over",
+        "matchedTime": "2023-08-01T23:33:20.273Z",
+        "settledAt": "2023-08-02T02:26:16.152Z",
+        "createdAt": "2023-08-01T23:33:20.273Z",
+        "graded": true,
+        "platform": "api",
+        "risk": "1.01",
+        "win": "1.00",
+        "fee": "0.01",
+        "result": "-1.01",
+        "pinnacleLine": { "odds": -102, "total": 8.5, "OU": "over" },
+        "game": {
+          "id": "64c7fa454803b0ff0f7f5741",
+          "league": "MLB",
+          "sport": "baseball",
+          "start": "2023-08-01T23:45:00.000Z",
+          "ended": true,
+          "participants": [/* ... */]
+        }
+      }
+    ],
+    "summary": { "pnl": -1, "volume": 1 }
+  }
+}
+```
+</CodeGroup>

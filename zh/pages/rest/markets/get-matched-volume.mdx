@@ -1,0 +1,76 @@
+---
+title: '获取已撮合成交量'
+description: '一段日期范围内的全站已撮合成交量'
+openapi: 'GET /exchange/getMatchedVolume'
+---
+
+返回一段包含端点的 **美国东部时间（ET）日历日** 范围内的全站已撮合成交量。
+
+## 成交量如何计算 {#how-volume-is-calculated}
+
+每笔已撮合投注计入撮合**双方**的本金：
+
+- **吃单方本金**（撮合金额），加上
+- **挂单方本金**，由吃单赔率推导 — 吃单赔率为正时为 `stake × odds / 100`，为负时为 `stake × −100 / odds`。
+
+等价地，从任一方看，每笔已撮合投注计入 **`risk + win`** — 你的本金加上潜在利润，因为你的潜在利润恰好是对手方的本金。一笔 $100、+150 的吃单计为 $250 成交量（吃单方 $100 + 挂单方 $150）。
+
+<Note>
+成交量使用佣金前的原始本金。[获取已撮合投注](/zh/pages/rest/user/get-matched-bets) 上的 `risk` / `win` 字段已计入佣金，因此把它们相加会与此端点略有差异。
+</Note>
+
+## 新鲜度 {#freshness}
+
+已结束的 ET 日从最终日归档读取。如果范围结束于今天（晚于今天的 `endDate` 会被截断到今天），会再加上当天撮合的实时汇总，因此当天部分会随投注撮合实时更新。
+
+## 请求 {#request}
+
+`GET /exchange/getMatchedVolume`
+
+<ParamField query="startDate" type="string" required>
+  范围的第一个 ET 日历日，`YYYY-MM-DD`（含）。
+</ParamField>
+
+<ParamField query="endDate" type="string" required>
+  范围的最后一个 ET 日历日，`YYYY-MM-DD`（含）。不得早于 `startDate`。晚于今天的日期会被截断到今天。
+</ParamField>
+
+<CodeGroup>
+```bash curl
+curl "https://api.4casters.io/exchange/getMatchedVolume?startDate=2026-08-10&endDate=2026-08-11" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+</CodeGroup>
+
+## 响应 {#response}
+
+<ResponseField name="data" type="object">
+  <Expandable title="data">
+    <ResponseField name="startDate" type="string">所请求开始日期的回显。</ResponseField>
+    <ResponseField name="endDate" type="string">所请求结束日期的回显（截断前）。</ResponseField>
+    <ResponseField name="matchedVolume" type="number">以美元计的已撮合成交量总计：范围内每笔已撮合投注双方本金（风险额 + 可赢额）之和。</ResponseField>
+  </Expandable>
+</ResponseField>
+
+```json 响应示例
+{
+  "data": {
+    "startDate": "2026-08-10",
+    "endDate": "2026-08-11",
+    "matchedVolume": 6447933.012757301
+  }
+}
+```
+
+## 速率限制 {#rate-limits}
+
+没有端点级限制 — 仅适用 [全局每 IP 限制](/zh/pages/rest/introduction#rate-limiting)（滚动每分钟 3,000 次请求）。对于仪表盘，每隔几秒轮询一次完全足够；注意已最终确定的日期不会再变化，因此只有包含今天的范围才有必要重新轮询。
+
+## 错误 {#errors}
+
+| 状态 | 含义 |
+|---|---|
+| `400` | `startDate` / `endDate` 缺失或格式错误（必须为 `YYYY-MM-DD`），或 `startDate` 晚于 `endDate`。 |
+| `401` | 认证令牌缺失或无效。 |
+| `429` | 超出全局每 IP 速率限制。请遵守 `Retry-After` 响应头。 |
+| `503` | 触发了服务端 15 秒超时。可以安全重试。 |

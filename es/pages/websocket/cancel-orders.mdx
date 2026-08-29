@@ -1,0 +1,289 @@
+---
+title: 'Cancelar órdenes'
+---
+
+Hay cuatro variantes de cancelación. Todas responden con el mismo envoltorio: `{ requestID, data: [ ...CancelResponsePayload ] }`.
+
+## Payload de respuesta de cancelación {#cancel-response-payload}
+
+Toda cancelación correcta devuelve una o más entradas con esta forma. Observa que las mayúsculas de los nombres de campo cambian entre la solicitud (`orderId`/`gameId`, `d` minúscula) y la respuesta (`orderID`/`gameID`, `ID` en mayúsculas).
+
+<CodeGroup>
+```json JSON
+{
+  "success": true,
+  "orderID": "67f45377c18c6697c172afa4",
+  "odds": -110,
+  "filled": 0,
+  "offered": 100,
+  "remaining": 100,
+  "side": "5c12bc1ce0daba000f47ba8b",
+  "number": -3.5,
+  "gameID": "688c0516fbc14da0c202d426",
+  "userReference": "client-ref-001",
+  "description": "Dallas Mavericks +3.5"
+}
+```
+</CodeGroup>
+
+<ResponseField name="success" type="boolean">
+  `true` cuando la orden fue cancelada.
+</ResponseField>
+<ResponseField name="orderID" type="string">
+  ID de la orden cancelada.
+</ResponseField>
+<ResponseField name="filled" type="number">
+  Importe que ya estaba cruzado antes de que llegara la cancelación.
+</ResponseField>
+<ResponseField name="offered" type="number">
+  Siempre `0` tras una cancelación: el lado ofertado se reduce a cero.
+</ResponseField>
+<ResponseField name="remaining" type="number">
+  Importe que no estaba cruzado en el momento de la cancelación.
+</ResponseField>
+<ResponseField name="odds" type="number">
+  Cuotas de la orden cancelada en formato americano, desde la perspectiva del maker.
+</ResponseField>
+<ResponseField name="side" type="string">
+  ID de participante (moneyline/spread) o `over`/`under` (totales).
+</ResponseField>
+<ResponseField name="number" type="number">
+  Número de spread o de total; `null` en moneylines.
+</ResponseField>
+<ResponseField name="gameID" type="string">
+  Juego al que pertenecía la orden cancelada.
+</ResponseField>
+<ResponseField name="userReference" type="string">
+  El `userReference` que definiste al colocar la orden, si lo hay.
+</ResponseField>
+<ResponseField name="description" type="string">
+  Descripción legible de la apuesta (p. ej. `"Dallas Mavericks +3.5"`).
+</ResponseField>
+
+## Cancelar por ID {#cancel-by-id}
+
+Cancela una sola orden por su ID de orden.
+
+### Solicitud {#request}
+
+<CodeGroup>
+```json JSON
+[
+  "cancelById",
+  {
+    "requestID": "YOUR_REQUEST_ID",
+    "orderId": "ORDER_ID_TO_CANCEL"
+  }
+]
+```
+</CodeGroup>
+
+### Respuesta {#response}
+
+<CodeGroup>
+```json JSON
+{
+  "requestID": "YOUR_REQUEST_ID",
+  "data": [
+    {
+      "success": true,
+      "orderID": "67f45377c18c6697c172afa4",
+      "odds": -110,
+      "filled": 0,
+      "offered": 0,
+      "remaining": 100,
+      "side": "5c12bc1ce0daba000f47ba8b",
+      "number": -3.5,
+      "gameID": "688c0516fbc14da0c202d426",
+      "userReference": "client-ref-001",
+      "description": "Dallas Mavericks +3.5"
+    }
+  ]
+}
+```
+</CodeGroup>
+
+## Cancelar varias {#cancel-multiple}
+
+Cancela un conjunto concreto de órdenes por ID.
+
+### Solicitud {#request-1}
+
+<CodeGroup>
+```json JSON
+[
+  "cancelMultiple",
+  {
+    "requestID": "YOUR_REQUEST_ID",
+    "orderIDs": [
+      "ORDER_ID_1",
+      "ORDER_ID_2",
+      "ORDER_ID_3"
+    ]
+  }
+]
+```
+</CodeGroup>
+
+### Respuesta {#response-1}
+
+`data` contiene una entrada por ID de orden; comprueba cada indicador `success`.
+
+<CodeGroup>
+```json JSON
+{
+  "requestID": "YOUR_REQUEST_ID",
+  "data": [
+    {
+      "success": true,
+      "orderID": "ORDER_ID_1",
+      "odds": -110,
+      "filled": 0,
+      "offered": 0,
+      "remaining": 100,
+      "side": "5c12bc1ce0daba000f47ba8b",
+      "number": -3.5,
+      "gameID": "688c0516fbc14da0c202d426",
+      "userReference": "",
+      "description": "Dallas Mavericks +3.5"
+    },
+    {
+      "success": false,
+      "orderID": "ORDER_ID_2",
+      "description": "order already cancelled"
+    }
+  ]
+}
+```
+</CodeGroup>
+
+## Cancelar todas por juego {#cancel-all-by-game}
+
+Cancela todas las órdenes abiertas que tengas en un solo juego. Opcionalmente restringe la cancelación a un mercado concreto pasando `type`, `side` y/o `market`.
+
+### Solicitud {#request-2}
+
+<CodeGroup>
+```json JSON
+[
+  "cancelAllByGame",
+  {
+    "requestID": "YOUR_REQUEST_ID",
+    "gameId": "GAME_ID_TO_CANCEL",
+    "type": "spread",
+    "side": "5c12bc1ce0daba000f47ba8b",
+    "market": "main"
+  }
+]
+```
+</CodeGroup>
+
+<ResponseField name="gameId" type="string" required>
+  Juego cuyas órdenes deben cancelarse.
+</ResponseField>
+<ResponseField name="type" type="string">
+  Opcional — filtra a un solo tipo de mercado: `moneyline`, `spread`, `total` o `moneyline1x2`.
+</ResponseField>
+<ResponseField name="side" type="string">
+  Opcional — ID de participante (moneyline/spread) o `over`/`under` (totales).
+</ResponseField>
+<ResponseField name="market" type="string">
+  Opcional — identificador de mercado (p. ej. `main`).
+</ResponseField>
+
+### Respuesta {#response-2}
+
+<CodeGroup>
+```json JSON
+{
+  "requestID": "YOUR_REQUEST_ID",
+  "data": [
+    {
+      "success": true,
+      "orderID": "67f45377c18c6697c172afa4",
+      "odds": -110,
+      "filled": 0,
+      "offered": 0,
+      "remaining": 100,
+      "side": "5c12bc1ce0daba000f47ba8b",
+      "number": -3.5,
+      "gameID": "688c0516fbc14da0c202d426",
+      "userReference": "",
+      "description": "Dallas Mavericks +3.5"
+    }
+  ]
+}
+```
+</CodeGroup>
+
+## Cancelar todas {#cancel-all}
+
+Cancela todas las órdenes abiertas de la cuenta.
+
+### Solicitud {#request-3}
+
+<CodeGroup>
+```json JSON
+[
+  "cancelAll",
+  {
+    "requestID": "YOUR_REQUEST_ID"
+  }
+]
+```
+</CodeGroup>
+
+### Respuesta {#response-3}
+
+<CodeGroup>
+```json JSON
+{
+  "requestID": "YOUR_REQUEST_ID",
+  "data": [
+    {
+      "success": true,
+      "orderID": "67f45377c18c6697c172afa4",
+      "odds": -110,
+      "filled": 0,
+      "offered": 0,
+      "remaining": 100,
+      "side": "5c12bc1ce0daba000f47ba8b",
+      "number": -3.5,
+      "gameID": "688c0516fbc14da0c202d426",
+      "userReference": "",
+      "description": "Dallas Mavericks +3.5"
+    }
+  ]
+}
+```
+</CodeGroup>
+
+## Errores {#errors}
+
+Cuando no se puede procesar una cancelación, el servidor responde con el envoltorio de error estándar (sin campo `data`):
+
+<CodeGroup>
+```json JSON
+{
+  "requestID": "YOUR_REQUEST_ID",
+  "error": "order not found"
+}
+```
+</CodeGroup>
+
+Valores habituales de `error`:
+
+| Error | Cuándo |
+| --- | --- |
+| `invalid order ID format` | El `orderId` de `cancelById` no es un ObjectID válido. |
+| `order not found` | El ID de orden no existe. |
+| `unauthorized: order does not belong to user` | Estás intentando cancelar la orden de otro usuario. |
+| `order already cancelled` | La orden ya estaba cancelada. |
+| `order is expired` | La orden caducó antes de que llegara la cancelación. |
+| `order already graded` | La orden ya fue liquidada. |
+| `game not found` | El juego referenciado no está en la caché. |
+| `Failed to process cancelMultiple` | Error inesperado al procesar un lote de `cancelMultiple`. |
+| `Failed to process cancelAll` | Error inesperado al procesar `cancelAll`. |
+| `Failed to process cancelAllByGame` | Error inesperado al procesar `cancelAllByGame`. |
+
+En cancelaciones por lote (`cancelMultiple`, `cancelAllByGame`, `cancelAll`) los fallos por orden aparecen en `data` con `success: false` y un `description` que explica el motivo; solo un `error` a nivel de envoltorio indica que falló toda la solicitud.

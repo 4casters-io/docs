@@ -1,0 +1,42 @@
+---
+title: 'Cancelar por referencia de usuario'
+description: 'Cancela órdenes por su referencia definida por el cliente'
+openapi: 'POST /session/cancelByReference'
+---
+
+Cancela todas las órdenes abiertas del juego indicado cuyo `userReference` coincida con una de las referencias suministradas. Útil cuando has etiquetado órdenes con tus propios ids y quieres cancelar por esos en lugar de rastrear ids de orden de 4casters.
+
+## Solicitud
+
+`POST /session/cancelByReference`
+
+<ParamField body="gameID" type="string" required>
+  Limita la búsqueda a un solo juego.
+</ParamField>
+<ParamField body="userReferences" type="array" required>
+  Array de cadenas `userReference`. Se cancela toda orden abierta en `gameID` cuyo `userReference` esté en este array.
+</ParamField>
+
+<CodeGroup>
+```bash curl
+curl -X POST https://api.4casters.io/session/cancelByReference \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "gameID": "6924f82640a7e89c3d3acc41",
+    "userReferences": ["my-order-1", "my-order-2"]
+  }'
+```
+</CodeGroup>
+
+## Respuesta {#response}
+
+<ResponseField name="data" type="array">
+  Resultados de cancelación por orden. Misma forma que [Cancelar una orden](/es/pages/rest/orders/cancel-order#response).
+</ResponseField>
+
+## Errores
+
+| Estado | Significado |
+| ------ | ------- |
+| `400`  | Falta `userReferences` o no es un array. |

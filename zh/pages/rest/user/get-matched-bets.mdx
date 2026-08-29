@@ -1,0 +1,89 @@
+---
+title: '获取已撮合投注'
+description: '列出已撮合但尚未结算的投注'
+openapi: 'GET /user/getMatchedBets'
+---
+
+返回调用方所有**已撮合但尚未结算**的投注 — 即尚未结算的赛事上的未平仓头寸。
+
+## 请求 {#request}
+
+`GET /user/getMatchedBets`
+
+不接受参数。
+
+<CodeGroup>
+```bash curl
+curl https://api.4casters.io/user/getMatchedBets \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+</CodeGroup>
+
+## 响应 {#response}
+
+<ResponseField name="data.matchedBets" type="array">
+  已撮合投注数组，按开赛时间升序排列。
+  <Expandable title="MatchedBet">
+    <ResponseField name="id" type="string">投注 ID。</ResponseField>
+    <ResponseField name="txID" type="string">成交的事务 ID。</ResponseField>
+    <ResponseField name="type" type="string">`moneyline`、`spread`、`total` 或 `moneyline1x2`。</ResponseField>
+    <ResponseField name="bet" type="number">原始投注额。</ResponseField>
+    <ResponseField name="odds" type="integer">成交时的美式赔率。</ResponseField>
+    <ResponseField name="spread" type="number">出现在 `spread` 上。</ResponseField>
+    <ResponseField name="total" type="number">出现在 `total` 上。</ResponseField>
+    <ResponseField name="OU" type="string">`over` 或 `under`。出现在 `total` 上。</ResponseField>
+    <ResponseField name="participantID" type="string">出现在 `moneyline` 和 `spread` 上。</ResponseField>
+    <ResponseField name="market" type="string">出现在 `moneyline1x2` 上。</ResponseField>
+    <ResponseField name="side" type="string">用于 `moneyline1x2` — `yes` 或 `no`。</ResponseField>
+    <ResponseField name="userReference" type="string">下单时传入的可选客户端自定义标识。</ResponseField>
+    <ResponseField name="createdAt" type="string">ISO 8601 时间戳。</ResponseField>
+    <ResponseField name="matchedTime" type="string">成交发生的 ISO 8601 时间戳。</ResponseField>
+    <ResponseField name="origin" type="string">`offer`（你挂单，吃单方成交了你）或 `wager`（你吃掉了已有流动性）。</ResponseField>
+    <ResponseField name="risk" type="string">已撮合部分的风险额（字符串格式，两位小数）。包含亏损时你需支付的佣金。</ResponseField>
+    <ResponseField name="win" type="string">扣除盈利时你需支付的佣金后的可赢金额。已撮合投注没有单独的 `fee` 字段 — 佣金在结算时收取，且仅出现在已结算注单上；在此之前反映在 `risk`/`win` 中。</ResponseField>
+    <ResponseField name="graded" type="boolean">此处始终为 `false`。</ResponseField>
+    <ResponseField name="closed" type="boolean">投注是否已被管理员操作关闭。</ResponseField>
+    <ResponseField name="adminRefund" type="boolean">投注是否已被管理员退款。</ResponseField>
+    <Snippet file="zh/types/game-summary.mdx" />
+  </Expandable>
+</ResponseField>
+
+### 示例 {#example}
+
+<CodeGroup>
+```json JSON
+{
+  "data": {
+    "matchedBets": [
+      {
+        "id": "67f45377c18c6697c172afa4",
+        "txID": "67f45377c18c6697c172afa3",
+        "type": "moneyline",
+        "bet": 50,
+        "odds": -185,
+        "participantID": "5d48bd5198366d41ec7238da",
+        "userReference": "my-ref-123",
+        "createdAt": "2025-09-24T19:30:59.482Z",
+        "matchedTime": "2025-09-24T19:30:59.482Z",
+        "origin": "wager",
+        "risk": "50.27",
+        "win": "27.16",
+        "graded": false,
+        "closed": false,
+        "adminRefund": false,
+        "game": {
+          "id": "688c0516fbc14da0c202d426",
+          "league": "NBA",
+          "sport": "basketball",
+          "start": "2025-09-25T00:10:00.000Z",
+          "ended": false,
+          "eventName": "TORONTO RAPTORS VS PHILADELPHIA 76ERS",
+          "isFutures": false,
+          "participants": [/* ... */]
+        }
+      }
+    ]
+  }
+}
+```
+</CodeGroup>

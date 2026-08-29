@@ -1,0 +1,111 @@
+---
+title: 'Obtener apuestas liquidadas'
+description: 'Lista apuestas liquidadas entre dos fechas con un resumen de P&L'
+openapi: 'api-reference/openapi.json GET /user/getGradedWagers'
+---
+
+Devuelve todas las **apuestas liquidadas** de la cuenta autenticada entre dos fechas, más un resumen de P&L y volumen. Las fechas corresponden a la **hora de inicio del juego** de la apuesta (así, `startDate=06-22-2022` devuelve apuestas de juegos que empiezan después del 06-21-2022 00:00 GMT).
+
+## Solicitud
+
+`GET /user/getGradedWagers`
+
+<ParamField query="startDate" type="string">
+  Fecha de inicio (`MM-DD-YYYY`). El valor por defecto es `10-21-2020`.
+</ParamField>
+<ParamField query="endDate" type="string">
+  Fecha de fin (`MM-DD-YYYY`). El valor por defecto es hoy.
+</ParamField>
+
+<CodeGroup>
+```bash curl
+curl "https://api.4casters.io/user/getGradedWagers?startDate=01-01-2024&endDate=02-01-2024" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+</CodeGroup>
+
+## Respuesta {#response}
+
+<ResponseField name="data.graded" type="array">
+  Array de apuestas liquidadas, ordenadas de forma descendente por hora de inicio del juego.
+  <Expandable title="GradedWager">
+    <ResponseField name="id" type="string">Id de la apuesta.</ResponseField>
+    <ResponseField name="txID" type="string">Id de transacción del cruce.</ResponseField>
+    <ResponseField name="ticketNumber" type="string">Número de ticket de visualización.</ResponseField>
+    <ResponseField name="type" type="string">`moneyline`, `spread`, `total` o `moneyline1x2`.</ResponseField>
+    <ResponseField name="outcome" type="string">`winner`, `loser`, `push` o `refund`.</ResponseField>
+    <ResponseField name="bet" type="number">Tamaño original de la apuesta.</ResponseField>
+    <ResponseField name="odds" type="integer">Cuotas americanas en el momento del cruce.</ResponseField>
+    <ResponseField name="spread" type="number">Presente en `spread`.</ResponseField>
+    <ResponseField name="total" type="number">Presente en `total`.</ResponseField>
+    <ResponseField name="OU" type="string">Presente en `total`.</ResponseField>
+    <ResponseField name="participantID" type="string">Presente en `moneyline` y `spread`.</ResponseField>
+    <ResponseField name="market" type="string">Presente en `moneyline1x2`.</ResponseField>
+    <ResponseField name="side" type="string">En `moneyline1x2` — `yes` o `no`.</ResponseField>
+    <ResponseField name="matchedTime" type="string">Marca de tiempo ISO 8601 en que ocurrió el cruce.</ResponseField>
+    <ResponseField name="settledAt" type="string">Marca de tiempo ISO 8601 en que se liquidó la apuesta.</ResponseField>
+    <ResponseField name="createdAt" type="string">Marca de tiempo ISO 8601 en que se colocó la orden.</ResponseField>
+    <ResponseField name="cancelled" type="boolean" />
+    <ResponseField name="closed" type="boolean" />
+    <ResponseField name="graded" type="boolean">Siempre `true` aquí.</ResponseField>
+    <ResponseField name="adminRefund" type="boolean" />
+    <ResponseField name="platform" type="string">Origen de la orden, p. ej. `api`, `web`, `mobile`.</ResponseField>
+    <ResponseField name="risk" type="string">Riesgo de la porción cruzada (cadena, 2 decimales).</ResponseField>
+    <ResponseField name="win" type="string">Importe de ganancia, neto de comisión.</ResponseField>
+    <ResponseField name="fee" type="string">Comisión cobrada sobre la porción cruzada.</ResponseField>
+    <ResponseField name="result" type="string">P&L neto de esta apuesta. Negativo si perdiste, positivo si ganaste, `0` en push.</ResponseField>
+    <ResponseField name="pinnacleLine" type="object">Instantánea de la línea comparable de Pinnacle en el momento del cruce, cuando está disponible.</ResponseField>
+    <Snippet file="es/types/game-summary.mdx" />
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="data.summary" type="object">
+  Totales agregados sobre las apuestas devueltas.
+  <Expandable title="summary">
+    <ResponseField name="pnl" type="integer">Suma de `result` (redondeada).</ResponseField>
+    <ResponseField name="volume" type="integer">Suma de `min(risk, win)` (redondeada).</ResponseField>
+  </Expandable>
+</ResponseField>
+
+### Ejemplo
+
+<CodeGroup>
+```json JSON
+{
+  "data": {
+    "graded": [
+      {
+        "id": "64c98e8c0745a206acf18ad7",
+        "txID": "64c99640453fd2ad91206018",
+        "ticketNumber": "5a5494406ef9e2c5988b30bf666ce55e",
+        "type": "total",
+        "outcome": "loser",
+        "bet": 1,
+        "odds": 101,
+        "total": 8.5,
+        "OU": "over",
+        "matchedTime": "2023-08-01T23:33:20.273Z",
+        "settledAt": "2023-08-02T02:26:16.152Z",
+        "createdAt": "2023-08-01T23:33:20.273Z",
+        "graded": true,
+        "platform": "api",
+        "risk": "1.01",
+        "win": "1.00",
+        "fee": "0.01",
+        "result": "-1.01",
+        "pinnacleLine": { "odds": -102, "total": 8.5, "OU": "over" },
+        "game": {
+          "id": "64c7fa454803b0ff0f7f5741",
+          "league": "MLB",
+          "sport": "baseball",
+          "start": "2023-08-01T23:45:00.000Z",
+          "ended": true,
+          "participants": [/* ... */]
+        }
+      }
+    ],
+    "summary": { "pnl": -1, "volume": 1 }
+  }
+}
+```
+</CodeGroup>

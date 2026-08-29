@@ -1,0 +1,49 @@
+---
+title: '按用户引用获取投注'
+description: '查找与客户端自定义标识关联的全部投注'
+openapi: 'GET /user/getBetByUserReference'
+---
+
+查找与 `userReference` 关联的全部投注。`userReference` 是可选的客户端自定义字符串，可在下单时附加到订单以便在你这边跟踪 — 此端点是对应的读取接口。
+
+响应将结果分为三个桶：
+
+- `unmatched` — 该引用下仍挂在订单簿上的未成交挂单。
+- `matched`   — 该引用下已撮合（未结算）的投注。
+- `graded`    — 该引用下已结算的投注，包含 `risk`、`win`、`fee` 和 `result`。
+
+## 请求 {#request}
+
+`GET /user/getBetByUserReference`
+
+<ParamField query="userReference" type="string" required>
+  下单时传入的客户端自定义引用。
+</ParamField>
+<ParamField query="gameID" type="string" required>
+  将查询限定到单场赛事。
+</ParamField>
+
+<CodeGroup>
+```bash curl
+curl "https://api.4casters.io/user/getBetByUserReference?userReference=my-order-1&gameID=67d1c942215edc7ee0c806ef" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+</CodeGroup>
+
+## 响应 {#response}
+
+<ResponseField name="data.unmatched" type="array">
+  未成交订单 — 形态与 [获取未撮合订单](/zh/pages/rest/user/get-unmatched-orders#response) 相同。
+</ResponseField>
+<ResponseField name="data.matched" type="array">
+  已撮合（未结算）投注 — 形态与 [获取已撮合投注](/zh/pages/rest/user/get-matched-bets#response) 相同。
+</ResponseField>
+<ResponseField name="data.graded" type="array">
+  已结算投注 — 形态与 [获取已结算注单](/zh/pages/rest/user/get-graded-wagers#response) 相同。
+</ResponseField>
+
+## 错误 {#errors}
+
+| 状态 | 含义 |
+| ------ | ------- |
+| `408`  | `userReference` 或 `gameID` 缺失。 |

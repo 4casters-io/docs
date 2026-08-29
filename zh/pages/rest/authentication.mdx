@@ -1,0 +1,100 @@
+---
+title: '认证'
+description: '登录并为请求授权'
+openapi: 'POST /user/login'
+---
+
+要使用任何需认证的路由，你需要一个认证令牌。令牌通过登录获取，有效期为 **30 天**，之后需要重新登录。
+
+## 登录 {#log-in}
+
+`POST /user/login`
+
+<CodeGroup>
+```bash curl
+curl -X POST https://api.4casters.io/user/login \
+  -H "Content-Type: application/json" \
+  -d '{"username": "your_username", "password": "your_password"}'
+```
+
+```json JSON 请求体
+{
+  "username": "your_username",
+  "password": "your_password"
+}
+```
+</CodeGroup>
+
+### 请求 {#request}
+
+<ParamField body="username" type="string" required>账户用户名（或邮箱）。</ParamField>
+<ParamField body="password" type="string" required>账户密码。</ParamField>
+
+### 响应 {#response}
+
+令牌会同时作为 `data.user.auth` **以及**签名 `auth` Cookie（`Set-Cookie`）返回。对于大多数服务端集成，你应捕获 `data.user.auth` 并丢弃 Cookie。
+
+```json
+{
+  "data": {
+    "user": {
+      "id": "5fe37acbb5a23600123662c1",
+      "username": "your_username",
+      "auth": "5cd551d6...",
+      "type": "p2p",
+      "oddsFormat": "american",
+      "displayBalance": 1250.50,
+      "creditLimit": 500,
+      "liability": -125.00,
+      "commissionCharged": 0.01,
+      "hasMarketMakerAccess": false,
+      "isPro": false,
+      "createdAt": "2020-12-23T17:14:09.000Z"
+    }
+  }
+}
+```
+
+全部字段见 OpenAPI schema 中的 [`User`](/api-reference/openapi.json)。
+
+### 错误响应 {#error-responses}
+
+| 状态 | 含义 |
+| ------ | ------- |
+| `400`  | `username` 和 `password` 为必填。 |
+| `401`  | 用户名或密码不正确。 |
+| `403`  | 账户被封禁、锁定或已关闭。 |
+| `429`  | 超出登录速率限制。 |
+
+## 为请求授权 {#authorizing-requests}
+
+在后续每个请求中传递来自 `data.user.auth` 的令牌。按以下优先顺序接受三种请求头 / 载荷格式：
+
+<Tabs>
+  <Tab title="Authorization 请求头（推荐）">
+    ```bash
+    curl https://api.4casters.io/user/getMe \
+      -H "Authorization: Bearer 5cd551d6..."
+    ```
+    `Bearer ` 前缀是可选的 — 直接传递裸令牌也可以。
+  </Tab>
+  <Tab title="Cookie">
+    `/user/login` 设置的签名 `auth` Cookie 在同一客户端复用时，会在每个端点上自动生效。
+  </Tab>
+  <Tab title="请求体字段（仅 POST）">
+    ```json
+    { "token": "5cd551d6...", "...": "..." }
+    ```
+    作为无法方便设置自定义请求头的客户端（例如某些 webhook 发送方）的回退方案。
+  </Tab>
+</Tabs>
+
+如果未提供令牌 — 或令牌未知 / 已过期 — 服务器响应 `401 InvalidCredentials`。
+
+## 令牌轮换 {#token-rotation}
+
+使用超过 30 天的令牌发起的已认证请求会自动轮换为新令牌。发生时，新令牌会在 `X-Auth-Token` 响应头中返回（并作为更新后的签名 `auth` Cookie）。长期运行的集成应监听此响应头并持久化新值。
+
+## 登出 {#logging-out}
+
+`POST /user/logout` 会使当前令牌失效。之后使用该令牌的请求返回 `401`。

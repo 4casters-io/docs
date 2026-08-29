@@ -1,0 +1,62 @@
+---
+title: '取消多笔订单'
+description: '按 ID 批量取消订单'
+openapi: 'POST /session/cancelMultiple'
+---
+
+按 ID 批量取消订单。结果与输入的 `sessionIDs` 数组按位置对应，可能同时包含成功取消和单笔失败。
+
+## 请求 {#request}
+
+`POST /session/cancelMultiple`
+
+<ParamField body="sessionIDs" type="array" required>
+  要取消的订单 ID 数组。每个 ID 必须是有效的 `ObjectID` — 若其中任何一个格式错误，整个请求会以 `400` 失败。
+</ParamField>
+
+<CodeGroup>
+```bash curl
+curl -X POST https://api.4casters.io/session/cancelMultiple \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "sessionIDs": [
+      "65b036dfb31407c2b6bc1cfe",
+      "65b036e0b31407c2b6bc1d08"
+    ]
+  }'
+```
+</CodeGroup>
+
+## 响应 {#response}
+
+<ResponseField name="data" type="array">
+  按单取消结果。形态与 [取消一笔订单](/zh/pages/rest/orders/cancel-order#response) 相同。失败时，条目包含 `{ success: false, reason: "..." }`（因无效 ID / 未找到 / 非本人而被拒绝时没有 `sessionID` 字段）。
+</ResponseField>
+
+### 示例 {#example}
+
+<CodeGroup>
+```json JSON
+{
+  "data": [
+    {
+      "success": true,
+      "sessionID": "65b036dfb31407c2b6bc1cfe",
+      "odds": 125,
+      "filled": 0,
+      "offered": 0,
+      "remaining": 100,
+      "gameID": "65f0c3c24ef07d0008abc123"
+    },
+    { "success": false, "reason": "Not your order" }
+  ]
+}
+```
+</CodeGroup>
+
+## 错误 {#errors}
+
+| 状态 | 含义 |
+| ------ | ------- |
+| `400`  | `sessionIDs` 缺失或不是数组，或任一 ID 格式错误。 |

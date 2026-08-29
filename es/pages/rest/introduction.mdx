@@ -1,0 +1,69 @@
+---
+title: 'Introducción'
+description: 'API REST pública del intercambio de apuestas peer-to-peer de 4casters'
+---
+
+La API REST de 4casters te permite iniciar sesión, consultar juegos y el libro de órdenes, colocar / editar / cancelar órdenes y leer tu historial de apuestas de forma programática. Es la misma API que impulsa la aplicación web de 4casters.
+
+## URL base
+
+Todos los endpoints de esta sección tienen como raíz:
+
+```
+https://api.4casters.io
+```
+
+## Convenciones
+
+- **Transporte**: solo HTTPS.
+- **Codificación**: JSON. Envía `Content-Type: application/json` en cada solicitud que tenga cuerpo.
+- **Envoltorio de respuesta**: Con un par de excepciones bien marcadas (`/affiliate/getAffiliateCommission`, `/exchange/getOddsForAveragePrice`), cada respuesta exitosa va envuelta: `{ "data": <payload> }`.
+- **Identificadores**: los ids de juego, de participante y de orden son cadenas `ObjectID` de MongoDB (hex de 24 caracteres).
+- **Cuotas**: todas las cuotas están en formato americano (negativas para favoritos, positivas para no favoritos) salvo que se indique lo contrario.
+- **Tiempo**: todas las marcas de tiempo son ISO 8601 con `Z` (UTC).
+
+## Autenticación
+
+Casi todos los endpoints requieren autenticación. Inicia sesión una vez con [POST `/user/login`](/es/pages/rest/authentication) y luego envía el token de autenticación devuelto en cada solicitud: consulta [Autenticación](/es/pages/rest/authentication) para más detalles.
+
+## Errores por orden frente a errores HTTP
+
+Los endpoints de "colocar" y "editar" aceptan lotes y devuelven resultados por orden. Una respuesta HTTP `200` exitosa puede contener fallos individuales de órdenes dentro de `data.createdSessions[i]`. Consulta la forma de error por orden en la página de cada endpoint.
+
+Los errores a nivel HTTP (`4xx`, `5xx`) se devuelven como `{ "error": "<message>" }`.
+
+## Limitación de tasa {#rate-limiting}
+
+Aplican tres capas de limitación de tasa:
+
+- **Global, por IP** — cada solicitud a la API cuenta contra un presupuesto por IP de **3.000 solicitudes por ventana móvil de 60 segundos** (unas ~50 solicitudes/segundo sostenidas). Superarlo devuelve `429` con un encabezado `Retry-After` (segundos) y el cuerpo `{ "error": "Too many requests. Please try again later." }`.
+- **Rutas de autenticación** (`/user/login`, restablecimiento de contraseña, registro) tienen un throttling adicional por IP y por cuenta.
+- **Rutas de colocar / editar / cancelar** están además limitadas por cuenta.
+
+Los endpoints de lectura no tienen límite por cuenta: solo aplica el techo global por IP.
+
+## Tiempos de espera
+
+Las solicitudes que tardan más de **15 segundos** en el servidor se abortan y devuelven `503` con el cuerpo `{ "error": { "message": "Network Error", "code": 503 } }`.
+
+## Actualizaciones en tiempo real
+
+La API REST se complementa con la [API de streaming WebSocket](/es/pages/streaming/introduction) para ticks del libro de órdenes en tiempo real y eventos de cruce / liquidación por cuenta. El token de autenticación que devuelve `/user/login` sirve para ambas.
+
+## Índice de endpoints
+
+<CardGroup cols={2}>
+  <Card title="Autenticación" href="/es/pages/rest/authentication">Inicia sesión y obtén un token de autenticación.</Card>
+  <Card title="Usuario"           href="/es/pages/rest/user/get-me">Información de cuenta, saldo, apuestas y órdenes.</Card>
+  <Card title="Órdenes"         href="/es/pages/rest/orders/place-order">Coloca, edita, consulta y cancela órdenes.</Card>
+  <Card title="Mercados"        href="/es/pages/rest/markets/get-orderbook">Explora ligas, juegos, participantes y el libro de órdenes.</Card>
+  <Card title="Afiliados"      href="/es/pages/rest/affiliate/get-affiliate-commission">Comisión de afiliado.</Card>
+</CardGroup>
+
+## Colección heredada de Postman
+
+La documentación previa vivía como una colección de Postman. Se conserva como referencia, pero estas docs de Mintlify son ahora la fuente de verdad: la colección de Postman puede quedar atrás en endpoints, parámetros o formas de respuesta nuevos.
+
+<Card title="4Casters API — colección de Postman" icon="link" href="https://documenter.getpostman.com/view/6710109/U16gNmHG">
+  Ver la documentación heredada de Postman
+</Card>

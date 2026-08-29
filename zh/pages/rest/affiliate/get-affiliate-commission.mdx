@@ -1,0 +1,60 @@
+---
+title: '获取联盟佣金'
+description: '你邀请的玩家向你支付的佣金'
+openapi: 'GET /affiliate/getAffiliateCommission'
+---
+
+返回调用方所邀请玩家向其支付的佣金，按玩家用户名分组。不带参数时返回终身收益；带 `fromDate` / `toDate` 时限定范围。
+
+<Note>
+与大多数端点不同，此端点在**顶层**以 `commissionPaid` 返回结果（不在 `data` 下）。
+</Note>
+
+## 请求 {#request}
+
+`GET /affiliate/getAffiliateCommission`
+
+<ParamField query="fromDate" type="string">
+  开始日期（`MM-DD-YYYY`）。默认为 `08-02-2021`。
+</ParamField>
+<ParamField query="toDate" type="string">
+  结束日期（`MM-DD-YYYY`）。默认为今天。
+</ParamField>
+
+<CodeGroup>
+```bash curl（日期范围）
+curl "https://api.4casters.io/affiliate/getAffiliateCommission?fromDate=10-03-2022&toDate=10-10-2022" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+
+```bash curl（全部时间）
+curl https://api.4casters.io/affiliate/getAffiliateCommission \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+</CodeGroup>
+
+## 响应 {#response}
+
+<ResponseField name="commissionPaid" type="array">
+  每条记录是单键对象，将玩家用户名映射为该玩家在请求范围内支付的佣金总额。
+</ResponseField>
+
+### 示例 {#example}
+
+<CodeGroup>
+```json JSON
+{
+  "commissionPaid": [
+    { "alice":   124.50 },
+    { "bob":      12.00 },
+    { "charlie":  87.34 }
+  ]
+}
+```
+</CodeGroup>
+
+## 错误 {#errors}
+
+| 状态 | 含义 |
+| ------ | ------- |
+| `400`  | `fromDate` 无法解析。 |

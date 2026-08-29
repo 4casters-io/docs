@@ -1,0 +1,54 @@
+---
+title: 'Obtener participantes'
+description: 'Lista equipos, jugadores y lados de futuros'
+openapi: 'GET /exchange/getParticipants'
+---
+
+Devuelve una lista deduplicada de participantes — equipos, jugadores, lados de futuros — en todo el intercambio. Usa los valores `participantID` de este endpoint como campo `side` al colocar órdenes `moneyline` o `spread`.
+
+## Solicitud
+
+`GET /exchange/getParticipants`
+
+<ParamField query="active" type="string">
+  Cuando `active=true`, restringe la respuesta a participantes de juegos que empiezan en el futuro. Cuando `active=false` (o se omite), devuelve participantes de todos los juegos.
+</ParamField>
+
+<CodeGroup>
+```bash curl
+curl "https://api.4casters.io/exchange/getParticipants?active=true" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+</CodeGroup>
+
+## Respuesta {#response}
+
+<ResponseField name="data.participants" type="array">
+  <Expandable title="Participant">
+    <ResponseField name="participantID" type="string">Id de participante. Úsalo como `side` al colocar órdenes moneyline / spread.</ResponseField>
+    <ResponseField name="longName"      type="string" />
+    <ResponseField name="shortName"     type="string" />
+    <ResponseField name="league"        type="string" />
+    <ResponseField name="sport"         type="string" />
+  </Expandable>
+</ResponseField>
+
+### Ejemplo
+
+<CodeGroup>
+```json JSON
+{
+  "data": {
+    "participants": [
+      {
+        "participantID": "6021801d14a2fe0012fa0c62",
+        "longName":      "Harold Varner III",
+        "shortName":     "Varner",
+        "league":        "PGA",
+        "sport":         "golf"
+      }
+    ]
+  }
+}
+```
+</CodeGroup>

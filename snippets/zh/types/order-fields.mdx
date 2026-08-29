@@ -1,0 +1,47 @@
+<ParamField body="gameID" type="string" required>
+  4casters 赛事 ID。可通过 `GET /exchange/v2/getGames` 或 `GET /exchange/v2/getOrderbook` 获取。
+</ParamField>
+
+<ParamField body="type" type="string" required>
+  市场类型。取值为 `moneyline`、`spread`、`total`、`moneyline1x2` 之一。`moneyline1x2` **仅适用于足球**（三项胜平负：主胜 / 客胜 / 平局）。
+</ParamField>
+
+<ParamField body="side" type="string" required>
+  订单方向。含义取决于 `type`：
+  - `moneyline`、`spread` — 你支持的参赛方 ID。
+  - `total` — `"over"` 或 `"under"`。
+  - `moneyline1x2` — 对 `market` 所指定结果下注 `"yes"` 或 `"no"`。
+</ParamField>
+
+<ParamField body="market" type="string">
+  **仅用于 `moneyline1x2`。** 取 `"draw"` 或参赛方 ID — 指定你押「是/否」的结果。例如：`side: "yes"` + `market: "draw"` 表示 *比赛以平局结束*；`side: "no"` + `market: "<homeTeamId>"` 表示 *主队不会获胜*。
+</ParamField>
+
+<ParamField body="odds" type="integer" required>
+  订单赔率，**美式**格式（例如 `-110`、`+150`）。
+</ParamField>
+
+<ParamField body="bet" type="number" required>
+  本注要承担的风险额。一笔 `bet: 100, odds: 120` 的订单可被其他用户合计成交 **120（对方赔率为 -120）**。
+</ParamField>
+
+<ParamField body="number" type="number">
+  让分或大小分盘口。`spread` 和 `total` 必填。`moneyline` 或 `moneyline1x2` 不使用。
+</ParamField>
+
+<ParamField body="orderType" type="string">
+  取值为 `limit`、`post`、`postArb`、`fillAndKill`、`fillOrKill` 之一。默认为 `limit`。
+  - `limit` — 作为吃单方，按你的价格或更优价格撮合任何流动性，剩余部分作为挂单方留在订单簿。
+  - `post`  — 保证为挂单方。若订单会撮合已有挂单则拒绝（`rejected_order_type_rules`，例如 `"post order cannot have matches"`）。
+  - `postArb` — 类似 `post`，但当你的美式赔率与挂单价格相差在 **1%** 以内时允许撮合。避免在普通成交中本应支付的吃单手续费。
+  - `fillAndKill` — 保证为吃单方。按你的价格或更优价格撮合当前可成交数量，并取消剩余部分；不会挂单。**部分成交**即为成功。仅在完全没有可撮合流动性时才会被拒绝。
+  - `fillOrKill` — 全成或全撤的吃单。必须立即撮合全部 `bet`，否则整笔订单被拒绝并回滚任何部分成交；不会挂单。
+</ParamField>
+
+<ParamField body="expirationMinutes" type="integer">
+  下单后 N 分钟自动取消。省略则挂单直至开赛（默认行为 — 每笔未成交订单在开赛时都会被自动取消）。
+</ParamField>
+
+<ParamField body="userReference" type="string">
+  客户端自定义标识，会保留在由此订单产生的每一笔成交和挂单上。之后可通过 `GET /user/getBetByUserReference` 查询该订单。
+</ParamField>

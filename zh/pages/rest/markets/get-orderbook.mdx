@@ -1,0 +1,107 @@
+---
+title: '获取订单簿'
+description: '读取某联赛或赛事的订单簿（v2，推荐）'
+openapi: 'GET /exchange/v2/getOrderbook'
+---
+
+以**扁平**形式返回某联赛或单场赛事的订单簿：每个市场是订单数组，而不是按让分 / 大小分数键控的对象。
+
+这是推荐的订单簿端点。与 [WebSocket 推送](/zh/pages/streaming/price-feed) 行情推送搭配，可获取实时更新。
+
+## 请求 {#request}
+
+`GET /exchange/v2/getOrderbook`
+
+<ParamField query="league" type="string">
+  联赛代码，例如 `NBA`（不区分大小写）。未提供 `gameID` 时必填。
+</ParamField>
+<ParamField query="sport" type="string">
+  运动项目名称，例如 `basketball`（不区分大小写）。设置 `league` 时的可选过滤。
+</ParamField>
+<ParamField query="gameID" type="string">
+  单场赛事 ID。提供时会忽略 `league` 和 `sport`。
+</ParamField>
+
+<CodeGroup>
+```bash curl（单个联赛）
+curl "https://api.4casters.io/exchange/v2/getOrderbook?league=NBA" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+
+```bash curl（单场赛事）
+curl "https://api.4casters.io/exchange/v2/getOrderbook?gameID=688c0516fbc14da0c202d426" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+</CodeGroup>
+
+## 响应 {#response}
+
+<ResponseField name="data.games" type="array">
+  每个 `game` 为标准 [Game](/zh/pages/rest/markets/get-games#response) 形态，并带有以下按市场数组：
+
+  <Expandable title="单场订单簿字段">
+    <ResponseField name="awayMoneylines"    type="array">支持客队的挂单单胜盘订单。按最优价格优先排序。</ResponseField>
+    <ResponseField name="homeMoneylines"    type="array">支持主队的挂单单胜盘订单。</ResponseField>
+    <ResponseField name="awaySpreads"       type="array">客队一侧的挂单让分订单，跨让分数扁平化。</ResponseField>
+    <ResponseField name="homeSpreads"       type="array">主队一侧的挂单让分订单。</ResponseField>
+    <ResponseField name="over"              type="array">挂单 `over` 订单，跨大小分扁平化。</ResponseField>
+    <ResponseField name="under"             type="array">挂单 `under` 订单。</ResponseField>
+    <ResponseField name="awayMoneylines1x2" type="array">**仅足球。** 支持客队的三项胜平负订单。</ResponseField>
+    <ResponseField name="homeMoneylines1x2" type="array">**仅足球。** 支持主队的三项胜平负订单。</ResponseField>
+    <ResponseField name="draw1x2"           type="array">**仅足球。** 押平局的三项胜平负订单。</ResponseField>
+    <ResponseField name="openInterest"      type="number">该赛事上每笔挂单的 `bet` 之和。</ResponseField>
+    <ResponseField name="matchedVolume"     type="number">该赛事上已撮合的总成交量。</ResponseField>
+  </Expandable>
+</ResponseField>
+
+这些数组中的每笔订单具有以下形态：
+
+<Snippet file="zh/types/orderbook-order.mdx" />
+
+### 示例（已精简） {#example-trimmed}
+
+<CodeGroup>
+```json JSON
+{
+  "data": {
+    "games": [
+      {
+        "id": "67aaba04c32f13ae2e8aa070",
+        "league": "NBA",
+        "sport": "basketball",
+        "start": "2025-02-12T00:10:00.000Z",
+        "ended": false,
+        "live": false,
+        "featured": false,
+        "eventName": "TORONTO RAPTORS VS PHILADELPHIA 76ERS",
+        "isSpecials": false,
+        "periodName": "Full Time",
+        "participants": [/* away, home */],
+        "awayMoneylines": [
+          {
+            "id": "67ab79fc786aa2c2cfe7524f",
+            "type": "moneyline",
+            "sumUntaken": 1151.04,
+            "odds": 330,
+            "bet": 3798.43,
+            "gameID": "67aaba04c32f13ae2e8aa070",
+            "takenRatio": 0,
+            "participantID": "61a3917a8afa5950306490fd",
+            "expiry": "2025-02-12T00:10:06.000Z",
+            "createdAt": "2025-02-11T16:25:32.354Z",
+            "gameStartExpiry": true
+          }
+        ],
+        "homeMoneylines": [/* ... */],
+        "awaySpreads":    [/* ... */],
+        "homeSpreads":    [/* ... */],
+        "over":           [/* ... */],
+        "under":          [/* ... */],
+        "openInterest": 12450.30,
+        "matchedVolume": 27916.55
+      }
+    ]
+  }
+}
+```
+</CodeGroup>

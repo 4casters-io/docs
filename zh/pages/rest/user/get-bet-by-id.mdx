@@ -1,0 +1,76 @@
+---
+title: '按 ID 获取投注'
+description: '按 id 或事务 id 查找单笔投注'
+openapi: 'GET /user/getBetByID'
+---
+
+查找属于调用方的单笔投注（已撮合、已结算或未成交挂单）。传入 **`id` 或 `txID` 之一**，不要同时传入。
+
+## 请求 {#request}
+
+`GET /user/getBetByID`
+
+<ParamField query="id" type="string">
+  来自列表端点（例如 `/user/getMatchedBets`）的投注 `id`。
+</ParamField>
+<ParamField query="txID" type="string">
+  事务 ID，例如 `/session/v3/place` 返回的 `wagerRequestID` 或 `txID`。
+</ParamField>
+
+必须恰好传入 `id` 或 `txID` 之一。
+
+<CodeGroup>
+```bash curl（按 txID）
+curl "https://api.4casters.io/user/getBetByID?txID=64824b329556daa319747e31" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+
+```bash curl（按 id）
+curl "https://api.4casters.io/user/getBetByID?id=6494ca85c9346058f35b2b1e" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+</CodeGroup>
+
+## 响应 {#response}
+
+`bet` 的形态取决于投注的当前状态：
+
+- **已结算**投注返回 [GradedWager](/zh/pages/rest/user/get-graded-wagers#response) 形态，包含 `risk`、`win`、`fee` 和 `result`。
+- **已撮合**投注返回 [MatchedBet](/zh/pages/rest/user/get-matched-bets#response) 形态。
+- **未成交挂单**返回 [UnmatchedOrder](/zh/pages/rest/user/get-unmatched-orders#response) 形态。
+
+注意，与大多数端点不同，此端点在**顶层**返回投注（不在 `data` 下）。
+
+### 示例 {#example}
+
+<CodeGroup>
+```json JSON（未成交挂单）
+{
+  "bet": {
+    "id": "667c1e870c0d22ec36ccb438",
+    "txID": "667c1e870c0d22ec36ccb439",
+    "type": "moneyline",
+    "bet": 222,
+    "graded": false,
+    "closed": false,
+    "createdAt": "2024-06-26T13:58:31.224Z",
+    "origin": "offer",
+    "wagerRequestID": "667c1e870c...",
+    "game": {
+      "id": "6679ee8c9f05a804e064b6ed",
+      "league": "FED-EX-500",
+      "sport": "golf",
+      "start": "2024-06-27T10:45:00.000Z",
+      "ended": false,
+      "participants": [/* ... */]
+    }
+  }
+}
+```
+</CodeGroup>
+
+## 错误 {#errors}
+
+| 状态 | 含义 |
+| ------ | ------- |
+| `400`  | `id` 和 `txID` 均缺失，或未找到所提供标识对应的投注。 |

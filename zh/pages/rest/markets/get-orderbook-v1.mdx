@@ -1,0 +1,41 @@
+---
+title: '获取订单簿（v1，已弃用）'
+description: '为向后兼容保留的旧版嵌套订单簿端点'
+openapi: 'POST /exchange/getOrderbook'
+---
+
+<Warning>
+**已弃用。** 更简单、推荐的扁平格式请使用 [`GET /exchange/v2/getOrderbook`](/zh/pages/rest/markets/get-orderbook)。
+
+此端点仅为与旧客户端向后兼容而保留。
+</Warning>
+
+以**嵌套**形式返回整个联赛的订单簿，按让分 / 大小分数键控。单场形态与 [获取单场订单簿](/zh/pages/rest/markets/get-single-orderbook) 相同，但覆盖该联赛的每一场赛事。
+
+## 请求 {#request}
+
+`POST /exchange/getOrderbook`
+
+<ParamField body="leagueRequested" type="string" required>
+  联赛代码（不区分大小写）。
+</ParamField>
+
+<CodeGroup>
+```bash curl
+curl -X POST https://api.4casters.io/exchange/getOrderbook \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"leagueRequested": "NBA"}'
+```
+</CodeGroup>
+
+## 响应 {#response}
+
+<ResponseField name="data.market" type="string">此端点始终为 `null`。</ResponseField>
+<ResponseField name="data.games"  type="array">
+  带嵌套订单簿字段的赛事数组。单场形态见 [获取单场订单簿](/zh/pages/rest/markets/get-single-orderbook#response) — `awayMoneylines` / `homeMoneylines` 数组，以及按让分或大小分数键控的 `awaySpreads` / `homeSpreads` / `over` / `under` 对象。
+</ResponseField>
+
+这些桶中的每笔单独订单具有标准订单形态：
+
+<Snippet file="zh/types/orderbook-order.mdx" />
