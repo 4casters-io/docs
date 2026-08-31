@@ -1,0 +1,69 @@
+---
+title: '簡介'
+description: '4casters 點對點博彩交易所的公開 REST API'
+---
+
+4casters REST API 讓你可以登入、查詢賽事和訂單簿、下單 / 改單 / 取消訂單，並以程式設計方式讀取投注歷史。它與驅動 4casters Web 應用的是同一套 API。
+
+## 基礎 URL {#base-url}
+
+本節中的所有端點均以以下地址為根：
+
+```
+https://api.4casters.io
+```
+
+## 約定 {#conventions}
+
+- **傳輸**：僅 HTTPS。
+- **編碼**：JSON。凡帶請求體的請求均傳送 `Content-Type: application/json`。
+- **響應信封**：除少數明確標註的例外（`/affiliate/getAffiliateCommission`、`/exchange/getOddsForAveragePrice`）外，每個成功響應都包裝為：`{ "data": <payload> }`。
+- **識別符號**：賽事 ID、參賽方 ID 和訂單 ID 均為 MongoDB `ObjectID` 字串（24 位十六進位制）。
+- **賠率**：所有賠率均為美式格式（熱門為負，冷門為正），除非另有說明。
+- **時間**：所有時間戳均為帶 `Z` 的 ISO 8601（UTC）。
+
+## 認證 {#authentication}
+
+幾乎每個端點都需要認證。先透過 [POST `/user/login`](/zh-Hant/pages/rest/authentication) 登入一次，然後在每個請求中傳送返回的認證令牌 — 詳情見 [認證](/zh-Hant/pages/rest/authentication)。
+
+## 單筆訂單錯誤與 HTTP 錯誤 {#per-order-errors-vs-http-errors}
+
+「下單」和「改單」端點接受批次並返回按單結果。HTTP `200` 成功響應仍可能在 `data.createdSessions[i]` 中包含單筆訂單失敗。各端點頁面上有單筆訂單的錯誤形態。
+
+HTTP 級錯誤（`4xx`、`5xx`）以 `{ "error": "<message>" }` 返回。
+
+## 速率限制 {#rate-limiting}
+
+適用三層速率限制：
+
+- **全域性，按 IP** — 發往 API 的每個請求都計入每 IP 預算：**滾動 60 秒視窗內 3,000 次請求**（持續約每秒 50 次）。超出時返回 `429`，帶 `Retry-After` 響應頭（秒）以及響應體 `{ "error": "Too many requests. Please try again later." }`。
+- **認證路由**（`/user/login`、密碼重置、註冊）還有額外的按 IP 和按帳戶限流。
+- **下單 / 改單 / 取消路由**還會按帳戶額外限流。
+
+讀取端點沒有按帳戶限制 — 僅適用全域性每 IP 上限。
+
+## 超時 {#timeouts}
+
+服務端耗時超過 **15 秒** 的請求會被中止，並返回 `503`，響應體為 `{ "error": { "message": "Network Error", "code": 503 } }`。
+
+## 即時更新 {#real-time-updates}
+
+REST API 可與 [WebSocket 推送 API](/zh-Hant/pages/streaming/introduction) 搭配，獲取即時訂單簿行情以及按帳戶的成交 / 結算事件。`/user/login` 返回的認證令牌對兩者都有效。
+
+## 端點索引 {#endpoint-index}
+
+<CardGroup cols={2}>
+  <Card title="認證" href="/zh/pages/rest/authentication">登入並獲取認證令牌。</Card>
+  <Card title="使用者"           href="/zh/pages/rest/user/get-me">帳戶資訊、餘額、投注和訂單。</Card>
+  <Card title="訂單"         href="/zh/pages/rest/orders/place-order">下單、改單、查詢和取消訂單。</Card>
+  <Card title="市場"        href="/zh/pages/rest/markets/get-orderbook">瀏覽聯賽、賽事、參賽方和訂單簿。</Card>
+  <Card title="聯盟"      href="/zh/pages/rest/affiliate/get-affiliate-commission">聯盟佣金。</Card>
+</CardGroup>
+
+## 舊版 Postman 集合 {#legacy-postman-collection}
+
+先前的文件以 Postman 集合形式存在。它仍保留作參考，但這些 Mintlify 文件現為權威來源 — Postman 集合在新端點、引數或響應形態上可能滯後。
+
+<Card title="4Casters API — Postman 集合" icon="link" href="https://documenter.getpostman.com/view/6710109/U16gNmHG">
+  檢視舊版 Postman 文件
+</Card>

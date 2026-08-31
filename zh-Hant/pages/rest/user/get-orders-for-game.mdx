@@ -1,0 +1,48 @@
+---
+title: '獲取單場賽事的訂單'
+description: '列出你在單場賽事上的未成交訂單和已撮合投注'
+openapi: 'GET /user/getOrdersForGame'
+---
+
+對於給定的 4casters 賽事 ID，返回撥用方在該賽事上的未成交訂單和已撮合（未結算）投注。此端點不返回已結算投注 — 請使用 [獲取已結算注單](/zh-Hant/pages/rest/user/get-graded-wagers)。
+
+## 請求 {#request}
+
+`GET /user/getOrdersForGame`
+
+<ParamField query="gameID" type="string" required>4casters 賽事 ID。</ParamField>
+
+<CodeGroup>
+```bash curl
+curl "https://api.4casters.io/user/getOrdersForGame?gameID=688c0516fbc14da0c202d426" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+</CodeGroup>
+
+## 響應 {#response}
+
+<ResponseField name="data.unmatched" type="array">
+  該賽事上的未成交訂單陣列，按開賽時間升序排列。形態與 [獲取未撮合訂單](/zh-Hant/pages/rest/user/get-unmatched-orders) 相同。
+</ResponseField>
+<ResponseField name="data.matched" type="array">
+  該賽事上已撮合（未結算）投注的陣列。形態與 [獲取已撮合投注](/zh-Hant/pages/rest/user/get-matched-bets) 相同。
+</ResponseField>
+
+### 示例 {#example}
+
+<CodeGroup>
+```json JSON
+{
+  "data": {
+    "unmatched": [/* UnmatchedOrder, ... */],
+    "matched":   [/* MatchedBet, ...     */]
+  }
+}
+```
+</CodeGroup>
+
+## 錯誤 {#errors}
+
+| 狀態 | 含義 |
+| ------ | ------- |
+| `404`  | `gameID` 缺失或不是有效的賽事 ID。 |

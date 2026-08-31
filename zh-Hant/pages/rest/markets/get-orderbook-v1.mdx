@@ -1,0 +1,41 @@
+---
+title: '獲取訂單簿（v1，已棄用）'
+description: '為向後相容保留的舊版巢狀訂單簿端點'
+openapi: 'POST /exchange/getOrderbook'
+---
+
+<Warning>
+**已棄用。** 更簡單、推薦的扁平格式請使用 [`GET /exchange/v2/getOrderbook`](/zh-Hant/pages/rest/markets/get-orderbook)。
+
+此端點僅為與舊客戶端向後相容而保留。
+</Warning>
+
+以**巢狀**形式返回整個聯賽的訂單簿，按讓分 / 大小分數鍵控。單場形態與 [獲取單場訂單簿](/zh-Hant/pages/rest/markets/get-single-orderbook) 相同，但覆蓋該聯賽的每一場賽事。
+
+## 請求 {#request}
+
+`POST /exchange/getOrderbook`
+
+<ParamField body="leagueRequested" type="string" required>
+  聯賽程式碼（不區分大小寫）。
+</ParamField>
+
+<CodeGroup>
+```bash curl
+curl -X POST https://api.4casters.io/exchange/getOrderbook \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"leagueRequested": "NBA"}'
+```
+</CodeGroup>
+
+## 響應 {#response}
+
+<ResponseField name="data.market" type="string">此端點始終為 `null`。</ResponseField>
+<ResponseField name="data.games"  type="array">
+  帶巢狀訂單簿欄位的賽事陣列。單場形態見 [獲取單場訂單簿](/zh-Hant/pages/rest/markets/get-single-orderbook#response) — `awayMoneylines` / `homeMoneylines` 陣列，以及按讓分或大小分數鍵控的 `awaySpreads` / `homeSpreads` / `over` / `under` 物件。
+</ResponseField>
+
+這些桶中的每筆單獨訂單具有標準訂單形態：
+
+<Snippet file="zh-Hant/types/orderbook-order.mdx" />

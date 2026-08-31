@@ -1,0 +1,42 @@
+---
+title: '更新日志'
+description: '4casters API 中对客户端可见的重要变更。'
+---
+
+本更新日志记录对集成方可观察的 4casters 公开 API 变更。内部重构、不改变行为的性能修复，以及基础设施变更有意省略。
+
+约定：
+
+- 最新条目在前。日期为 ISO `YYYY-MM-DD`。
+- 每条条目标注受影响的 API 接口。
+- 变更归类在「新增」「变更」「修复」「弃用」或「移除」下（不适用的小节会省略）。
+- 破坏性变更标注为 `Breaking`。
+
+---
+
+<Update label="2026-08-13" tags={["REST API", "订单 API"]}>
+  ### 新增
+  - **`fillOrKill` 订单类型。** 全成或全撤的吃单：必须立即撮合全部 `bet`，否则整笔订单被拒绝并回滚任何部分成交，因此你不会停留在部分成交状态。REST 和 WebSocket 下单端点均支持。见 [订单类型](/zh-Hans/pages/rest/orders/place-order#order-types)。
+
+  ### 修复
+  - **更正了 `fillAndKill` 文档。** 原先描述为「按你的价格立即成交，否则拒绝」，读起来像全成或全撤。`fillAndKill` 实际会成交当前可成交数量并取消剩余部分 — **部分成交**即为成功结果，仅在完全没有可撮合流动性时才会被拒绝。行为未变；只是文档有误。若需要真正的全成或全撤执行，请使用新的 `fillOrKill`。
+</Update>
+
+<Update label="2026-07-30" tags={["REST API"]}>
+  ### 新增
+  - **`GET /exchange/getMatchedVolume`。** 新端点，返回一段包含端点的 ET 日历日范围内的全站已撮合成交量。每笔已撮合投注计入双方本金（风险额 + 可赢额，佣金前）；结束于今天的范围包含当天的实时汇总。见 [获取已撮合成交量](/zh-Hans/pages/rest/markets/get-matched-volume)。
+</Update>
+
+<Update label="2026-07-15" tags={["推送 API", "用户推送"]}>
+  ### 修复
+  - **`GET /v2/user/messages` 回放现在会返回消息。** v2 用户推送回放端点此前始终返回空列表，因此断线后的缺口恢复会静默无效。回放消息的形态与 WebSocket 送达的完全一致。见 [回放错过的消息](/zh-Hans/pages/streaming/user-feed#replaying-missed-messages)。
+</Update>
+
+<Update label="2026-04-28" tags={["推送 API", "行情推送"]}>
+  ### 新增
+  - **行情推送可按 `gameID`、`league` 或 `sport` 订阅。** 连接到 `wss://streaming-api.4casters.io/price-stream` 的客户端现在可以发送 JSON 的 `subscribe`、`unsubscribe` 和 `subscribeAll` 命令，将推送收窄到特定赛事、联赛或运动项目。完整命令形态与路由语义见 [订阅](/zh-Hans/pages/streaming/price-feed#subscriptions)。
+  - **`parentGameID` 扇出。** 订阅父级 `gameID` 的客户端也会收到 `parentGameID` 匹配的子赛事更新（例如 F5-MLB 衍生盘会到达父赛事的订阅者）。
+
+  ### 变更
+  - **向后兼容。** 从不发送 subscribe 命令的客户端保持广播全部模式，并像以前一样接收每条更新 — 无需更改集成。
+</Update>

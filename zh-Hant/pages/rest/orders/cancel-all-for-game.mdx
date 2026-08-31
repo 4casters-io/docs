@@ -1,0 +1,49 @@
+---
+title: '取消單場賽事的全部訂單'
+description: '取消單場賽事上的每一筆未成交訂單'
+openapi: 'POST /session/cancelAllOrdersForGame'
+---
+
+取消單場賽事上的每一筆未成交訂單。可選擇限定到單一市場 `type`，以保留其他市場的訂單。
+
+## 請求 {#request}
+
+`POST /session/cancelAllOrdersForGame`
+
+<ParamField body="gameID" type="string" required>
+  應取消訂單的賽事。
+</ParamField>
+<ParamField body="type" type="string">
+  可選。僅取消該市場型別的訂單 — 取值為 `moneyline`、`spread`、`total` 之一。省略時取消所有市場型別。
+</ParamField>
+
+<CodeGroup>
+```bash curl（單個市場）
+curl -X POST https://api.4casters.io/session/cancelAllOrdersForGame \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "gameID": "688c0516fbc14da0c202d426",
+    "type": "spread"
+  }'
+```
+
+```bash curl（全部市場）
+curl -X POST https://api.4casters.io/session/cancelAllOrdersForGame \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{ "gameID": "688c0516fbc14da0c202d426" }'
+```
+</CodeGroup>
+
+## 響應 {#response}
+
+<ResponseField name="data" type="array">
+  按單取消結果。形態與 [取消一筆訂單](/zh-Hant/pages/rest/orders/cancel-order#response) 相同。
+</ResponseField>
+
+## 錯誤 {#errors}
+
+| 狀態 | 含義 |
+| ------ | ------- |
+| `400`  | `gameID` 缺失 / 無效，或 `type` 不是允許的取值之一。 |

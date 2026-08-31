@@ -1,0 +1,68 @@
+---
+title: '心跳'
+---
+
+心跳用於保持會話存活。傳送帶 `requestTimeout`（單位為**秒**）的心跳 — 如果伺服器在該超時到期前未收到下一次心跳，**你的所有未成交訂單將被自動取消**。
+
+通常在連線生命週期內按固定間隔傳送心跳（例如每 5 秒一次，超時 10 秒）。
+
+## 請求 {#request}
+
+<CodeGroup>
+```json JSON
+[
+  "heartbeat",
+  {
+    "requestID": "YOUR_REQUEST_ID",
+    "requestTimeout": 10
+  }
+]
+```
+</CodeGroup>
+
+<ResponseField name="requestID" type="string">
+  客戶端生成的標識；會在響應中回傳。若省略，伺服器會生成一個。
+</ResponseField>
+<ResponseField name="requestTimeout" type="number" required>
+  伺服器在取消你的全部未成交訂單之前，應等待下一次心跳的秒數。必須大於 `0`。
+</ResponseField>
+
+## 響應 {#response}
+
+伺服器回覆 `heartbeatAck`，其中包含伺服器時鐘和當前有效超時。
+
+<CodeGroup>
+```json JSON
+{
+  "requestID": "YOUR_REQUEST_ID",
+  "data": {
+    "type": "heartbeatAck",
+    "serverTime": "2026-04-22T15:30:00.123456789Z",
+    "timeoutSec": 10
+  }
+}
+```
+</CodeGroup>
+
+<ResponseField name="data.type" type="string">
+  始終為 `heartbeatAck`。
+</ResponseField>
+<ResponseField name="data.serverTime" type="string">
+  當前伺服器時間，RFC 3339 格式，納秒精度。
+</ResponseField>
+<ResponseField name="data.timeoutSec" type="number">
+  回顯你傳送的 `requestTimeout`。
+</ResponseField>
+
+## 錯誤 {#errors}
+
+如果 `requestTimeout` 缺失或 `<= 0`，伺服器返回：
+
+<CodeGroup>
+```json JSON
+{
+  "requestID": "YOUR_REQUEST_ID",
+  "error": "Invalid heartbeat timeout"
+}
+```
+</CodeGroup>

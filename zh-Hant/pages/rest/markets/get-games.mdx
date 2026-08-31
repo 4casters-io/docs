@@ -1,0 +1,80 @@
+---
+title: '獲取賽事'
+description: '列出某聯賽的活躍賽事'
+openapi: 'GET /exchange/v2/getGames'
+---
+
+返回某聯賽的全部活躍賽事。響應**不**包含訂單簿或任何價格 — 請呼叫 [獲取訂單簿](/zh-Hant/pages/rest/markets/get-orderbook) 獲取。
+
+## 請求 {#request}
+
+`GET /exchange/v2/getGames`
+
+<ParamField query="league" type="string" required>
+  來自 [獲取聯賽](/zh-Hant/pages/rest/markets/get-leagues) 的聯賽程式碼。使用特殊值 `upcoming` 可獲取跨聯賽的全部即將開賽賽事。
+</ParamField>
+<ParamField query="sport" type="string">
+  可選的運動專案過濾。
+</ParamField>
+
+<CodeGroup>
+```bash curl
+curl "https://api.4casters.io/exchange/v2/getGames?league=NBA" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+</CodeGroup>
+
+## 響應 {#response}
+
+<ResponseField name="data.games" type="array">
+  <Expandable title="Game">
+    <ResponseField name="id"             type="string">賽事 ID。</ResponseField>
+    <ResponseField name="parentGameID"   type="string">父賽事 ID（若這是子市場：附加盤、分段盤）。</ResponseField>
+    <ResponseField name="cheapDataUID"   type="string">賽事的穩定跨系統標識（用於盤口關聯）。</ResponseField>
+    <ResponseField name="league"         type="string" />
+    <ResponseField name="sport"          type="string" />
+    <ResponseField name="start"          type="string">ISO 8601 開賽時間。</ResponseField>
+    <ResponseField name="ended"          type="boolean" />
+    <ResponseField name="live"           type="boolean" />
+    <ResponseField name="featured"       type="boolean" />
+    <ResponseField name="eventName"      type="string" />
+    <ResponseField name="tournamentName" type="string" />
+    <ResponseField name="periodName"     type="string">例如 `Full Time`、`1H`、`Set 1`。</ResponseField>
+    <ResponseField name="isSpecials"     type="boolean">期貨盤及其他特殊盤為 `true`。</ResponseField>
+    <ResponseField name="participants"   type="array">二元 `[away, home]` 陣列。每個參賽方有 `id`、`longName`、`shortName`、`homeAway`、`mainPitcher`、`rotationNumber`、`futuresSide`。</ResponseField>
+  </Expandable>
+</ResponseField>
+
+### 示例 {#example}
+
+<CodeGroup>
+```json JSON
+{
+  "data": {
+    "games": [
+      {
+        "id": "6266c12172aefcf0033374ce",
+        "parentGameID": null,
+        "cheapDataUID": "32620-79238-2022-04-26",
+        "league": "NHL",
+        "sport": "hockey",
+        "start": "2022-04-26T18:00:00.000Z",
+        "ended": false,
+        "live": false,
+        "featured": false,
+        "participants": [
+          { "id": "60747bc471b5071a80ca0ac8", "longName": "Carolina Hurricanes", "shortName": "CAR", "homeAway": "away", "mainPitcher": null, "rotationNumber": "25", "futuresSide": "" },
+          { "id": "607349daf6d3364eb69604f6", "longName": "New York Rangers",    "shortName": "NEW", "homeAway": "home", "mainPitcher": null, "rotationNumber": "26", "futuresSide": "" }
+        ]
+      }
+    ]
+  }
+}
+```
+</CodeGroup>
+
+## 錯誤 {#errors}
+
+| 狀態 | 含義 |
+| ------ | ------- |
+| `400`  | `league` 為必填。 |

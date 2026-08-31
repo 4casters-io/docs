@@ -1,0 +1,289 @@
+---
+title: '取消訂單'
+---
+
+支援四種取消方式。它們都使用相同的響應信封：`{ requestID, data: [ ...CancelResponsePayload ] }`。
+
+## 取消響應載荷 {#cancel-response-payload}
+
+每次成功取消都會返回一條或多條如下形態的記錄。注意請求與響應的欄位大小寫不同：請求為 `orderId`/`gameId`（`d` 小寫），響應為 `orderID`/`gameID`（`ID` 大寫）。
+
+<CodeGroup>
+```json JSON
+{
+  "success": true,
+  "orderID": "67f45377c18c6697c172afa4",
+  "odds": -110,
+  "filled": 0,
+  "offered": 100,
+  "remaining": 100,
+  "side": "5c12bc1ce0daba000f47ba8b",
+  "number": -3.5,
+  "gameID": "688c0516fbc14da0c202d426",
+  "userReference": "client-ref-001",
+  "description": "Dallas Mavericks +3.5"
+}
+```
+</CodeGroup>
+
+<ResponseField name="success" type="boolean">
+  訂單已取消時為 `true`。
+</ResponseField>
+<ResponseField name="orderID" type="string">
+  被取消訂單的 ID。
+</ResponseField>
+<ResponseField name="filled" type="number">
+  取消到達前已經成交的數量。
+</ResponseField>
+<ResponseField name="offered" type="number">
+  取消後始終為 `0` — 掛單側已歸零。
+</ResponseField>
+<ResponseField name="remaining" type="number">
+  取消時尚未成交的數量。
+</ResponseField>
+<ResponseField name="odds" type="number">
+  被取消訂單的美式賠率，從 maker 視角給出。
+</ResponseField>
+<ResponseField name="side" type="string">
+  參賽者 ID（moneyline/spread）或 `over`/`under`（大小球）。
+</ResponseField>
+<ResponseField name="number" type="number">
+  讓分或大小球盤口數值；moneyline 為 `null`。
+</ResponseField>
+<ResponseField name="gameID" type="string">
+  被取消訂單所屬的賽事。
+</ResponseField>
+<ResponseField name="userReference" type="string">
+  下單時設定的 `userReference`（如有）。
+</ResponseField>
+<ResponseField name="description" type="string">
+  投注的人類可讀描述（例如 `"Dallas Mavericks +3.5"`）。
+</ResponseField>
+
+## 按 ID 取消 {#cancel-by-id}
+
+按訂單 ID 取消單筆訂單。
+
+### 請求 {#request}
+
+<CodeGroup>
+```json JSON
+[
+  "cancelById",
+  {
+    "requestID": "YOUR_REQUEST_ID",
+    "orderId": "ORDER_ID_TO_CANCEL"
+  }
+]
+```
+</CodeGroup>
+
+### 響應 {#response}
+
+<CodeGroup>
+```json JSON
+{
+  "requestID": "YOUR_REQUEST_ID",
+  "data": [
+    {
+      "success": true,
+      "orderID": "67f45377c18c6697c172afa4",
+      "odds": -110,
+      "filled": 0,
+      "offered": 0,
+      "remaining": 100,
+      "side": "5c12bc1ce0daba000f47ba8b",
+      "number": -3.5,
+      "gameID": "688c0516fbc14da0c202d426",
+      "userReference": "client-ref-001",
+      "description": "Dallas Mavericks +3.5"
+    }
+  ]
+}
+```
+</CodeGroup>
+
+## 批次取消 {#cancel-multiple}
+
+按 ID 取消一組指定訂單。
+
+### 請求
+
+<CodeGroup>
+```json JSON
+[
+  "cancelMultiple",
+  {
+    "requestID": "YOUR_REQUEST_ID",
+    "orderIDs": [
+      "ORDER_ID_1",
+      "ORDER_ID_2",
+      "ORDER_ID_3"
+    ]
+  }
+]
+```
+</CodeGroup>
+
+### 響應
+
+`data` 中每個訂單 ID 對應一條記錄；請檢查每條的 `success` 標誌。
+
+<CodeGroup>
+```json JSON
+{
+  "requestID": "YOUR_REQUEST_ID",
+  "data": [
+    {
+      "success": true,
+      "orderID": "ORDER_ID_1",
+      "odds": -110,
+      "filled": 0,
+      "offered": 0,
+      "remaining": 100,
+      "side": "5c12bc1ce0daba000f47ba8b",
+      "number": -3.5,
+      "gameID": "688c0516fbc14da0c202d426",
+      "userReference": "",
+      "description": "Dallas Mavericks +3.5"
+    },
+    {
+      "success": false,
+      "orderID": "ORDER_ID_2",
+      "description": "order already cancelled"
+    }
+  ]
+}
+```
+</CodeGroup>
+
+## 按賽事全部取消 {#cancel-all-by-game}
+
+取消你在單場賽事上的全部未成交訂單。可選擇傳入 `type`、`side` 和/或 `market`，將取消範圍限定到特定盤口。
+
+### 請求
+
+<CodeGroup>
+```json JSON
+[
+  "cancelAllByGame",
+  {
+    "requestID": "YOUR_REQUEST_ID",
+    "gameId": "GAME_ID_TO_CANCEL",
+    "type": "spread",
+    "side": "5c12bc1ce0daba000f47ba8b",
+    "market": "main"
+  }
+]
+```
+</CodeGroup>
+
+<ResponseField name="gameId" type="string" required>
+  要取消訂單的賽事。
+</ResponseField>
+<ResponseField name="type" type="string">
+  可選 — 過濾到單一盤口型別：`moneyline`、`spread`、`total` 或 `moneyline1x2`。
+</ResponseField>
+<ResponseField name="side" type="string">
+  可選 — 參賽者 ID（moneyline/spread）或 `over`/`under`（大小球）。
+</ResponseField>
+<ResponseField name="market" type="string">
+  可選 — 盤口識別符號（例如 `main`）。
+</ResponseField>
+
+### 響應
+
+<CodeGroup>
+```json JSON
+{
+  "requestID": "YOUR_REQUEST_ID",
+  "data": [
+    {
+      "success": true,
+      "orderID": "67f45377c18c6697c172afa4",
+      "odds": -110,
+      "filled": 0,
+      "offered": 0,
+      "remaining": 100,
+      "side": "5c12bc1ce0daba000f47ba8b",
+      "number": -3.5,
+      "gameID": "688c0516fbc14da0c202d426",
+      "userReference": "",
+      "description": "Dallas Mavericks +3.5"
+    }
+  ]
+}
+```
+</CodeGroup>
+
+## 全部取消 {#cancel-all}
+
+取消帳戶上的全部未成交訂單。
+
+### 請求
+
+<CodeGroup>
+```json JSON
+[
+  "cancelAll",
+  {
+    "requestID": "YOUR_REQUEST_ID"
+  }
+]
+```
+</CodeGroup>
+
+### 響應
+
+<CodeGroup>
+```json JSON
+{
+  "requestID": "YOUR_REQUEST_ID",
+  "data": [
+    {
+      "success": true,
+      "orderID": "67f45377c18c6697c172afa4",
+      "odds": -110,
+      "filled": 0,
+      "offered": 0,
+      "remaining": 100,
+      "side": "5c12bc1ce0daba000f47ba8b",
+      "number": -3.5,
+      "gameID": "688c0516fbc14da0c202d426",
+      "userReference": "",
+      "description": "Dallas Mavericks +3.5"
+    }
+  ]
+}
+```
+</CodeGroup>
+
+## 錯誤 {#errors}
+
+當取消無法處理時，伺服器返回標準錯誤信封（無 `data` 欄位）：
+
+<CodeGroup>
+```json JSON
+{
+  "requestID": "YOUR_REQUEST_ID",
+  "error": "order not found"
+}
+```
+</CodeGroup>
+
+常見 `error` 值：
+
+| 錯誤 | 何時出現 |
+| --- | --- |
+| `invalid order ID format` | `cancelById` 的 `orderId` 不是有效的 ObjectID。 |
+| `order not found` | 該訂單 ID 不存在。 |
+| `unauthorized: order does not belong to user` | 你正在嘗試取消他人的訂單。 |
+| `order already cancelled` | 該訂單已被取消。 |
+| `order is expired` | 訂單在取消到達前已過期。 |
+| `order already graded` | 該訂單已經結算。 |
+| `game not found` | 所引用的賽事不在快取中。 |
+| `Failed to process cancelMultiple` | 處理 `cancelMultiple` 批次時發生意外錯誤。 |
+| `Failed to process cancelAll` | 處理 `cancelAll` 時發生意外錯誤。 |
+| `Failed to process cancelAllByGame` | 處理 `cancelAllByGame` 時發生意外錯誤。 |
+
+對於批次取消（`cancelMultiple`、`cancelAllByGame`、`cancelAll`），單筆失敗會出現在 `data` 中，帶有 `success: false` 以及解釋原因的 `description` — 只有信封級的 `error` 才表示整個請求失敗。

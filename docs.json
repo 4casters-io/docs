@@ -208,29 +208,29 @@
         ]
       },
       {
-        "language": "zh",
+        "language": "zh-Hans",
         "tabs": [
           {
             "tab": "简介",
             "pages": [
-              "zh/pages/introduction"
+              "zh-Hans/pages/introduction"
             ]
           },
           {
             "tab": "WebSocket 推送",
             "pages": [
-              "zh/pages/streaming/introduction",
-              "zh/pages/streaming/user-feed",
-              "zh/pages/streaming/price-feed"
+              "zh-Hans/pages/streaming/introduction",
+              "zh-Hans/pages/streaming/user-feed",
+              "zh-Hans/pages/streaming/price-feed"
             ]
           },
           {
             "tab": "订单 API",
             "pages": [
-              "zh/pages/websocket/introduction",
-              "zh/pages/websocket/heartbeat",
-              "zh/pages/websocket/place-order",
-              "zh/pages/websocket/cancel-orders"
+              "zh-Hans/pages/websocket/introduction",
+              "zh-Hans/pages/websocket/heartbeat",
+              "zh-Hans/pages/websocket/place-order",
+              "zh-Hans/pages/websocket/cancel-orders"
             ]
           },
           {
@@ -239,56 +239,56 @@
               {
                 "group": "入门",
                 "pages": [
-                  "zh/pages/rest/introduction",
-                  "zh/pages/rest/authentication"
+                  "zh-Hans/pages/rest/introduction",
+                  "zh-Hans/pages/rest/authentication"
                 ]
               },
               {
                 "group": "用户",
                 "pages": [
-                  "zh/pages/rest/user/get-me",
-                  "zh/pages/rest/user/get-matched-bets",
-                  "zh/pages/rest/user/get-unmatched-orders",
-                  "zh/pages/rest/user/get-orders-for-game",
-                  "zh/pages/rest/user/get-graded-wagers",
-                  "zh/pages/rest/user/get-bet-by-id",
-                  "zh/pages/rest/user/get-bet-by-wager-request-id",
-                  "zh/pages/rest/user/get-bet-by-user-reference",
-                  "zh/pages/rest/user/orders-heartbeat",
-                  "zh/pages/rest/user/get-game-liability"
+                  "zh-Hans/pages/rest/user/get-me",
+                  "zh-Hans/pages/rest/user/get-matched-bets",
+                  "zh-Hans/pages/rest/user/get-unmatched-orders",
+                  "zh-Hans/pages/rest/user/get-orders-for-game",
+                  "zh-Hans/pages/rest/user/get-graded-wagers",
+                  "zh-Hans/pages/rest/user/get-bet-by-id",
+                  "zh-Hans/pages/rest/user/get-bet-by-wager-request-id",
+                  "zh-Hans/pages/rest/user/get-bet-by-user-reference",
+                  "zh-Hans/pages/rest/user/orders-heartbeat",
+                  "zh-Hans/pages/rest/user/get-game-liability"
                 ]
               },
               {
                 "group": "订单",
                 "pages": [
-                  "zh/pages/rest/orders/place-order",
-                  "zh/pages/rest/orders/edit-order",
-                  "zh/pages/rest/orders/lookup-order",
-                  "zh/pages/rest/orders/cancel-order",
-                  "zh/pages/rest/orders/cancel-multiple",
-                  "zh/pages/rest/orders/cancel-by-reference",
-                  "zh/pages/rest/orders/cancel-all-for-game",
-                  "zh/pages/rest/orders/cancel-all-for-league",
-                  "zh/pages/rest/orders/cancel-all-orders"
+                  "zh-Hans/pages/rest/orders/place-order",
+                  "zh-Hans/pages/rest/orders/edit-order",
+                  "zh-Hans/pages/rest/orders/lookup-order",
+                  "zh-Hans/pages/rest/orders/cancel-order",
+                  "zh-Hans/pages/rest/orders/cancel-multiple",
+                  "zh-Hans/pages/rest/orders/cancel-by-reference",
+                  "zh-Hans/pages/rest/orders/cancel-all-for-game",
+                  "zh-Hans/pages/rest/orders/cancel-all-for-league",
+                  "zh-Hans/pages/rest/orders/cancel-all-orders"
                 ]
               },
               {
                 "group": "市场",
                 "pages": [
-                  "zh/pages/rest/markets/get-leagues",
-                  "zh/pages/rest/markets/get-participants",
-                  "zh/pages/rest/markets/get-games",
-                  "zh/pages/rest/markets/get-orderbook",
-                  "zh/pages/rest/markets/get-single-orderbook",
-                  "zh/pages/rest/markets/get-average-price",
-                  "zh/pages/rest/markets/get-matched-volume",
-                  "zh/pages/rest/markets/get-orderbook-v1"
+                  "zh-Hans/pages/rest/markets/get-leagues",
+                  "zh-Hans/pages/rest/markets/get-participants",
+                  "zh-Hans/pages/rest/markets/get-games",
+                  "zh-Hans/pages/rest/markets/get-orderbook",
+                  "zh-Hans/pages/rest/markets/get-single-orderbook",
+                  "zh-Hans/pages/rest/markets/get-average-price",
+                  "zh-Hans/pages/rest/markets/get-matched-volume",
+                  "zh-Hans/pages/rest/markets/get-orderbook-v1"
                 ]
               },
               {
                 "group": "联盟",
                 "pages": [
-                  "zh/pages/rest/affiliate/get-affiliate-commission"
+                  "zh-Hans/pages/rest/affiliate/get-affiliate-commission"
                 ]
               }
             ]
@@ -300,7 +300,105 @@
           {
             "tab": "更新日志",
             "pages": [
-              "zh/pages/changelog"
+              "zh-Hans/pages/changelog"
+            ]
+          }
+        ]
+      },
+      {
+        "language": "zh-Hant",
+        "tabs": [
+          {
+            "tab": "簡介",
+            "pages": [
+              "zh-Hant/pages/introduction"
+            ]
+          },
+          {
+            "tab": "WebSocket 推送",
+            "pages": [
+              "zh-Hant/pages/streaming/introduction",
+              "zh-Hant/pages/streaming/user-feed",
+              "zh-Hant/pages/streaming/price-feed"
+            ]
+          },
+          {
+            "tab": "訂單 API",
+            "pages": [
+              "zh-Hant/pages/websocket/introduction",
+              "zh-Hant/pages/websocket/heartbeat",
+              "zh-Hant/pages/websocket/place-order",
+              "zh-Hant/pages/websocket/cancel-orders"
+            ]
+          },
+          {
+            "tab": "REST API",
+            "groups": [
+              {
+                "group": "入門",
+                "pages": [
+                  "zh-Hant/pages/rest/introduction",
+                  "zh-Hant/pages/rest/authentication"
+                ]
+              },
+              {
+                "group": "使用者",
+                "pages": [
+                  "zh-Hant/pages/rest/user/get-me",
+                  "zh-Hant/pages/rest/user/get-matched-bets",
+                  "zh-Hant/pages/rest/user/get-unmatched-orders",
+                  "zh-Hant/pages/rest/user/get-orders-for-game",
+                  "zh-Hant/pages/rest/user/get-graded-wagers",
+                  "zh-Hant/pages/rest/user/get-bet-by-id",
+                  "zh-Hant/pages/rest/user/get-bet-by-wager-request-id",
+                  "zh-Hant/pages/rest/user/get-bet-by-user-reference",
+                  "zh-Hant/pages/rest/user/orders-heartbeat",
+                  "zh-Hant/pages/rest/user/get-game-liability"
+                ]
+              },
+              {
+                "group": "訂單",
+                "pages": [
+                  "zh-Hant/pages/rest/orders/place-order",
+                  "zh-Hant/pages/rest/orders/edit-order",
+                  "zh-Hant/pages/rest/orders/lookup-order",
+                  "zh-Hant/pages/rest/orders/cancel-order",
+                  "zh-Hant/pages/rest/orders/cancel-multiple",
+                  "zh-Hant/pages/rest/orders/cancel-by-reference",
+                  "zh-Hant/pages/rest/orders/cancel-all-for-game",
+                  "zh-Hant/pages/rest/orders/cancel-all-for-league",
+                  "zh-Hant/pages/rest/orders/cancel-all-orders"
+                ]
+              },
+              {
+                "group": "市場",
+                "pages": [
+                  "zh-Hant/pages/rest/markets/get-leagues",
+                  "zh-Hant/pages/rest/markets/get-participants",
+                  "zh-Hant/pages/rest/markets/get-games",
+                  "zh-Hant/pages/rest/markets/get-orderbook",
+                  "zh-Hant/pages/rest/markets/get-single-orderbook",
+                  "zh-Hant/pages/rest/markets/get-average-price",
+                  "zh-Hant/pages/rest/markets/get-matched-volume",
+                  "zh-Hant/pages/rest/markets/get-orderbook-v1"
+                ]
+              },
+              {
+                "group": "聯盟",
+                "pages": [
+                  "zh-Hant/pages/rest/affiliate/get-affiliate-commission"
+                ]
+              }
+            ]
+          },
+          {
+            "tab": "API 參考",
+            "openapi": "/sources/core-api.openapi.json"
+          },
+          {
+            "tab": "更新日誌",
+            "pages": [
+              "zh-Hant/pages/changelog"
             ]
           }
         ]
