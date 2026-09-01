@@ -73,14 +73,14 @@ Crea una oferta en espera. Si la orden **se cruzaría** con liquidez existente a
 
 ### `postArb` {#postarb}
 
-Se comporta como `post`, pero puedes colocar **incluso cuando la orden se cruzaría**, **solo si** tus **cuotas americanas** están dentro del **1 %** de las cuotas de la orden en espera con la que te cruzarías. Si esa diferencia de precio es **mayor al 1 %**, la colocación se rechaza.
+Se comporta como `post`, pero puedes colocar **incluso cuando la orden se cruzaría**, **solo si** tus **cuotas americanas** están dentro del **1%** de las cuotas de la orden en espera con la que te cruzarías. Si esa diferencia de precio es **mayor al 1%**, la colocación se rechaza.
 
 Ejemplos:
 
 - Mejor oferta **+100** y colocas **+100** — `post` se rechaza (se cruzaría); `postArb` puede estar permitido.
-- Mejor oferta **+200** — `postArb` a **+190** se rechaza (demasiado lejos de **+200**). Alrededor de **+198** está en el borde de la banda del 1 % frente a **+200**.
-- Mejor orden **−200** — la banda se extiende hasta alrededor de **−202** en el lado negativo (la misma regla del 1 %).
-- Con **+100** en el libro, **−101** es el límite de referencia en el otro lado para la tolerancia del 1 % (según las reglas del producto).
+- Mejor oferta **+200** — `postArb` a **+190** se rechaza (demasiado lejos de **+200**). Alrededor de **+198** está en el borde de la banda del 1% frente a **+200**.
+- Mejor orden **−200** — la banda se extiende hasta alrededor de **−202** en el lado negativo (la misma regla del 1%).
+- Con **+100** en el libro, **−101** es el límite de referencia en el otro lado para la tolerancia del 1% (según las reglas del producto).
 
 `postArb` evita las **comisiones de taker** de un cruce normal: no se te cobran comisiones de taker en este flujo como sí ocurriría si tomases o golpeases liquidez en espera como taker.
 
@@ -385,7 +385,7 @@ Sin liquidez cruzable en absoluto, la misma orden se rechaza con `"fill or kill 
 
 ### Escenario 6: postArb frente a post cuando el libro cruzaría {#scenario-6-postarb-vs-post-when-the-book-would-match}
 
-`post` rechaza una orden que cruzaría liquidez en espera (por ejemplo, mejor oferta **+100** e intentas colocar **+100**). `postArb` permite esa situación cuando tus cuotas están dentro del **1 %** de la orden con la que te cruzarías, de modo que la misma colocación a **+100** puede tener éxito como `postArb` y **evitas** las **comisiones de taker** que pagarías en un cruce normal si tomases esa liquidez como taker. Si tu precio está demasiado lejos de la cotización en espera (p. ej. mejor oferta **+200** pero envías **+190**), `postArb` se rechaza; un precio alrededor de **+198** está cerca del límite frente a **+200**. Usa `"orderType": "postArb"` en el objeto de orden igual que `limit`, `post`, `fillAndKill` o `fillOrKill`.
+`post` rechaza una orden que cruzaría liquidez en espera (por ejemplo, mejor oferta **+100** e intentas colocar **+100**). `postArb` permite esa situación cuando tus cuotas están dentro del **1%** de la orden con la que te cruzarías, de modo que la misma colocación a **+100** puede tener éxito como `postArb` y **evitas** las **comisiones de taker** que pagarías en un cruce normal si tomases esa liquidez como taker. Si tu precio está demasiado lejos de la cotización en espera (p. ej. mejor oferta **+200** pero envías **+190**), `postArb` se rechaza; un precio alrededor de **+198** está cerca del límite frente a **+200**. Usa `"orderType": "postArb"` en el objeto de orden igual que `limit`, `post`, `fillAndKill` o `fillOrKill`.
 
 <CodeGroup>
 ```json JSON
@@ -479,7 +479,7 @@ Los errores se devuelven de forma posicional en el array `data`, coincidiendo co
 - `error_type` es un enum en el que puedes apoyarte para el manejo programático:
     - `validation_error` — el payload o el estado no superó la validación (p. ej. campos ausentes, cuotas/número incorrectos, lado inválido, juego inactivo).
     - `rejected_liability` — restricciones de usuario, cuenta o liability impidieron la colocación o la ejecución.
-    - `rejected_order_type_rules` — las reglas del tipo de orden prohíben la ejecución (p. ej. `fillAndKill` no encontró liquidez ejecutable, así que no se pudo cruzar nada y la orden fue rechazada; `fillOrKill` no se pudo cruzar por completo; `post` encontró cruces cuando los cruces no están permitidos; o `postArb` se rechazó porque tus cuotas americanas difieren de la orden en espera con la que te cruzarías en **más del 1 %**).
+    - `rejected_order_type_rules` — las reglas del tipo de orden prohíben la ejecución (p. ej. `fillAndKill` no encontró liquidez ejecutable, así que no se pudo cruzar nada y la orden fue rechazada; `fillOrKill` no se pudo cruzar por completo; `post` encontró cruces cuando los cruces no están permitidos; o `postArb` se rechazó porque tus cuotas americanas difieren de la orden en espera con la que te cruzarías en **más del 1%**).
     - `system_error` — error transitorio o interno; reintentar puede funcionar.
 
 Ejemplo con varias colocaciones de órdenes, algunas de las cuales devolvieron un error:

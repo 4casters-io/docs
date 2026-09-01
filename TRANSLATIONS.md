@@ -153,7 +153,7 @@ Address the user as `tú`, never `usted`. Neutral between Spain and Latin Americ
 
 `matched` and `unmatched` as **API field names** stay in English everywhere — they are keys in the payload (rule 2). The Spanish words above are for the concept in prose.
 
-**Spanish typography is intentional:** `3,000` renders as `3.000` and `1%` as `1 %` — correct Spanish convention, applied consistently. Do not "fix" these back. Note the deliberate difference from the frontend (PRO-275), which keeps `en-US` number formatting by PM decision.
+**Numbers are `en-US` format in every language — PM decision (2026-09-01), docs and app alike.** `3,000` stays `3,000` and `1%` stays `1%` in Spanish prose; do not localize separators. The Spanish tree was normalized (it had `3.000` on two pages, `1,000` on two others, and `1 %` throughout two). Rationale: one number format everywhere ahead of locale-separator bugs — `parseFloat("1.234,56")` reads as 1.234.
 
 **Two drift items for the Spanish reviewer:** *exchange* is kept in English on most pages but rendered `intercambio` in 5 — pick one (recommend keeping `exchange`); and one raw English "liability" survives in `websocket/place-order`'s error section where the pages otherwise use `exposición`.
 
