@@ -1,0 +1,107 @@
+---
+title: 'Obter livro de ordens'
+description: 'Ler o livro de ordens de uma liga ou jogo (v2, recomendado)'
+openapi: 'GET /exchange/v2/getOrderbook'
+---
+
+Devolve o livro de ordens de uma liga ou de um único jogo em forma **plana**: cada mercado é um array de ordens em vez de um objeto indexado por spread / total.
+
+Este é o endpoint de livro de ordens recomendado. Combine-o com o feed de preços do [WebSocket de Streaming](/pt/pages/streaming/price-feed) para atualizações em tempo real.
+
+## Pedido {#request}
+
+`GET /exchange/v2/getOrderbook`
+
+<ParamField query="league" type="string">
+  Código da liga, p. ex. `NBA` (não distingue maiúsculas de minúsculas). Obrigatório quando `gameID` não é fornecido.
+</ParamField>
+<ParamField query="sport" type="string">
+  Nome do desporto, p. ex. `basketball` (não distingue maiúsculas de minúsculas). Filtro opcional quando `league` está definido.
+</ParamField>
+<ParamField query="gameID" type="string">
+  Id de um único jogo. Quando fornecido, `league` e `sport` são ignorados.
+</ParamField>
+
+<CodeGroup>
+```bash curl (uma liga)
+curl "https://api.4casters.io/exchange/v2/getOrderbook?league=NBA" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+
+```bash curl (um jogo)
+curl "https://api.4casters.io/exchange/v2/getOrderbook?gameID=688c0516fbc14da0c202d426" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+</CodeGroup>
+
+## Resposta {#response}
+
+<ResponseField name="data.games" type="array">
+  Cada `game` é a forma padrão [Game](/pt/pages/rest/markets/get-games#response) com os seguintes arrays adicionais por mercado:
+
+  <Expandable title="Campos do livro de ordens por jogo">
+    <ResponseField name="awayMoneylines"    type="array">Ordens moneyline em espera a apoiar a equipa de fora. Ordenadas do melhor preço primeiro.</ResponseField>
+    <ResponseField name="homeMoneylines"    type="array">Ordens moneyline em espera a apoiar a equipa da casa.</ResponseField>
+    <ResponseField name="awaySpreads"       type="array">Ordens de spread do lado de fora em espera, aplanadas ao longo dos números de spread.</ResponseField>
+    <ResponseField name="homeSpreads"       type="array">Ordens de spread do lado da casa em espera.</ResponseField>
+    <ResponseField name="over"              type="array">Ordens `over` em espera, aplanadas ao longo dos totais.</ResponseField>
+    <ResponseField name="under"             type="array">Ordens `under` em espera.</ResponseField>
+    <ResponseField name="awayMoneylines1x2" type="array">**Apenas futebol.** Ordens de money line de três vias a apoiar a equipa de fora.</ResponseField>
+    <ResponseField name="homeMoneylines1x2" type="array">**Apenas futebol.** Ordens de money line de três vias a apoiar a equipa da casa.</ResponseField>
+    <ResponseField name="draw1x2"           type="array">**Apenas futebol.** Ordens de money line de três vias no empate.</ResponseField>
+    <ResponseField name="openInterest"      type="number">Soma de `bet` de todas as ordens em espera no jogo.</ResponseField>
+    <ResponseField name="matchedVolume"     type="number">Volume total correspondido neste jogo.</ResponseField>
+  </Expandable>
+</ResponseField>
+
+Cada ordem nesses arrays tem a seguinte forma:
+
+<Snippet file="pt/types/orderbook-order.mdx" />
+
+### Exemplo (abreviado) {#example-trimmed}
+
+<CodeGroup>
+```json JSON
+{
+  "data": {
+    "games": [
+      {
+        "id": "67aaba04c32f13ae2e8aa070",
+        "league": "NBA",
+        "sport": "basketball",
+        "start": "2025-02-12T00:10:00.000Z",
+        "ended": false,
+        "live": false,
+        "featured": false,
+        "eventName": "TORONTO RAPTORS VS PHILADELPHIA 76ERS",
+        "isSpecials": false,
+        "periodName": "Full Time",
+        "participants": [/* away, home */],
+        "awayMoneylines": [
+          {
+            "id": "67ab79fc786aa2c2cfe7524f",
+            "type": "moneyline",
+            "sumUntaken": 1151.04,
+            "odds": 330,
+            "bet": 3798.43,
+            "gameID": "67aaba04c32f13ae2e8aa070",
+            "takenRatio": 0,
+            "participantID": "61a3917a8afa5950306490fd",
+            "expiry": "2025-02-12T00:10:06.000Z",
+            "createdAt": "2025-02-11T16:25:32.354Z",
+            "gameStartExpiry": true
+          }
+        ],
+        "homeMoneylines": [/* ... */],
+        "awaySpreads":    [/* ... */],
+        "homeSpreads":    [/* ... */],
+        "over":           [/* ... */],
+        "under":          [/* ... */],
+        "openInterest": 12450.30,
+        "matchedVolume": 27916.55
+      }
+    ]
+  }
+}
+```
+</CodeGroup>

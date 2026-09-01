@@ -1,0 +1,76 @@
+---
+title: 'Obter volume correspondido'
+description: 'Volume total correspondido em todo o site num intervalo de datas'
+openapi: 'GET /exchange/getMatchedVolume'
+---
+
+Devolve o volume total correspondido em todo o site para um intervalo inclusivo de **dias de calendário US-Eastern (ET)**.
+
+## Como o volume é calculado {#how-volume-is-calculated}
+
+Cada aposta correspondida contribui com os montantes de **ambos os lados** da correspondência:
+
+- o **montante do taker** (o valor correspondido), mais
+- o **montante do maker**, derivado das odds do taker — com odds de taker positivas é `stake × odds / 100`, com odds de taker negativas é `stake × −100 / odds`.
+
+De forma equivalente, na perspetiva de qualquer das partes, cada aposta correspondida contribui com **`risk + win`** — o seu montante mais o seu lucro potencial, porque o seu lucro potencial é exatamente o montante da contraparte. Um take de $100 a +150 conta como $250 de volume ($100 do lado do taker + $150 do lado do maker).
+
+<Note>
+O volume usa os montantes brutos, antes de comissões. Os campos `risk` / `win` em [Obter apostas correspondidas](/pt/pages/rest/user/get-matched-bets) já incorporam a comissão, pelo que somá-los diferirá ligeiramente deste endpoint.
+</Note>
+
+## Atualidade {#freshness}
+
+Os dias ET terminados são lidos de um arquivo diário finalizado. Se o intervalo terminar hoje (um `endDate` posterior a hoje é limitado a hoje), é adicionado um agregado ao vivo das correspondências de hoje, pelo que a parte do dia corrente é atualizada em tempo real à medida que as apostas correspondem.
+
+## Pedido {#request}
+
+`GET /exchange/getMatchedVolume`
+
+<ParamField query="startDate" type="string" required>
+  Primeiro dia de calendário ET do intervalo, `YYYY-MM-DD` (inclusivo).
+</ParamField>
+
+<ParamField query="endDate" type="string" required>
+  Último dia de calendário ET do intervalo, `YYYY-MM-DD` (inclusivo). Não pode ser anterior a `startDate`. As datas posteriores a hoje são limitadas a hoje.
+</ParamField>
+
+<CodeGroup>
+```bash curl
+curl "https://api.4casters.io/exchange/getMatchedVolume?startDate=2026-08-10&endDate=2026-08-11" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+</CodeGroup>
+
+## Resposta {#response}
+
+<ResponseField name="data" type="object">
+  <Expandable title="data">
+    <ResponseField name="startDate" type="string">Eco da data de início pedida.</ResponseField>
+    <ResponseField name="endDate" type="string">Eco da data de fim pedida (antes da limitação).</ResponseField>
+    <ResponseField name="matchedVolume" type="number">Volume total correspondido em USD: a soma dos montantes de ambos os lados (risk + win) de cada aposta correspondida no intervalo.</ResponseField>
+  </Expandable>
+</ResponseField>
+
+```json Exemplo de resposta
+{
+  "data": {
+    "startDate": "2026-08-10",
+    "endDate": "2026-08-11",
+    "matchedVolume": 6447933.012757301
+  }
+}
+```
+
+## Limites de taxa {#rate-limits}
+
+Não existe limite específico deste endpoint — aplica-se apenas o [limite global por IP](/pt/pages/rest/introduction#rate-limiting) (3,000 pedidos por minuto deslizante). Para dashboards, fazer polling a cada poucos segundos é mais do que suficiente; note que os dias finalizados nunca mudam, pelo que só os intervalos que incluem hoje beneficiam de repetir o polling.
+
+## Erros {#errors}
+
+| Estado | Significado |
+|---|---|
+| `400` | `startDate` / `endDate` em falta ou malformados (têm de ser `YYYY-MM-DD`), ou `startDate` posterior a `endDate`. |
+| `401` | Token de autenticação em falta ou inválido. |
+| `429` | Limite global de taxa por IP excedido. Respeite o cabeçalho `Retry-After`. |
+| `503` | Foi atingido o timeout de 15 segundos do lado do servidor. Pode repetir com segurança. |

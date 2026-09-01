@@ -1,0 +1,65 @@
+---
+title: 'API 4casters'
+description: 'Acesso programático à exchange de apostas peer-to-peer da 4casters'
+---
+
+A 4casters expõe três APIs que partilham o mesmo token de autenticação e o mesmo motor subjacente de conta / livro de ordens / liquidação. Escolha a que corresponde ao que está a construir, ou combine-as — a maioria das integrações usa REST para configuração + histórico e um WebSocket para trading ao vivo.
+
+## Escolha a sua API {#choose-your-api}
+
+<CardGroup cols={3}>
+  <Card title="API REST" icon="globe" href="/pt/pages/rest/introduction">
+    Pedido / resposta por HTTPS. Use para iniciar sessão, estado da conta, histórico, consultas de mercado e colocação / edição / cancelamento em lote.
+  </Card>
+  <Card title="WebSocket de ordens" icon="bolt" href="/pt/pages/websocket/introduction">
+    Canal persistente de baixa latência para colocar e cancelar ordens. Use quando a latência de ida e volta for importante.
+  </Card>
+  <Card title="WebSocket de streaming" icon="signal-stream" href="/pt/pages/streaming/introduction">
+    Feeds push de ticks do livro de ordens e de correspondências / liquidações por conta. Use para manter o estado sincronizado sem polling.
+  </Card>
+</CardGroup>
+
+## Quando usar cada uma {#when-to-use-which}
+
+| Canal | Ideal para | Evitar para |
+| --- | --- | --- |
+| **REST** (`https://api.4casters.io`) | Início de sessão, informação de conta, histórico de apostas, consultas, exploração de mercados, colocação / edição / cancelamento em lote, tudo o que executaria a partir de um script ou de um job de backend. | Ciclos internos apertados onde a latência de ida e volta é importante. |
+| **WebSocket de ordens** (`wss://orders-api.4casters.io/orders/ws`) | Trading ao vivo: colocação + cancelamento de baixa latência com uma sessão persistente e correlação por `requestID`. | Leitura de estado — é um canal de escrita/comandos, não uma API de consulta. |
+| **WebSocket de streaming** (`wss://streaming-api.4casters.io/...`) | Ticks do livro de ordens em tempo real (feed de preços) e eventos de correspondência / liquidação por conta (feed de utilizador). | Leituras pontuais — use REST em vez de abrir um stream. |
+
+## Autenticação {#authentication}
+
+As três APIs partilham um único token.
+
+1. Chame [`POST /user/login`](/pt/pages/rest/authentication) na API REST com o seu nome de utilizador e palavra-passe.
+2. Envie o token devolvido em cada pedido subsequente:
+   - **REST**: cabeçalho `Authorization: Bearer <token>`.
+   - **WebSockets**: cabeçalho `Authorization: <token>` no handshake.
+
+Os tokens são válidos durante 30 dias e podem ser renovados antes de expirarem. Consulte [Autenticação](/pt/pages/rest/authentication) para a renovação do token, autenticação com cookie assinado e mais detalhes.
+
+## Convenções {#conventions}
+
+- **Transporte**: apenas HTTPS / WSS.
+- **Codificação**: JSON em todo o lado.
+- **Envelope de resposta (REST)**: `{ "data": <payload> }` em caso de sucesso; `{ "error": "<message>" }` em erros HTTP.
+- **Identificadores**: os ids de jogo, de participante e de ordem são cadeias `ObjectID` do MongoDB (hex de 24 caracteres).
+- **Odds**: formato americano (negativas para favoritos, positivas para não favoritos) salvo indicação em contrário.
+- **Tempo**: ISO 8601 com `Z` (UTC).
+
+## Uma integração típica {#a-typical-integration}
+
+A maioria dos clientes não triviais combina as três:
+
+1. **REST** — `POST /user/login` uma vez, guarde o token em cache e depois chame `GET /user/getMe` e `GET /games/v2/leagues` para inicializar o estado.
+2. **WebSocket de streaming** — abra o feed de preços dos mercados que lhe interessam e o feed de utilizador para reagir às suas próprias correspondências / liquidações.
+3. **WebSocket de ordens** — abra uma ligação persistente e coloque / cancele ordens com baixa latência, correlacionando as respostas por `requestID`.
+4. **REST** — recorra a `POST /myBets/getMatchedBets`, `/myBets/getOrdersForGame`, etc. para histórico e reconciliação.
+
+## Precisa da documentação antiga? {#need-the-old-docs}
+
+A documentação anterior vivia como uma coleção Postman. Está preservada como referência, mas esta documentação Mintlify é agora a fonte de verdade — a coleção Postman pode ficar desatualizada em novos endpoints, parâmetros ou formas de resposta.
+
+<Card title="API 4Casters — coleção Postman" icon="link" href="https://documenter.getpostman.com/view/6710109/U16gNmHG">
+  Ver a documentação legada do Postman
+</Card>

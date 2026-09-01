@@ -1,0 +1,41 @@
+---
+title: 'Obter livro de ordens (v1, descontinuado)'
+description: 'Endpoint legado de livro de ordens aninhado, mantido por retrocompatibilidade'
+openapi: 'POST /exchange/getOrderbook'
+---
+
+<Warning>
+**Descontinuado.** Use [`GET /exchange/v2/getOrderbook`](/pt/pages/rest/markets/get-orderbook) para o formato plano, mais simples e recomendado.
+
+Este endpoint é mantido por retrocompatibilidade com clientes mais antigos.
+</Warning>
+
+Devolve o livro de ordens de uma liga inteira em forma **aninhada**, indexado pelo número de spread / total. Mesma forma por jogo de [Obter livro de ordens de um jogo](/pt/pages/rest/markets/get-single-orderbook), mas para todos os jogos da liga.
+
+## Pedido {#request}
+
+`POST /exchange/getOrderbook`
+
+<ParamField body="leagueRequested" type="string" required>
+  Código da liga (não distingue maiúsculas de minúsculas).
+</ParamField>
+
+<CodeGroup>
+```bash curl
+curl -X POST https://api.4casters.io/exchange/getOrderbook \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"leagueRequested": "NBA"}'
+```
+</CodeGroup>
+
+## Resposta {#response}
+
+<ResponseField name="data.market" type="string">Sempre `null` neste endpoint.</ResponseField>
+<ResponseField name="data.games"  type="array">
+  Array de jogos com campos de livro de ordens aninhado. Consulte [Obter livro de ordens de um jogo](/pt/pages/rest/markets/get-single-orderbook#response) para a forma por jogo — arrays `awayMoneylines` / `homeMoneylines` mais objetos `awaySpreads` / `homeSpreads` / `over` / `under` indexados pelo número de spread ou total.
+</ResponseField>
+
+Cada ordem individual nesses grupos tem a forma padrão de ordem:
+
+<Snippet file="pt/types/orderbook-order.mdx" />

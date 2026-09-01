@@ -1,0 +1,48 @@
+---
+title: 'Obter ordens de um jogo'
+description: 'Listar as suas ordens abertas e apostas correspondidas num único jogo'
+openapi: 'GET /user/getOrdersForGame'
+---
+
+Para um dado id de jogo da 4casters, devolve as ordens abertas do chamador e as apostas correspondidas (não avaliadas) desse jogo. As apostas avaliadas não são devolvidas por este endpoint — use [Obter apostas avaliadas](/pt/pages/rest/user/get-graded-wagers) para essas.
+
+## Pedido {#request}
+
+`GET /user/getOrdersForGame`
+
+<ParamField query="gameID" type="string" required>Id de jogo da 4casters.</ParamField>
+
+<CodeGroup>
+```bash curl
+curl "https://api.4casters.io/user/getOrdersForGame?gameID=688c0516fbc14da0c202d426" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+</CodeGroup>
+
+## Resposta {#response}
+
+<ResponseField name="data.unmatched" type="array">
+  Array de ordens abertas no jogo, ordenado ascendentemente pela hora de início do jogo. Mesma forma de [Obter ordens não correspondidas](/pt/pages/rest/user/get-unmatched-orders).
+</ResponseField>
+<ResponseField name="data.matched" type="array">
+  Array de apostas correspondidas (não avaliadas) no jogo. Mesma forma de [Obter apostas correspondidas](/pt/pages/rest/user/get-matched-bets).
+</ResponseField>
+
+### Exemplo {#example}
+
+<CodeGroup>
+```json JSON
+{
+  "data": {
+    "unmatched": [/* UnmatchedOrder, ... */],
+    "matched":   [/* MatchedBet, ...     */]
+  }
+}
+```
+</CodeGroup>
+
+## Erros {#errors}
+
+| Estado | Significado |
+| ------ | ------- |
+| `404`  | `gameID` em falta ou não é um id de jogo válido. |

@@ -1,0 +1,17 @@
+Quando o servidor falha uma ordem individual num lote de colocação, edição ou cancelamento por ordem, a entrada **por ordem** é devolvida como:
+
+```json
+{
+  "error": "<human-readable message>",
+  "errorType": "validation_error | rejected_liability | rejected_order_type_rules | system_error"
+}
+```
+
+Os erros são devolvidos **posicionalmente** no array de resultados, correspondendo ao índice da ordem de entrada. Se receber um erro para uma ordem, essa ordem não foi processada e pode ser reenviada com segurança.
+
+- `error` não é padronizado — é uma cadeia descritiva e pode mudar.
+- `errorType` é um enum estável em que pode confiar para tratamento programático:
+  - `validation_error` — o payload ou o estado falhou a validação (campos em falta, odds/número inválidos, lado inválido, jogo inativo).
+  - `rejected_liability` — restrições de utilizador / conta / responsabilidade impediram a publicação ou a execução.
+  - `rejected_order_type_rules` — as regras do tipo de ordem proibiram a execução. Exemplos: `fillAndKill` não tinha liquidez executável, `fillOrKill` não pôde ser executada na totalidade, `post` iria corresponder a ordens em espera, ou `postArb` está a mais de 1% do preço correspondível.
+  - `system_error` — erro interno transitório; uma nova tentativa pode ter sucesso.

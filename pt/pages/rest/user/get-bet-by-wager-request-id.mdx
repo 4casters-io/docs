@@ -1,0 +1,44 @@
+---
+title: 'Obter aposta por ID de pedido de aposta'
+description: 'Consultar todas as apostas derivadas de um único pedido de colocação'
+openapi: 'GET /user/getBetByWagerRequestID'
+---
+
+Consulte todas as apostas ligadas a um único `wagerRequestID`. Um `wagerRequestID` é gerado pelo servidor para **cada** ordem de um pedido de colocação — use-o para ligar todas as execuções e ofertas em espera que resultaram de uma única ordem submetida.
+
+A resposta separa os resultados em três grupos:
+
+- `unmatched` — ofertas abertas do pedido que ainda estão em espera no livro. **Sempre vazio neste endpoint** — use [Obter aposta por referência de utilizador](/pt/pages/rest/user/get-bet-by-user-reference) se precisar de ofertas abertas na resposta.
+- `matched`   — apostas correspondidas (não avaliadas) do pedido.
+- `graded`    — apostas avaliadas (liquidadas) do pedido, incluindo `risk`, `win`, `fee` e `result`.
+
+## Pedido {#request}
+
+`GET /user/getBetByWagerRequestID`
+
+<ParamField query="wagerRequestID" type="string" required>
+  O `wagerRequestID` devolvido por `/session/v3/place` (no campo `matched[].wagerRequestID` ou `unmatched.wagerRequestID`).
+</ParamField>
+
+<CodeGroup>
+```bash curl
+curl "https://api.4casters.io/user/getBetByWagerRequestID?wagerRequestID=65f69afec4c141f5ecc5dc0b" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+</CodeGroup>
+
+## Resposta {#response}
+
+<ResponseField name="data.unmatched" type="array">Array vazio.</ResponseField>
+<ResponseField name="data.matched" type="array">
+  Apostas correspondidas (não avaliadas) — mesma forma de [Obter apostas correspondidas](/pt/pages/rest/user/get-matched-bets#response).
+</ResponseField>
+<ResponseField name="data.graded" type="array">
+  Apostas avaliadas (liquidadas) — mesma forma de [Obter apostas avaliadas](/pt/pages/rest/user/get-graded-wagers#response).
+</ResponseField>
+
+## Erros {#errors}
+
+| Estado | Significado |
+| ------ | ------- |
+| `400`  | `wagerRequestID` em falta ou desconhecido. |
