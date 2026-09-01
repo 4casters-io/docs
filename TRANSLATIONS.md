@@ -48,7 +48,7 @@ The exception list is `INLINE_EXEMPT` in `scripts/check-structure.py`, keyed on 
 3. Add explicit `{#anchor}` IDs to translated headings.
 4. Add the `navigation.languages` block to `docs.json`.
 5. Add the locale to `LOCALES` in **both** `scripts/check-structure.py` and `scripts/check-links.py` — they are separate lists.
-6. Write the glossary section for the language, below, **before** drafting. Not after.
+6. Write the glossary for the language **before** drafting, not after — either a section below or a `{locale}/GLOSSARY-DRAFT.md` in the locale tree (where the six 2026-09 drafts live). It merges into this file when its reviewer signs off.
 7. Add the disclaimer banner for the locale (see below) unless a fluent human has read the pages.
 8. Pass both gates.
 

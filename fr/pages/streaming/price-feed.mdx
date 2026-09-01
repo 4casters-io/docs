@@ -57,7 +57,7 @@ connectPriceFeed();
 ```
 </CodeGroup>
 
-## Ping/Pong
+## Ping/Pong {#pingpong}
 Les deux flux prennent en charge le `ping/pong` WebSocket standard. Vous pouvez proactivement appeler `ping()` à intervalle régulier et suivre les `pong` pour vérifier la vivacité de la connexion.
 
 ## Abonnements {#subscriptions}
@@ -130,11 +130,11 @@ Attrape-tout explicite. Utile si vous avez précédemment restreint via `subscri
 - Un `subscribe` avec `replace: false` **et** des tableaux tous vides est un no-op (un client bogué ne peut pas se couper accidentellement du flux en envoyant un abonnement additif vide).
 - Un `subscribe` avec `replace: true` **et** des tableaux tous vides est la voie légitime « effacer tous mes abonnements » — la connexion entre en mode filtré avec zéro abonnement et ne reçoit rien jusqu'à ce que vous vous abonniez à nouveau ou envoyiez `subscribeAll`.
 
-## Messages
+## Messages {#messages}
 
 Chaque message sur `/price-stream` arrive sous forme de 2-uplet `[type, payload]`. Trois types de messages sont diffusés.
 
-### `orderUpdate`
+### `orderUpdate` {#orderupdate}
 
 Émis chaque fois qu'un ordre d'un marché quelconque change (nouveau, modifié, exécuté ou annulé). Le payload n'inclut que les `sideOrders` que l'utilisateur destinataire est autorisé à voir (ses propres ordres plus les contreparties matchables).
 
@@ -265,7 +265,7 @@ Les deux champs apparaissent au niveau de la mise à jour (identifiant quel côt
 ```
 </CodeGroup>
 
-### `gameUpdate`
+### `gameUpdate` {#gameupdate}
 
 Émis quand un match est créé ou que son état change (ouverture de marchés, fermeture, mises à jour de l'heure de début). Le payload est le match complet rendu.
 
@@ -301,7 +301,7 @@ Les deux champs apparaissent au niveau de la mise à jour (identifiant quel côt
 
 Valeurs connues de `messageType` : `marketOpen`, `marketClosed`. Traitez ce champ comme extensible et ignorez les valeurs inconnues.
 
-### `matchedVolumeUpdate`
+### `matchedVolumeUpdate` {#matchedvolumeupdate}
 
 Émis quand le volume total matché sur un match change.
 

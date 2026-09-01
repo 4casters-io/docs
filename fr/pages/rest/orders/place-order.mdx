@@ -56,15 +56,15 @@ curl -X POST https://api.4casters.io/session/v3/place \
 
 ## Types d'ordre {#order-types}
 
-### `limit`
+### `limit` {#limit}
 
 Le type d'ordre par défaut. S'exécute contre toute liquidité correspondante à votre prix ou mieux en tant que taker (avec commission taker), et laisse tout reliquat en attente au carnet en tant que maker. Un ordre `limit` peut finir entièrement matché, entièrement en attente, ou partiellement matché avec le reliquat en attente.
 
-### `post`
+### `post` {#post}
 
 Crée une offre en attente. Si l'ordre **matcherait** de la liquidité existante au moment du placement, le serveur le rejette (`rejected_order_type_rules`, par ex. `"post order cannot have matches"`).
 
-### `postArb`
+### `postArb` {#postarb}
 
 Se comporte comme `post`, mais vous pouvez poster **même quand l'ordre matcherait**, **uniquement si** vos cotes américaines sont à moins de **1%** des cotes de l'ordre en attente que vous matcheriez. Si l'écart de prix dépasse 1%, le placement est rejeté.
 
@@ -79,13 +79,13 @@ Exemples :
 
 Les ordres placés en `postArb` sont marqués `isPostArb: true` sur leurs mises à jour du [flux utilisateur](/fr/pages/streaming/user-feed) et du [flux des prix](/fr/pages/streaming/price-feed) ; le champ est omis pour les autres types d'ordre. La réponse de placement elle-même n'inclut pas ce marqueur.
 
-### `fillAndKill`
+### `fillAndKill` {#fillandkill}
 
 S'exécute immédiatement en tant que taker contre toute la taille disponible à votre prix ou mieux, et annule tout reliquat. Un `fillAndKill` ne reste jamais au carnet.
 
 Une exécution **partielle** est un résultat réussi : si vous envoyez `bet: 1000` et qu'il n'existe que $400 de liquidité matchable, vous êtes exécuté pour $400 et les $600 restants sont annulés — la réponse est un succès, pas une erreur. L'ordre n'est rejeté (`rejected_order_type_rules`, `"fill and kill has no matches"`) que lorsqu'il n'existe aucune liquidité matchable. Voir les scénarios Fill And Kill dans les [exemples](#examples) ci-dessous.
 
-### `fillOrKill`
+### `fillOrKill` {#fillorkill}
 
 Tout-ou-rien. L'**intégralité** de votre `bet` doit matcher immédiatement à votre prix ou mieux, sinon l'ordre entier est rejeté — y compris les exécutions réalisées en chemin, qui sont annulées (rollback). Un `fillOrKill` ne reste jamais au carnet, et vous ne restez jamais partiellement exécuté.
 

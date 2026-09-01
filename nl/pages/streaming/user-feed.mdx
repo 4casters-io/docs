@@ -399,7 +399,7 @@ Let op de twee perspectieven op dezelfde fill: de taker ziet `side: "yes"` tegen
 
 De v2 user feed ondersteunt **gap-herstel na een weggevallen verbinding**. Elk bericht draagt een `messageID` (een monotoon oplopend stream-entry-id, bijv. `"1751552702114-0"`). Valt je verbinding weg, dan kun je precies de berichten ophalen die je hebt gemist.
 
-### Endpoint
+### Endpoint {#endpoint}
 
 ```
 GET https://streaming-api.4casters.io/v2/user/messages?afterID=<messageID>&beforeID=<messageID>

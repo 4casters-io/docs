@@ -399,7 +399,7 @@ Nota le due prospettive dello stesso abbinamento: il taker vede `side: "yes"` a 
 
 Il feed utente v2 supporta il **recupero dei buchi dopo una disconnessione**. Ogni messaggio porta un `messageID` (un id di voce dello stream monotonicamente crescente, es. `"1751552702114-0"`). Se la connessione cade, puoi recuperare esattamente i messaggi che hai perso.
 
-### Endpoint
+### Endpoint {#endpoint}
 
 ```
 GET https://streaming-api.4casters.io/v2/user/messages?afterID=<messageID>&beforeID=<messageID>

@@ -57,7 +57,7 @@ connectPriceFeed();
 ```
 </CodeGroup>
 
-## Ping/Pong
+## Ping/Pong {#pingpong}
 
 Beide feeds ondersteunen standaard WebSocket-`ping/pong`. Je kunt proactief met een interval `ping()` sturen en `pong` bijhouden om de verbinding op leven te controleren.
 
@@ -135,7 +135,7 @@ Expliciete catch-all. Handig als je eerder via `subscribe` hebt gefilterd en de 
 
 Elk bericht op `/price-stream` komt binnen als een 2-tuple `[type, payload]`. Er worden drie berichttypen uitgezonden.
 
-### `orderUpdate`
+### `orderUpdate` {#orderupdate}
 
 Wordt uitgezonden wanneer een order in welke markt dan ook verandert (nieuw, bewerkt, gevuld of geannuleerd). De payload bevat alleen `sideOrders` die de ontvangende gebruiker mag zien (eigen orders plus matchbare tegenpartijen).
 
@@ -266,7 +266,7 @@ Beide velden verschijnen op updateniveau (om aan te geven welke kant van het ord
 ```
 </CodeGroup>
 
-### `gameUpdate`
+### `gameUpdate` {#gameupdate}
 
 Wordt uitgezonden wanneer een wedstrijd wordt aangemaakt of zijn status verandert (markten die openen of sluiten, updates van de starttijd). De payload is de volledig gerenderde wedstrijd.
 
@@ -302,7 +302,7 @@ Wordt uitgezonden wanneer een wedstrijd wordt aangemaakt of zijn status verander
 
 Bekende `messageType`-waarden: `marketOpen`, `marketClosed`. Beschouw het veld als uitbreidbaar en negeer onbekende waarden.
 
-### `matchedVolumeUpdate`
+### `matchedVolumeUpdate` {#matchedvolumeupdate}
 
 Wordt uitgezonden wanneer het totale gematchte volume op een wedstrijd verandert.
 

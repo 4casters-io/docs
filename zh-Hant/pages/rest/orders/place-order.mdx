@@ -56,15 +56,15 @@ curl -X POST https://api.4casters.io/session/v3/place \
 
 ## 訂單型別 {#order-types}
 
-### `limit`
+### `limit` {#limit}
 
 預設訂單型別。作為 taker（收取 taker 佣金）按你的價格或更優價格吃掉任何可匹配流動性，未成交部分作為 maker 留在訂單簿上。`limit` 訂單最終可以是全部成交、全部掛單，或部分成交、剩餘掛單。
 
-### `post`
+### `post` {#post}
 
 建立一筆掛單。如果下單時該訂單**會與**已有流動性成交，伺服器會拒絕它（`rejected_order_type_rules`，例如 `"post order cannot have matches"`）。
 
-### `postArb`
+### `postArb` {#postarb}
 
 行為類似 `post`，但**即使訂單會成交也可以掛單**，**前提是**你的美式賠率與將被成交的掛單賠率相差不超過 **1%**。若價差超過 1%，下單會被拒絕。
 
@@ -79,13 +79,13 @@ curl -X POST https://api.4casters.io/session/v3/place \
 
 以 `postArb` 下的訂單，會在其[使用者推送](/zh-Hant/pages/streaming/user-feed)和[行情推送](/zh-Hant/pages/streaming/price-feed)更新中帶有 `isPostArb: true`；其他訂單型別會省略該欄位。下單回應本身不包含該標誌。
 
-### `fillAndKill`
+### `fillAndKill` {#fillandkill}
 
 立即作為 taker 按你的價格或更優價格吃掉當前可成交數量，並取消剩餘部分。`fillAndKill` 永遠不會留在訂單簿上。
 
 **部分成交**也是成功結果：如果你傳送 `bet: 1000` 而可匹配流動性只有 $400，則成交 $400，剩餘 $600 被取消——回應為成功，而非錯誤。僅當完全沒有可匹配流動性時，訂單才會被拒絕（`rejected_order_type_rules`，`"fill and kill has no matches"`）。參見下方[示例](#examples)中的 Fill And Kill 場景。
 
-### `fillOrKill`
+### `fillOrKill` {#fillorkill}
 
 全成或全撤。你的**整筆** `bet` 必須立即按你的價格或更優價格成交，否則整筆訂單被拒絕——包括途中已發生的成交，都會回滾。`fillOrKill` 永遠不會留在訂單簿上，也不會留下部分倉位。
 

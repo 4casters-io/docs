@@ -46,7 +46,7 @@ connectUserFeed();
 ```
 </CodeGroup>
 
-## Messages
+## Messages {#messages}
 
 Le flux utilisateur envoie chaque mise à jour sous forme d'**objet JSON nu** (pas d'enveloppe en tuple). Toutes les mises à jour partagent une même enveloppe ; l'action est déterminée par ceux de `unmatched` / `matched` qui sont renseignés et par `origin`.
 
@@ -399,7 +399,7 @@ Notez les deux points de vue de la même exécution : le taker voit `side: "yes"
 
 Le flux utilisateur v2 prend en charge la **récupération des trous après une connexion perdue**. Chaque message porte un `messageID` (un id d'entrée de stream strictement croissant, par ex. `"1751552702114-0"`). Si votre connexion tombe, vous pouvez récupérer exactement les messages que vous avez manqués.
 
-### Endpoint
+### Endpoint {#endpoint}
 
 ```
 GET https://streaming-api.4casters.io/v2/user/messages?afterID=<messageID>&beforeID=<messageID>

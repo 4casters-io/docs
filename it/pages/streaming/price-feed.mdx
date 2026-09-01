@@ -57,7 +57,7 @@ connectPriceFeed();
 ```
 </CodeGroup>
 
-## Ping/Pong
+## Ping/Pong {#pingpong}
 Entrambi i feed supportano il `ping/pong` standard di WebSocket. Puoi fare `ping()` proattivamente a intervalli regolari e tracciare i `pong` per verificare che la connessione sia viva.
 
 ## Sottoscrizioni {#subscriptions}
@@ -134,7 +134,7 @@ Catch-all esplicito. Utile se in precedenza hai ristretto il feed con `subscribe
 
 Ogni messaggio su `/price-stream` arriva come 2-tupla `[type, payload]`. Vengono trasmessi tre tipi di messaggio.
 
-### `orderUpdate`
+### `orderUpdate` {#orderupdate}
 
 Emesso ogni volta che un ordine in un qualsiasi mercato cambia (nuovo, modificato, abbinato o annullato). Il payload include solo i `sideOrders` che l'utente ricevente è autorizzato a vedere (i propri ordini più le controparti abbinabili).
 
@@ -265,7 +265,7 @@ Entrambi i campi compaiono a livello di aggiornamento (identificando quale lato 
 ```
 </CodeGroup>
 
-### `gameUpdate`
+### `gameUpdate` {#gameupdate}
 
 Emesso quando un evento viene creato o il suo stato cambia (apertura dei mercati, chiusura, aggiornamenti dell'ora di inizio). Il payload è l'evento completo renderizzato.
 
@@ -301,7 +301,7 @@ Emesso quando un evento viene creato o il suo stato cambia (apertura dei mercati
 
 Valori noti di `messageType`: `marketOpen`, `marketClosed`. Tratta il campo come estensibile e ignora i valori sconosciuti.
 
-### `matchedVolumeUpdate`
+### `matchedVolumeUpdate` {#matchedvolumeupdate}
 
 Emesso quando il volume totale abbinato su un evento cambia.
 

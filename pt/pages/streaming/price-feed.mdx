@@ -134,7 +134,7 @@ Apanha-tudo explícito. Útil se anteriormente restringiu via `subscribe` e quer
 
 Cada mensagem em `/price-stream` chega como um 2-tuplo `[type, payload]`. São difundidos três tipos de mensagens.
 
-### `orderUpdate`
+### `orderUpdate` {#orderupdate}
 
 Emitida sempre que uma ordem em qualquer mercado muda (nova, editada, executada ou cancelada). O payload inclui apenas os `sideOrders` que o utilizador recetor está autorizado a ver (as suas próprias ordens mais as contrapartes correspondíveis).
 
@@ -265,7 +265,7 @@ Ambos os campos aparecem ao nível da atualização (identificando qual o lado d
 ```
 </CodeGroup>
 
-### `gameUpdate`
+### `gameUpdate` {#gameupdate}
 
 Emitida quando um jogo é criado ou o seu estado muda (mercados a abrir, a fechar, atualizações da hora de início). O payload é o jogo completo renderizado.
 
@@ -301,7 +301,7 @@ Emitida quando um jogo é criado ou o seu estado muda (mercados a abrir, a fecha
 
 Valores conhecidos de `messageType`: `marketOpen`, `marketClosed`. Trate o campo como extensível e ignore valores desconhecidos.
 
-### `matchedVolumeUpdate`
+### `matchedVolumeUpdate` {#matchedvolumeupdate}
 
 Emitida quando o volume total correspondido num jogo muda.
 
