@@ -412,6 +412,619 @@
           "type": "warning",
           "dismissible": false
         }
+      },
+      {
+        "language": "ru",
+        "tabs": [
+          {
+            "tab": "Введение",
+            "pages": [
+              "ru/pages/introduction"
+            ]
+          },
+          {
+            "tab": "WebSocket-трансляция",
+            "pages": [
+              "ru/pages/streaming/introduction",
+              "ru/pages/streaming/user-feed",
+              "ru/pages/streaming/price-feed"
+            ]
+          },
+          {
+            "tab": "API заявок",
+            "pages": [
+              "ru/pages/websocket/introduction",
+              "ru/pages/websocket/heartbeat",
+              "ru/pages/websocket/place-order",
+              "ru/pages/websocket/cancel-orders"
+            ]
+          },
+          {
+            "tab": "REST API",
+            "groups": [
+              {
+                "group": "Начало работы",
+                "pages": [
+                  "ru/pages/rest/introduction",
+                  "ru/pages/rest/authentication"
+                ]
+              },
+              {
+                "group": "Пользователь",
+                "pages": [
+                  "ru/pages/rest/user/get-me",
+                  "ru/pages/rest/user/get-matched-bets",
+                  "ru/pages/rest/user/get-unmatched-orders",
+                  "ru/pages/rest/user/get-orders-for-game",
+                  "ru/pages/rest/user/get-graded-wagers",
+                  "ru/pages/rest/user/get-bet-by-id",
+                  "ru/pages/rest/user/get-bet-by-wager-request-id",
+                  "ru/pages/rest/user/get-bet-by-user-reference",
+                  "ru/pages/rest/user/orders-heartbeat",
+                  "ru/pages/rest/user/get-game-liability"
+                ]
+              },
+              {
+                "group": "Заявки",
+                "pages": [
+                  "ru/pages/rest/orders/place-order",
+                  "ru/pages/rest/orders/edit-order",
+                  "ru/pages/rest/orders/lookup-order",
+                  "ru/pages/rest/orders/cancel-order",
+                  "ru/pages/rest/orders/cancel-multiple",
+                  "ru/pages/rest/orders/cancel-by-reference",
+                  "ru/pages/rest/orders/cancel-all-for-game",
+                  "ru/pages/rest/orders/cancel-all-for-league",
+                  "ru/pages/rest/orders/cancel-all-orders"
+                ]
+              },
+              {
+                "group": "Рынки",
+                "pages": [
+                  "ru/pages/rest/markets/get-leagues",
+                  "ru/pages/rest/markets/get-participants",
+                  "ru/pages/rest/markets/get-games",
+                  "ru/pages/rest/markets/get-orderbook",
+                  "ru/pages/rest/markets/get-single-orderbook",
+                  "ru/pages/rest/markets/get-average-price",
+                  "ru/pages/rest/markets/get-matched-volume",
+                  "ru/pages/rest/markets/get-orderbook-v1"
+                ]
+              },
+              {
+                "group": "Партнёрская программа",
+                "pages": [
+                  "ru/pages/rest/affiliate/get-affiliate-commission"
+                ]
+              }
+            ]
+          },
+          {
+            "tab": "Справочник API",
+            "openapi": "/sources/core-api.openapi.json"
+          },
+          {
+            "tab": "История изменений",
+            "pages": [
+              "ru/pages/changelog"
+            ]
+          }
+        ],
+        "banner": {
+          "content": "Эта документация переведена с помощью ИИ для удобства и может содержать ошибки. **Английская версия является официальной** — сверяйтесь с ней, прежде чем полагаться на эту страницу. [Сообщить об ошибке перевода](https://github.com/4casters-io/docs/issues/new?labels=translation&title=%5Bru%5D+Translation+issue&body=%2A%2APage%3A%2A%2A+%3C%21--+paste+the+URL+of+the+page+--%3E%0A%0A%2A%2AWhat+reads+wrong%3A%2A%2A+%3C%21--+quote+the+text+--%3E%0A%0A%2A%2ASuggested+wording%3A%2A%2A%0A%0A---%0A_Language%3A+ru.+The+English+page+is+authoritative._%0A)",
+          "type": "warning",
+          "dismissible": false
+        }
+      },
+      {
+        "language": "fr",
+        "tabs": [
+          {
+            "tab": "Introduction",
+            "pages": [
+              "fr/pages/introduction"
+            ]
+          },
+          {
+            "tab": "Streaming WebSocket",
+            "pages": [
+              "fr/pages/streaming/introduction",
+              "fr/pages/streaming/user-feed",
+              "fr/pages/streaming/price-feed"
+            ]
+          },
+          {
+            "tab": "API des ordres",
+            "pages": [
+              "fr/pages/websocket/introduction",
+              "fr/pages/websocket/heartbeat",
+              "fr/pages/websocket/place-order",
+              "fr/pages/websocket/cancel-orders"
+            ]
+          },
+          {
+            "tab": "API REST",
+            "groups": [
+              {
+                "group": "Premiers pas",
+                "pages": [
+                  "fr/pages/rest/introduction",
+                  "fr/pages/rest/authentication"
+                ]
+              },
+              {
+                "group": "Utilisateur",
+                "pages": [
+                  "fr/pages/rest/user/get-me",
+                  "fr/pages/rest/user/get-matched-bets",
+                  "fr/pages/rest/user/get-unmatched-orders",
+                  "fr/pages/rest/user/get-orders-for-game",
+                  "fr/pages/rest/user/get-graded-wagers",
+                  "fr/pages/rest/user/get-bet-by-id",
+                  "fr/pages/rest/user/get-bet-by-wager-request-id",
+                  "fr/pages/rest/user/get-bet-by-user-reference",
+                  "fr/pages/rest/user/orders-heartbeat",
+                  "fr/pages/rest/user/get-game-liability"
+                ]
+              },
+              {
+                "group": "Ordres",
+                "pages": [
+                  "fr/pages/rest/orders/place-order",
+                  "fr/pages/rest/orders/edit-order",
+                  "fr/pages/rest/orders/lookup-order",
+                  "fr/pages/rest/orders/cancel-order",
+                  "fr/pages/rest/orders/cancel-multiple",
+                  "fr/pages/rest/orders/cancel-by-reference",
+                  "fr/pages/rest/orders/cancel-all-for-game",
+                  "fr/pages/rest/orders/cancel-all-for-league",
+                  "fr/pages/rest/orders/cancel-all-orders"
+                ]
+              },
+              {
+                "group": "Marchés",
+                "pages": [
+                  "fr/pages/rest/markets/get-leagues",
+                  "fr/pages/rest/markets/get-participants",
+                  "fr/pages/rest/markets/get-games",
+                  "fr/pages/rest/markets/get-orderbook",
+                  "fr/pages/rest/markets/get-single-orderbook",
+                  "fr/pages/rest/markets/get-average-price",
+                  "fr/pages/rest/markets/get-matched-volume",
+                  "fr/pages/rest/markets/get-orderbook-v1"
+                ]
+              },
+              {
+                "group": "Affiliation",
+                "pages": [
+                  "fr/pages/rest/affiliate/get-affiliate-commission"
+                ]
+              }
+            ]
+          },
+          {
+            "tab": "Référence API",
+            "openapi": "/sources/core-api.openapi.json"
+          },
+          {
+            "tab": "Journal des modifications",
+            "pages": [
+              "fr/pages/changelog"
+            ]
+          }
+        ],
+        "banner": {
+          "content": "Cette documentation est traduite par IA à titre de commodité et peut contenir des erreurs. **La version anglaise fait foi** — vérifiez-la avant de vous fier à cette page. [Signaler une erreur de traduction](https://github.com/4casters-io/docs/issues/new?labels=translation&title=%5Bfr%5D+Translation+issue&body=%2A%2APage%3A%2A%2A+%3C%21--+paste+the+URL+of+the+page+--%3E%0A%0A%2A%2AWhat+reads+wrong%3A%2A%2A+%3C%21--+quote+the+text+--%3E%0A%0A%2A%2ASuggested+wording%3A%2A%2A%0A%0A---%0A_Language%3A+fr.+The+English+page+is+authoritative._%0A)",
+          "type": "warning",
+          "dismissible": false
+        }
+      },
+      {
+        "language": "pt-BR",
+        "tabs": [
+          {
+            "tab": "Introdução",
+            "pages": [
+              "pt-BR/pages/introduction"
+            ]
+          },
+          {
+            "tab": "Streaming WebSocket",
+            "pages": [
+              "pt-BR/pages/streaming/introduction",
+              "pt-BR/pages/streaming/user-feed",
+              "pt-BR/pages/streaming/price-feed"
+            ]
+          },
+          {
+            "tab": "API de ordens",
+            "pages": [
+              "pt-BR/pages/websocket/introduction",
+              "pt-BR/pages/websocket/heartbeat",
+              "pt-BR/pages/websocket/place-order",
+              "pt-BR/pages/websocket/cancel-orders"
+            ]
+          },
+          {
+            "tab": "API REST",
+            "groups": [
+              {
+                "group": "Primeiros passos",
+                "pages": [
+                  "pt-BR/pages/rest/introduction",
+                  "pt-BR/pages/rest/authentication"
+                ]
+              },
+              {
+                "group": "Usuário",
+                "pages": [
+                  "pt-BR/pages/rest/user/get-me",
+                  "pt-BR/pages/rest/user/get-matched-bets",
+                  "pt-BR/pages/rest/user/get-unmatched-orders",
+                  "pt-BR/pages/rest/user/get-orders-for-game",
+                  "pt-BR/pages/rest/user/get-graded-wagers",
+                  "pt-BR/pages/rest/user/get-bet-by-id",
+                  "pt-BR/pages/rest/user/get-bet-by-wager-request-id",
+                  "pt-BR/pages/rest/user/get-bet-by-user-reference",
+                  "pt-BR/pages/rest/user/orders-heartbeat",
+                  "pt-BR/pages/rest/user/get-game-liability"
+                ]
+              },
+              {
+                "group": "Ordens",
+                "pages": [
+                  "pt-BR/pages/rest/orders/place-order",
+                  "pt-BR/pages/rest/orders/edit-order",
+                  "pt-BR/pages/rest/orders/lookup-order",
+                  "pt-BR/pages/rest/orders/cancel-order",
+                  "pt-BR/pages/rest/orders/cancel-multiple",
+                  "pt-BR/pages/rest/orders/cancel-by-reference",
+                  "pt-BR/pages/rest/orders/cancel-all-for-game",
+                  "pt-BR/pages/rest/orders/cancel-all-for-league",
+                  "pt-BR/pages/rest/orders/cancel-all-orders"
+                ]
+              },
+              {
+                "group": "Mercados",
+                "pages": [
+                  "pt-BR/pages/rest/markets/get-leagues",
+                  "pt-BR/pages/rest/markets/get-participants",
+                  "pt-BR/pages/rest/markets/get-games",
+                  "pt-BR/pages/rest/markets/get-orderbook",
+                  "pt-BR/pages/rest/markets/get-single-orderbook",
+                  "pt-BR/pages/rest/markets/get-average-price",
+                  "pt-BR/pages/rest/markets/get-matched-volume",
+                  "pt-BR/pages/rest/markets/get-orderbook-v1"
+                ]
+              },
+              {
+                "group": "Afiliados",
+                "pages": [
+                  "pt-BR/pages/rest/affiliate/get-affiliate-commission"
+                ]
+              }
+            ]
+          },
+          {
+            "tab": "Referência da API",
+            "openapi": "/sources/core-api.openapi.json"
+          },
+          {
+            "tab": "Registro de alterações",
+            "pages": [
+              "pt-BR/pages/changelog"
+            ]
+          }
+        ],
+        "banner": {
+          "content": "Esta documentação foi traduzida por IA por conveniência e pode conter erros. **A versão em inglês é a oficial** — consulte-a antes de confiar nesta página. [Relatar um erro de tradução](https://github.com/4casters-io/docs/issues/new?labels=translation&title=%5Bpt-BR%5D+Translation+issue&body=%2A%2APage%3A%2A%2A+%3C%21--+paste+the+URL+of+the+page+--%3E%0A%0A%2A%2AWhat+reads+wrong%3A%2A%2A+%3C%21--+quote+the+text+--%3E%0A%0A%2A%2ASuggested+wording%3A%2A%2A%0A%0A---%0A_Language%3A+pt-BR.+The+English+page+is+authoritative._%0A)",
+          "type": "warning",
+          "dismissible": false
+        }
+      },
+      {
+        "language": "pt",
+        "tabs": [
+          {
+            "tab": "Introdução",
+            "pages": [
+              "pt/pages/introduction"
+            ]
+          },
+          {
+            "tab": "Streaming WebSocket",
+            "pages": [
+              "pt/pages/streaming/introduction",
+              "pt/pages/streaming/user-feed",
+              "pt/pages/streaming/price-feed"
+            ]
+          },
+          {
+            "tab": "API de ordens",
+            "pages": [
+              "pt/pages/websocket/introduction",
+              "pt/pages/websocket/heartbeat",
+              "pt/pages/websocket/place-order",
+              "pt/pages/websocket/cancel-orders"
+            ]
+          },
+          {
+            "tab": "API REST",
+            "groups": [
+              {
+                "group": "Primeiros passos",
+                "pages": [
+                  "pt/pages/rest/introduction",
+                  "pt/pages/rest/authentication"
+                ]
+              },
+              {
+                "group": "Utilizador",
+                "pages": [
+                  "pt/pages/rest/user/get-me",
+                  "pt/pages/rest/user/get-matched-bets",
+                  "pt/pages/rest/user/get-unmatched-orders",
+                  "pt/pages/rest/user/get-orders-for-game",
+                  "pt/pages/rest/user/get-graded-wagers",
+                  "pt/pages/rest/user/get-bet-by-id",
+                  "pt/pages/rest/user/get-bet-by-wager-request-id",
+                  "pt/pages/rest/user/get-bet-by-user-reference",
+                  "pt/pages/rest/user/orders-heartbeat",
+                  "pt/pages/rest/user/get-game-liability"
+                ]
+              },
+              {
+                "group": "Ordens",
+                "pages": [
+                  "pt/pages/rest/orders/place-order",
+                  "pt/pages/rest/orders/edit-order",
+                  "pt/pages/rest/orders/lookup-order",
+                  "pt/pages/rest/orders/cancel-order",
+                  "pt/pages/rest/orders/cancel-multiple",
+                  "pt/pages/rest/orders/cancel-by-reference",
+                  "pt/pages/rest/orders/cancel-all-for-game",
+                  "pt/pages/rest/orders/cancel-all-for-league",
+                  "pt/pages/rest/orders/cancel-all-orders"
+                ]
+              },
+              {
+                "group": "Mercados",
+                "pages": [
+                  "pt/pages/rest/markets/get-leagues",
+                  "pt/pages/rest/markets/get-participants",
+                  "pt/pages/rest/markets/get-games",
+                  "pt/pages/rest/markets/get-orderbook",
+                  "pt/pages/rest/markets/get-single-orderbook",
+                  "pt/pages/rest/markets/get-average-price",
+                  "pt/pages/rest/markets/get-matched-volume",
+                  "pt/pages/rest/markets/get-orderbook-v1"
+                ]
+              },
+              {
+                "group": "Afiliados",
+                "pages": [
+                  "pt/pages/rest/affiliate/get-affiliate-commission"
+                ]
+              }
+            ]
+          },
+          {
+            "tab": "Referência da API",
+            "openapi": "/sources/core-api.openapi.json"
+          },
+          {
+            "tab": "Registo de alterações",
+            "pages": [
+              "pt/pages/changelog"
+            ]
+          }
+        ],
+        "banner": {
+          "content": "Esta documentação foi traduzida por IA por conveniência e pode conter erros. **A versão inglesa é a oficial** — consulte-a antes de confiar nesta página. [Comunicar um erro de tradução](https://github.com/4casters-io/docs/issues/new?labels=translation&title=%5Bpt%5D+Translation+issue&body=%2A%2APage%3A%2A%2A+%3C%21--+paste+the+URL+of+the+page+--%3E%0A%0A%2A%2AWhat+reads+wrong%3A%2A%2A+%3C%21--+quote+the+text+--%3E%0A%0A%2A%2ASuggested+wording%3A%2A%2A%0A%0A---%0A_Language%3A+pt.+The+English+page+is+authoritative._%0A)",
+          "type": "warning",
+          "dismissible": false
+        }
+      },
+      {
+        "language": "nl",
+        "tabs": [
+          {
+            "tab": "Introductie",
+            "pages": [
+              "nl/pages/introduction"
+            ]
+          },
+          {
+            "tab": "WebSocket-streaming",
+            "pages": [
+              "nl/pages/streaming/introduction",
+              "nl/pages/streaming/user-feed",
+              "nl/pages/streaming/price-feed"
+            ]
+          },
+          {
+            "tab": "Orders-API",
+            "pages": [
+              "nl/pages/websocket/introduction",
+              "nl/pages/websocket/heartbeat",
+              "nl/pages/websocket/place-order",
+              "nl/pages/websocket/cancel-orders"
+            ]
+          },
+          {
+            "tab": "REST API",
+            "groups": [
+              {
+                "group": "Aan de slag",
+                "pages": [
+                  "nl/pages/rest/introduction",
+                  "nl/pages/rest/authentication"
+                ]
+              },
+              {
+                "group": "Gebruiker",
+                "pages": [
+                  "nl/pages/rest/user/get-me",
+                  "nl/pages/rest/user/get-matched-bets",
+                  "nl/pages/rest/user/get-unmatched-orders",
+                  "nl/pages/rest/user/get-orders-for-game",
+                  "nl/pages/rest/user/get-graded-wagers",
+                  "nl/pages/rest/user/get-bet-by-id",
+                  "nl/pages/rest/user/get-bet-by-wager-request-id",
+                  "nl/pages/rest/user/get-bet-by-user-reference",
+                  "nl/pages/rest/user/orders-heartbeat",
+                  "nl/pages/rest/user/get-game-liability"
+                ]
+              },
+              {
+                "group": "Orders",
+                "pages": [
+                  "nl/pages/rest/orders/place-order",
+                  "nl/pages/rest/orders/edit-order",
+                  "nl/pages/rest/orders/lookup-order",
+                  "nl/pages/rest/orders/cancel-order",
+                  "nl/pages/rest/orders/cancel-multiple",
+                  "nl/pages/rest/orders/cancel-by-reference",
+                  "nl/pages/rest/orders/cancel-all-for-game",
+                  "nl/pages/rest/orders/cancel-all-for-league",
+                  "nl/pages/rest/orders/cancel-all-orders"
+                ]
+              },
+              {
+                "group": "Markten",
+                "pages": [
+                  "nl/pages/rest/markets/get-leagues",
+                  "nl/pages/rest/markets/get-participants",
+                  "nl/pages/rest/markets/get-games",
+                  "nl/pages/rest/markets/get-orderbook",
+                  "nl/pages/rest/markets/get-single-orderbook",
+                  "nl/pages/rest/markets/get-average-price",
+                  "nl/pages/rest/markets/get-matched-volume",
+                  "nl/pages/rest/markets/get-orderbook-v1"
+                ]
+              },
+              {
+                "group": "Affiliate",
+                "pages": [
+                  "nl/pages/rest/affiliate/get-affiliate-commission"
+                ]
+              }
+            ]
+          },
+          {
+            "tab": "API-referentie",
+            "openapi": "/sources/core-api.openapi.json"
+          },
+          {
+            "tab": "Wijzigingslog",
+            "pages": [
+              "nl/pages/changelog"
+            ]
+          }
+        ],
+        "banner": {
+          "content": "Deze documentatie is door AI vertaald voor het gemak en kan fouten bevatten. **De Engelse versie is leidend** — controleer die voordat u op deze pagina vertrouwt. [Een vertaalfout melden](https://github.com/4casters-io/docs/issues/new?labels=translation&title=%5Bnl%5D+Translation+issue&body=%2A%2APage%3A%2A%2A+%3C%21--+paste+the+URL+of+the+page+--%3E%0A%0A%2A%2AWhat+reads+wrong%3A%2A%2A+%3C%21--+quote+the+text+--%3E%0A%0A%2A%2ASuggested+wording%3A%2A%2A%0A%0A---%0A_Language%3A+nl.+The+English+page+is+authoritative._%0A)",
+          "type": "warning",
+          "dismissible": false
+        }
+      },
+      {
+        "language": "it",
+        "tabs": [
+          {
+            "tab": "Introduzione",
+            "pages": [
+              "it/pages/introduction"
+            ]
+          },
+          {
+            "tab": "Streaming WebSocket",
+            "pages": [
+              "it/pages/streaming/introduction",
+              "it/pages/streaming/user-feed",
+              "it/pages/streaming/price-feed"
+            ]
+          },
+          {
+            "tab": "API degli ordini",
+            "pages": [
+              "it/pages/websocket/introduction",
+              "it/pages/websocket/heartbeat",
+              "it/pages/websocket/place-order",
+              "it/pages/websocket/cancel-orders"
+            ]
+          },
+          {
+            "tab": "API REST",
+            "groups": [
+              {
+                "group": "Primi passi",
+                "pages": [
+                  "it/pages/rest/introduction",
+                  "it/pages/rest/authentication"
+                ]
+              },
+              {
+                "group": "Utente",
+                "pages": [
+                  "it/pages/rest/user/get-me",
+                  "it/pages/rest/user/get-matched-bets",
+                  "it/pages/rest/user/get-unmatched-orders",
+                  "it/pages/rest/user/get-orders-for-game",
+                  "it/pages/rest/user/get-graded-wagers",
+                  "it/pages/rest/user/get-bet-by-id",
+                  "it/pages/rest/user/get-bet-by-wager-request-id",
+                  "it/pages/rest/user/get-bet-by-user-reference",
+                  "it/pages/rest/user/orders-heartbeat",
+                  "it/pages/rest/user/get-game-liability"
+                ]
+              },
+              {
+                "group": "Ordini",
+                "pages": [
+                  "it/pages/rest/orders/place-order",
+                  "it/pages/rest/orders/edit-order",
+                  "it/pages/rest/orders/lookup-order",
+                  "it/pages/rest/orders/cancel-order",
+                  "it/pages/rest/orders/cancel-multiple",
+                  "it/pages/rest/orders/cancel-by-reference",
+                  "it/pages/rest/orders/cancel-all-for-game",
+                  "it/pages/rest/orders/cancel-all-for-league",
+                  "it/pages/rest/orders/cancel-all-orders"
+                ]
+              },
+              {
+                "group": "Mercati",
+                "pages": [
+                  "it/pages/rest/markets/get-leagues",
+                  "it/pages/rest/markets/get-participants",
+                  "it/pages/rest/markets/get-games",
+                  "it/pages/rest/markets/get-orderbook",
+                  "it/pages/rest/markets/get-single-orderbook",
+                  "it/pages/rest/markets/get-average-price",
+                  "it/pages/rest/markets/get-matched-volume",
+                  "it/pages/rest/markets/get-orderbook-v1"
+                ]
+              },
+              {
+                "group": "Affiliazione",
+                "pages": [
+                  "it/pages/rest/affiliate/get-affiliate-commission"
+                ]
+              }
+            ]
+          },
+          {
+            "tab": "Riferimento API",
+            "openapi": "/sources/core-api.openapi.json"
+          },
+          {
+            "tab": "Registro modifiche",
+            "pages": [
+              "it/pages/changelog"
+            ]
+          }
+        ]
       }
     ]
   },

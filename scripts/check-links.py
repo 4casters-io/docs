@@ -13,7 +13,7 @@ if hasattr(sys.stdout, 'reconfigure'):        # Windows consoles default to cp12
     sys.stdout.reconfigure(encoding='utf-8', errors='replace')
 
 # Add new locales here. check-structure.py has its own list -- keep them in step.
-LOCALES = ['es', 'zh-Hans', 'zh-Hant']
+LOCALES = ['es', 'zh-Hans', 'zh-Hant', 'ru', 'fr', 'pt-BR', 'pt', 'nl', 'it']
 ROOTS = ['pages'] + LOCALES
 
 # Link targets that are not pages in this repo.

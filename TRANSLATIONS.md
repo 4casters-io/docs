@@ -66,6 +66,8 @@ Both exit non-zero on failure. Zero failures is the bar.
 
 ### Gate 2 — a native speaker reads it
 
+Assignments (PM, 2026-09-01): **`es` — David · `it` — in-house Italian speaker · `zh-Hans` + `zh-Hant` — Adam.** `ru`, `fr`, `pt-BR`, `pt`, `nl` unassigned — those trees ship behind their AI-translation banner until someone fluent reads them.
+
 A fluent reader confirms the prose reads naturally and the glossary terms are right.
 
 **Do not ship a language on Gate 1 alone.** These docs describe a money API where `matched`, `unmatched`, `liability`, `stake` and `settle` have exact meanings. A structurally perfect translation that uses the wrong word for "unmatched" produces a developer who builds the wrong thing.
