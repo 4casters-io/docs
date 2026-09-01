@@ -1,6 +1,6 @@
 """Gate 1 (structure): compare each translated page against its English source.
 
-Run from the repo root:  python verify/check-structure.py
+Run from the repo root:  python scripts/check-structure.py
 Exit code 0 = pass, 1 = failures. Informational findings never fail the gate.
 
 FAILURES (these break the site or the examples):

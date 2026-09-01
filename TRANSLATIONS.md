@@ -130,7 +130,7 @@ Shared with the frontend (PRO-275) so the app and the docs never render the same
 
 ### Spanish (`es`)
 
-**The Spanish pages are native-speaker work and are not to be edited from this table.** This table is *derived from them* — it records what the translation already says, so the frontend can match it. If a term here disagrees with `es/pages/`, the pages are right and this table is wrong.
+**A native Spanish speaker (David) has made an editing pass over these pages; a full Gate 2 read is still owed.** They are the closest thing to reviewed in the repo and are not to be edited from this table. This table is *derived from them* — it records what the translation already says, so the frontend can match it. If a term here disagrees with `es/pages/`, the pages are right and this table is wrong.
 
 Address the user as `tú`, never `usted`. Neutral between Spain and Latin America.
 

@@ -1,6 +1,6 @@
 """Gate 1 (links): every internal link and #anchor in the docs resolves.
 
-Run from the repo root:  python verify/check-links.py
+Run from the repo root:  python scripts/check-links.py
 Exit code 0 = pass, 1 = unresolved targets.
 
 Covers absolute links (/es/pages/foo) and relative links (../foo, ./foo, foo),
@@ -130,7 +130,44 @@ for l, c in agg.most_common(25):
 if len(agg) > 25:
     print('  ... +%d more distinct' % (len(agg) - 25))
 
-bad = len(bad_page) + len(bad_anchor) + len(bad_snippet)
+# --- docs.json navigation: every page path must exist and live in its own locale ---
+import json
+NAV_SKIP_KEYS = {'banner', 'footer', 'navbar', 'openapi', 'global', 'icon',
+                 'language', 'tab', 'group', 'description', 'content'}
+bad_nav = []
+_doc = json.load(open('docs.json', encoding='utf-8'))
+_langs = _doc.get('navigation', {}).get('languages', [])
+for _lang in _langs:
+    _code = _lang.get('language')
+    _stack = [{k: v for k, v in _lang.items() if k not in NAV_SKIP_KEYS}]
+    while _stack:
+        _o = _stack.pop()
+        if isinstance(_o, dict):
+            _stack.extend(v for k, v in _o.items() if k not in NAV_SKIP_KEYS)
+        elif isinstance(_o, list):
+            _stack.extend(_o)
+        elif isinstance(_o, str) and '/' in _o and ' ' not in _o \
+                and not _o.startswith(('http', '/')):
+            total += 1
+            if not os.path.exists(_o + '.mdx'):
+                bad_nav.append((_code, _o, 'missing file'))
+            elif _code != 'en' and not _o.startswith(_code + '/'):
+                bad_nav.append((_code, _o, 'points outside its locale'))
+            elif _code == 'en' and not _o.startswith('pages/'):
+                bad_nav.append((_code, _o, 'points outside its locale'))
+
+# Every locale tree on disk must have a nav block -- catches a deleted block.
+_nav_codes = {l.get('language') for l in _langs}
+for _code in ['en'] + LOCALES:
+    _dir = 'pages' if _code == 'en' else _code
+    if os.path.isdir(_dir) and _code not in _nav_codes and (_code != 'en' or 'en' not in _nav_codes):
+        bad_nav.append((_code, '(no navigation.languages block)', 'locale tree exists on disk'))
+
+print('\n=== NAV ENTRIES UNRESOLVED (%d) ===' % len(bad_nav))
+for _c, _p, _why in bad_nav[:25]:
+    print('  [%s] %s  (%s)' % (_c, _p, _why))
+
+bad = len(bad_page) + len(bad_anchor) + len(bad_snippet) + len(bad_nav)
 print('\n' + '=' * 60)
 print('GATE 1 LINKS: %s — %d unresolved' % ('PASS' if bad == 0 else 'FAIL', bad))
 sys.exit(1 if bad else 0)
