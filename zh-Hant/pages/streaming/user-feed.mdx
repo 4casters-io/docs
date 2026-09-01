@@ -116,7 +116,7 @@ connectUserFeed();
 | `orderID` | string | 始終 | 訂單 id。 |
 | `wagerRequestID` | string | 始終 | 建立該訂單的下單請求 id。 |
 | `filled` | number | 始終 | **在成交上：僅本事件匹配到的風險**，不是累計值。下單時為 `0`。取消時則為取消到達前已匹配的累計風險。 |
-| `offered` | number | 始終 | 該訂單掛出的總風險。`0` 識別碼取消。 |
+| `offered` | number | 始終 | 該訂單掛出的總風險。`0` 表示取消。 |
 | `remaining` | number | 始終 | 仍掛在訂單簿上的風險。`0` 表示全部成交。 |
 | `odds` | integer | 始終 | 該訂單中你這一側的美式賠率。 |
 | `type` | string | 始終 | `moneyline`、`spread`、`total` 或 `moneyline1x2`。 |

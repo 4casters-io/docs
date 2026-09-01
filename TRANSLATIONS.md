@@ -124,7 +124,7 @@ Shared with the frontend (PRO-275) so the app and the docs never render the same
 
 ### All languages
 
-`WebSocket` and `REST` stay untranslated everywhere. `maker`, `taker`, `heartbeat` and `token` stay untranslated in **Spanish**. Chinese renders heartbeat as `心跳` and token as `令牌`, and splits maker/taker the way Chinese exchanges do: the English loanword when naming a fee (`taker 手续费`, as on Binance/OKX), the native word for the act or the party (`吃单方` taker side, `挂单方` maker side, `吃掉流动性` take liquidity). Derived from the pages — keep the split, don't "fix" it to one form.
+`WebSocket` and `REST` stay untranslated everywhere. `maker`, `taker`, `heartbeat` and `token` stay untranslated in **Spanish**. Chinese renders heartbeat as `心跳` and token as `令牌`. For maker/taker, the **fee** usage keeps the English loanword (`taker 手续费`, as on Binance/OKX Chinese UIs) — that part is settled idiom. The **party** usage is genuinely mixed in the pages today: 「作为 taker」 in English on `place-order` and `user-feed`, `吃单方` on three market/user pages. One decision for the Chinese reviewer, applied tree-wide in one commit.
 
 `moneyline`, `spread`, `total` stay in English, with a short gloss in the target language on first use per page.
 

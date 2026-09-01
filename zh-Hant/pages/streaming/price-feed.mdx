@@ -189,13 +189,13 @@ connectPriceFeed();
 
 #### moneyline1x2 盤口的 `orderUpdate` {#orderupdate-for-moneyline1x2-markets}
 
-對於 `moneyline1x2`（足球三項盤：主勝 / 平局 / 客勝），投注物件由 **`market` + `side` 組合**識別碼，而不是 `participantID` / `OU`：
+對於 `moneyline1x2`（足球三項盤：主勝 / 平局 / 客勝），投注物件由 **`market` + `side` 組合**識別，而不是 `participantID` / `OU`：
 
 - `market` — 該盤口所針對的結果：參賽者 ObjectID 十六進位制（主隊或客隊），或字面字串 `"draw"`。
 - `side` — 對該結果的 `"yes"` 或 `"no"`。
 - `OU`、`total` 和 `spread` 不出現，`participantID` 為空 — 請使用 `market` + `side`。
 
-這兩個欄位既出現在更新層級（識別碼哪一側訂單簿發生了變化），也出現在 `sideOrders` 的每一條記錄上。
+這兩個欄位既出現在更新層級（標示哪一側訂單簿發生了變化），也出現在 `sideOrders` 的每一條記錄上。
 
 <CodeGroup>
 ```json JSON

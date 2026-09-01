@@ -28,6 +28,12 @@ POST = [
     ('撥用', '呼叫'),      # s2twp mangles 调用 into 撥用 (to appropriate funds)
     ('調用', '呼叫'),
     ('標識符', '識別碼'),
+    # 标识 is noun (identifier) AND verb (marks / identifies). The verb
+    # cases must not become the noun 識別碼 -- "`0` 識別碼取消" is gibberish.
+    # Enumerated verb contexts first; the generic noun rule last.
+    ('標識取消', '表示取消'),            # `0` marks a cancel
+    ('標識哪', '標示哪'),                # identifies which side of the book
+    ('組合**標識', '組合**識別'),        # identified by the market+side combination
     ('標識', '識別碼'),
     ('載荷', '酬載'),
 ]
