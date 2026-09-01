@@ -1,0 +1,113 @@
+"""Gate 1 (links): every internal link and #anchor in the docs resolves.
+
+Run from the repo root:  python verify/check-links.py
+Exit code 0 = pass, 1 = unresolved targets.
+
+Covers absolute links (/es/pages/foo) and relative links (../foo, ./foo, foo),
+each with an optional #fragment checked against the target page's headings and
+its explicit {#id} anchors.
+"""
+import re, os, sys, collections
+
+if hasattr(sys.stdout, 'reconfigure'):        # Windows consoles default to cp1252
+    sys.stdout.reconfigure(encoding='utf-8', errors='replace')
+
+# Add new locales here. check-structure.py has its own list -- keep them in step.
+LOCALES = ['es', 'zh-Hans', 'zh-Hant']
+ROOTS = ['pages'] + LOCALES
+
+# Link targets that are not pages in this repo.
+EXTERNAL_PREFIXES = ('api-reference', 'sources')
+
+LINK = re.compile(r'\]\(([^)\s]+)\)')
+ANCHOR = re.compile(r'\{#([A-Za-z0-9_-]+)\}')
+HEADING = re.compile(r'^#{1,6}\s+(.*?)\s*$', re.M)
+
+
+def norm(p):
+    return p.replace(os.sep, '/')
+
+
+def slug(text):
+    text = ANCHOR.sub('', text)
+    text = re.sub(r'`([^`]*)`', r'\1', text)
+    text = re.sub(r'[*_]', '', text)
+    text = text.strip().lower()
+    text = re.sub(r'[^a-z0-9一-鿿\s-]', '', text)
+    return re.sub(r'\s+', '-', text)
+
+
+_anchor_cache = {}
+
+
+def anchors_of(path):
+    if path in _anchor_cache:
+        return _anchor_cache[path]
+    t = open(path, encoding='utf-8').read()
+    out = set()
+    for h in HEADING.findall(t):
+        m = ANCHOR.search(h)
+        out.add(m.group(1) if m else slug(h))
+    out |= set(ANCHOR.findall(t))
+    _anchor_cache[path] = out
+    return out
+
+
+# key (path without .mdx) -> file path
+mdx = {}
+for root, _, fs in os.walk('.'):
+    if '.git' in root:
+        continue
+    for f in fs:
+        if f.endswith('.mdx'):
+            p = norm(os.path.join(root, f))
+            p = p[2:] if p.startswith('./') else p
+            mdx[p[:-4]] = p
+
+bad_page, bad_anchor, skipped = [], [], 0
+total = 0
+
+for key, path in sorted(mdx.items()):
+    if key.split('/')[0] not in ROOTS:
+        continue
+    for link in LINK.findall(open(path, encoding='utf-8').read()):
+        if link.startswith(('http://', 'https://', 'mailto:', '#')):
+            continue
+        total += 1
+        target, _, frag = link.partition('#')
+        if not target:
+            continue
+        if target.startswith('/'):
+            resolved = target.strip('/')
+        else:                                  # relative to the linking page's dir
+            resolved = norm(os.path.normpath(os.path.join(os.path.dirname(key), target)))
+        resolved = resolved[:-4] if resolved.endswith('.mdx') else resolved
+        if resolved.startswith(EXTERNAL_PREFIXES):
+            skipped += 1
+            continue
+        if resolved not in mdx:
+            bad_page.append((path, link))
+            continue
+        if frag and frag not in anchors_of(mdx[resolved]):
+            bad_anchor.append((path, link, sorted(anchors_of(mdx[resolved]))[:5]))
+
+print('internal links checked: %d  (%d external/openapi targets skipped)' % (total, skipped))
+
+print('\n=== UNRESOLVED PAGE TARGETS (%d) ===' % len(bad_page))
+for p, l in bad_page[:25]:
+    print('  %s\n      -> %s' % (p, l))
+if len(bad_page) > 25:
+    print('  ... +%d more' % (len(bad_page) - 25))
+
+print('\n=== UNRESOLVED ANCHORS (%d) ===' % len(bad_anchor))
+agg = collections.Counter(l for _, l, _ in bad_anchor)
+for l, c in agg.most_common(25):
+    ex = next(x for x in bad_anchor if x[1] == l)
+    print('  %-58s x%d  (in %s)\n      have: %s' % (l, c, ex[0], ex[2]))
+if len(agg) > 25:
+    print('  ... +%d more distinct' % (len(agg) - 25))
+
+bad = len(bad_page) + len(bad_anchor)
+print('\n' + '=' * 60)
+print('GATE 1 LINKS: %s — %d unresolved' % ('PASS' if bad == 0 else 'FAIL', bad))
+sys.exit(1 if bad else 0)
