@@ -66,7 +66,9 @@ for root, _, fs in os.walk('.'):
             p = p[2:] if p.startswith('./') else p
             mdx[p[:-4]] = p
 
-bad_page, bad_anchor, skipped = [], [], 0
+SNIPPET = re.compile(r"""<Snippet\s[^>]*file=["']([^"']+)["']""")
+
+bad_page, bad_anchor, bad_snippet, skipped = [], [], [], 0
 total = 0
 
 for key, path in sorted(mdx.items()):
@@ -94,6 +96,13 @@ for key, path in sorted(mdx.items()):
         if frag and frag not in anchors_of(mdx[resolved]):
             bad_anchor.append((path, link, sorted(anchors_of(mdx[resolved]))[:5]))
 
+    # <Snippet file="..."> resolves against snippets/
+    for ref in SNIPPET.findall(open(path, encoding='utf-8').read()):
+        total += 1
+        target = 'snippets/' + ref.lstrip('/')
+        if not os.path.exists(target):
+            bad_snippet.append((path, ref))
+
 print('internal links checked: %d  (%d external/openapi targets skipped)' % (total, skipped))
 
 print('\n=== UNRESOLVED PAGE TARGETS (%d) ===' % len(bad_page))
@@ -101,6 +110,12 @@ for p, l in bad_page[:25]:
     print('  %s\n      -> %s' % (p, l))
 if len(bad_page) > 25:
     print('  ... +%d more' % (len(bad_page) - 25))
+
+print('\n=== UNRESOLVED SNIPPET REFS (%d) ===' % len(bad_snippet))
+for p, r in bad_snippet[:25]:
+    print('  %s\n      -> file="%s"' % (p, r))
+if len(bad_snippet) > 25:
+    print('  ... +%d more' % (len(bad_snippet) - 25))
 
 print('\n=== UNRESOLVED ANCHORS (%d) ===' % len(bad_anchor))
 agg = collections.Counter(l for _, l, _ in bad_anchor)
@@ -110,7 +125,7 @@ for l, c in agg.most_common(25):
 if len(agg) > 25:
     print('  ... +%d more distinct' % (len(agg) - 25))
 
-bad = len(bad_page) + len(bad_anchor)
+bad = len(bad_page) + len(bad_anchor) + len(bad_snippet)
 print('\n' + '=' * 60)
 print('GATE 1 LINKS: %s — %d unresolved' % ('PASS' if bad == 0 else 'FAIL', bad))
 sys.exit(1 if bad else 0)
