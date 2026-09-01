@@ -15,28 +15,28 @@ Convenções:
 ---
 
 <Update label="2026-08-13" tags={["REST API", "Orders API"]}>
-  ### Adicionado
+  ### Adicionado {#added}
   - **Tipo de ordem `fillOrKill`.** Ordem taker de tudo-ou-nada: a totalidade do `bet` tem de ser correspondida imediatamente ou a ordem inteira é rejeitada e quaisquer execuções parciais são revertidas, pelo que nunca fica parcialmente executado. Suportado nos endpoints de colocação REST e WebSocket. Consulte [Tipos de ordem](/pt/pages/rest/orders/place-order#order-types).
 
-  ### Corrigido
+  ### Corrigido {#fixed}
   - **Documentação do `fillAndKill` corrigida.** Estava descrito como «corresponder imediatamente ao seu preço ou rejeitar», o que se lia como tudo-ou-nada. Na verdade, o `fillAndKill` executa o volume que estiver disponível e cancela o restante — uma execução **parcial** é um resultado bem-sucedido, e a ordem só é rejeitada quando não existe liquidez correspondível de todo. O comportamento não mudou; apenas a documentação estava errada. Use o novo `fillOrKill` se precisar de execução verdadeiramente tudo-ou-nada.
 </Update>
 
 <Update label="2026-07-30" tags={["REST API"]}>
-  ### Adicionado
+  ### Adicionado {#added-2}
   - **`GET /exchange/getMatchedVolume`.** Novo endpoint que devolve o volume total correspondido em todo o site para um intervalo inclusivo de dias de calendário ET. Cada aposta correspondida conta os montantes de ambos os lados (risco + ganho, antes de comissões); os intervalos que terminam hoje incluem um agregado ao vivo do dia corrente. Consulte [Obter volume correspondido](/pt/pages/rest/markets/get-matched-volume).
 </Update>
 
 <Update label="2026-07-15" tags={["Streaming API", "User Feed"]}>
-  ### Corrigido
+  ### Corrigido {#fixed-2}
   - **O replay de `GET /v2/user/messages` agora devolve mensagens.** O endpoint de replay do feed de utilizador v2 devolvia sempre listas vazias, pelo que a recuperação de lacunas após uma ligação perdida silenciosamente não fazia nada. As mensagens reproduzidas chegam exatamente na forma em que o WebSocket as entrega. Consulte [Reproduzir mensagens perdidas](/pt/pages/streaming/user-feed#replaying-missed-messages).
 </Update>
 
 <Update label="2026-04-28" tags={["Streaming API", "Price Feed"]}>
-  ### Adicionado
+  ### Adicionado {#added-3}
   - **Subscrição por `gameID`, `league` ou `sport` no feed de preços.** Os clientes ligados a `wss://streaming-api.4casters.io/price-stream` podem agora enviar comandos JSON `subscribe`, `unsubscribe` e `subscribeAll` para restringir o feed a jogos, ligas ou desportos específicos. Consulte [Subscrições](/pt/pages/streaming/price-feed#subscriptions) para a forma completa dos comandos e a semântica de encaminhamento.
   - **Fanout de `parentGameID`.** Os subscritores de um `gameID` pai também recebem atualizações dos jogos filhos cujo `parentGameID` corresponda (p. ex., os derivados F5-MLB chegam aos subscritores do jogo pai).
 
-  ### Alterado
+  ### Alterado {#changed}
   - **Retrocompatível.** Os clientes que nunca enviam um comando de subscrição permanecem em modo de difusão total e recebem todas as atualizações como antes — não são necessárias alterações de integração.
 </Update>

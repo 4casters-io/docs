@@ -15,28 +15,28 @@ description: '4casters API 中對客戶端可見的重要變更。'
 ---
 
 <Update label="2026-08-13" tags={["REST API", "訂單 API"]}>
-  ### 新增
+  ### 新增 {#added}
   - **`fillOrKill` 訂單型別。** 全成或全撤的吃單：必須立即撮合全部 `bet`，否則整筆訂單被拒絕並回滾任何部分成交，因此你不會停留在部分成交狀態。REST 和 WebSocket 下單端點均支援。見 [訂單型別](/zh-Hant/pages/rest/orders/place-order#order-types)。
 
-  ### 修復
+  ### 修復 {#fixed}
   - **更正了 `fillAndKill` 文件。** 原先描述為「按你的價格立即成交，否則拒絕」，讀起來像全成或全撤。`fillAndKill` 實際會成交當前可成交數量並取消剩餘部分 — **部分成交**即為成功結果，僅在完全沒有可撮合流動性時才會被拒絕。行為未變；只是文件有誤。若需要真正的全成或全撤執行，請使用新的 `fillOrKill`。
 </Update>
 
 <Update label="2026-07-30" tags={["REST API"]}>
-  ### 新增
+  ### 新增 {#added-2}
   - **`GET /exchange/getMatchedVolume`。** 新端點，回傳一段 ET 日曆日範圍（首尾兩天均含）內的全站已撮合成交量。每筆已撮合投注計入雙方本金（風險額 + 可贏額，佣金前）；結束於今天的範圍包含當天的即時彙總。見 [獲取已撮合成交量](/zh-Hant/pages/rest/markets/get-matched-volume)。
 </Update>
 
 <Update label="2026-07-15" tags={["推送 API", "使用者推送"]}>
-  ### 修復
+  ### 修復 {#fixed-2}
   - **`GET /v2/user/messages` 回放現在會回傳訊息。** v2 使用者推送回放端點此前始終回傳空列表，因此斷線後的缺口恢復會靜默無效。回放訊息的形態與 WebSocket 送達的完全一致。見 [回放錯過的訊息](/zh-Hant/pages/streaming/user-feed#replaying-missed-messages)。
 </Update>
 
 <Update label="2026-04-28" tags={["推送 API", "行情推送"]}>
-  ### 新增
+  ### 新增 {#added-3}
   - **行情推送可按 `gameID`、`league` 或 `sport` 訂閱。** 連線到 `wss://streaming-api.4casters.io/price-stream` 的客戶端現在可以傳送 JSON 的 `subscribe`、`unsubscribe` 和 `subscribeAll` 命令，將推送收窄到特定賽事、聯賽或運動專案。完整命令形態與路由語義見 [訂閱](/zh-Hant/pages/streaming/price-feed#subscriptions)。
   - **`parentGameID` 扇出。** 訂閱父級 `gameID` 的客戶端也會收到 `parentGameID` 匹配的子賽事更新（例如 F5-MLB 衍生盤會到達父賽事的訂閱者）。
 
-  ### 變更
+  ### 變更 {#changed}
   - **向後相容。** 從不傳送 subscribe 命令的客戶端保持廣播全部模式，並像以前一樣接收每條更新 — 無需更改整合。
 </Update>

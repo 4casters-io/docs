@@ -236,6 +236,111 @@ They differ in vocabulary, and in a grammar pattern that shows up constantly in 
 
 Each needs its own reviewer. Neither is a derivation of the other.
 
+### Russian (`ru`) — draft, reviewer unassigned
+
+Formal вы. Fuller table + open questions: `ru/GLOSSARY-DRAFT.md`.
+
+| English | Russian |
+|---|---|
+| matched / unmatched | сведённый / несведённый |
+| fill / partial fill | исполнение / частичное исполнение |
+| orderbook | книга ордеров |
+| resting order | ожидающий ордер |
+| stake | ставка |
+| wager (graded) vs bet | пари (рассчитанное) / ставка — mirrors the API split |
+| settle / graded | рассчитать / рассчитанный |
+| liability | ответственность (≠ риск, the `risk` field) |
+| american odds | американские коэффициенты |
+| user feed / price feed | фид пользователя / фид цен |
+| in-play | лайв |
+
+### French (`fr`) — draft, reviewer unassigned
+
+vous. Fuller table + open questions: `fr/GLOSSARY-DRAFT.md`.
+
+| English | French |
+|---|---|
+| matched / unmatched | matché(e) / non matché(e) — Betfair FR |
+| orderbook | carnet d'ordres |
+| resting order | ordre en attente |
+| stake | mise |
+| settle / graded | régler / réglé |
+| graded wager | wager réglé (`wager` kept for the API split) |
+| liability | responsabilité |
+| american odds | cotes américaines |
+| game / league | match / ligue |
+| user feed / price feed | flux utilisateur / flux des prix |
+| in-play | en direct |
+
+### Brazilian Portuguese (`pt-BR`) — draft, reviewer unassigned
+
+você, gerúndio, usuário/tela/cadastro. Fuller table: `pt-BR/GLOSSARY-DRAFT.md`.
+
+| English | pt-BR |
+|---|---|
+| matched / unmatched | correspondida / não correspondida |
+| fill | correspondência |
+| orderbook | livro de ofertas |
+| resting order | ordem em espera |
+| stake | valor apostado |
+| settle / graded | liquidar / liquidada |
+| liability | responsabilidade |
+| american odds | odds americanas (`odds` stays English) |
+| user feed / price feed | feed do usuário / feed de preços |
+| in-play | ao vivo |
+
+### European Portuguese (`pt`) — draft, reviewer unassigned
+
+utilizador, estar a + infinitivo, registo. Fuller table: `pt/GLOSSARY-DRAFT.md`.
+
+| English | pt |
+|---|---|
+| matched / unmatched | correspondida / não correspondida |
+| fill | execução — deliberately distinct from pt-BR's correspondência |
+| orderbook | livro de ordens |
+| resting order | ordem em espera |
+| stake | montante |
+| settle / graded | liquidar / avaliada — note pt-BR uses liquidada for graded |
+| liability | responsabilidade |
+| american odds | odds americanas |
+| user feed / price feed | feed de utilizador / feed de preços |
+| in-play | ao vivo |
+
+### Dutch (`nl`) — draft, reviewer unassigned
+
+je. Fuller table + open questions: `nl/GLOSSARY-DRAFT.md`.
+
+| English | Dutch |
+|---|---|
+| matched / unmatched | gematcht / niet-gematcht |
+| fill | fill (English) |
+| orderbook | orderboek |
+| resting order | openstaande order |
+| stake | inzet |
+| settle / graded | afwikkelen / afgewikkeld |
+| liability | liability (English, glossed "je maximale verlies") — aansprakelijkheid too legal, risico collides with `risk` |
+| american odds | Amerikaanse odds |
+| user feed / price feed | English kept |
+| in-play | live (in-play) |
+
+### Italian (`it`) — draft, in-house reviewer assigned
+
+tu. Fuller table + open questions: `it/GLOSSARY-DRAFT.md`.
+
+| English | Italian |
+|---|---|
+| matched / unmatched | abbinata / non abbinata — Betfair Italia |
+| fill | abbinamento |
+| orderbook | libro degli ordini |
+| resting order | ordine in attesa |
+| stake | puntata |
+| settle | liquidare |
+| graded wager | giocata refertata — giocata vs scommessa mirrors the API split |
+| liability | responsabilità |
+| american odds | quote americane |
+| user feed / price feed | feed utente / feed prezzi |
+| in-play | live |
+
 ### New languages
 
 Write the table before drafting. Copy the English column from the Spanish table above — those are the terms that matter for this API — and fill in the target language with a native speaker, not after the fact.
