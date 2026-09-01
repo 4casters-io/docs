@@ -10,7 +10,7 @@ openapi: 'POST /exchange/getOrderbook'
 此端點僅為與舊客戶端向後相容而保留。
 </Warning>
 
-以**巢狀**形式返回整個聯賽的訂單簿，按讓分 / 大小分數鍵控。單場形態與 [獲取單場訂單簿](/zh-Hant/pages/rest/markets/get-single-orderbook) 相同，但覆蓋該聯賽的每一場賽事。
+以**巢狀**形式回傳整個聯賽的訂單簿，按讓分 / 大小分數鍵控。單場形態與 [獲取單場訂單簿](/zh-Hant/pages/rest/markets/get-single-orderbook) 相同，但覆蓋該聯賽的每一場賽事。
 
 ## 請求 {#request}
 
@@ -29,7 +29,7 @@ curl -X POST https://api.4casters.io/exchange/getOrderbook \
 ```
 </CodeGroup>
 
-## 響應 {#response}
+## 回應 {#response}
 
 <ResponseField name="data.market" type="string">此端點始終為 `null`。</ResponseField>
 <ResponseField name="data.games"  type="array">

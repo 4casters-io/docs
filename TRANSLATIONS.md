@@ -102,12 +102,12 @@ Keep the three elements. Do not soften "the English version is authoritative" �
 
 | Locale | Content (`%s` is the report URL) |
 |---|---|
-| `zh-Hans` | 本文档由 AI 翻译，仅为方便阅读而提供，可能存在错误。**英文文档为准**——依赖本页内容前请对照英文核对。[报告翻译问题](%s) |
-| `zh-Hant` | 本文件由 AI 翻譯，僅為方便閱讀而提供，可能存在錯誤。**英文文件為準**——依賴本頁內容前請對照英文核對。[報告翻譯問題](%s) |
-| `ru` | Эта документация переведена ИИ для удобства и может содержать ошибки. **Английская версия является официальной** — сверяйтесь с ней, прежде чем полагаться на эту страницу. [Сообщить об ошибке перевода](%s) |
+| `zh-Hans` | 本文档由 AI 翻译，仅为方便阅读而提供，可能存在错误。**以英文文档为准**——依赖本页内容前请对照英文核对。[报告翻译问题](%s) |
+| `zh-Hant` | 本文件由 AI 翻譯，僅為方便閱讀而提供，可能存在錯誤。**以英文文件為準**——依賴本頁內容前請對照英文核對。[報告翻譯問題](%s) |
+| `ru` | Эта документация переведена с помощью ИИ для удобства и может содержать ошибки. **Английская версия является официальной** — сверяйтесь с ней, прежде чем полагаться на эту страницу. [Сообщить об ошибке перевода](%s) |
 | `fr` | Cette documentation est traduite par IA à titre de commodité et peut contenir des erreurs. **La version anglaise fait foi** — vérifiez-la avant de vous fier à cette page. [Signaler une erreur de traduction](%s) |
-| `pt-BR` | Esta documentação foi traduzida por IA por conveniência e pode conter erros. **A versão em inglês é a oficial** — confira nela antes de confiar nesta página. [Relatar um erro de tradução](%s) |
-| `pt` | Esta documentação foi traduzida por IA por conveniência e pode conter erros. **A versão inglesa é a oficial** — confirme nela antes de confiar nesta página. [Comunicar um erro de tradução](%s) |
+| `pt-BR` | Esta documentação foi traduzida por IA por conveniência e pode conter erros. **A versão em inglês é a oficial** — consulte-a antes de confiar nesta página. [Relatar um erro de tradução](%s) |
+| `pt` | Esta documentação foi traduzida por IA por conveniência e pode conter erros. **A versão inglesa é a oficial** — consulte-a antes de confiar nesta página. [Comunicar um erro de tradução](%s) |
 | `nl` | Deze documentatie is door AI vertaald voor het gemak en kan fouten bevatten. **De Engelse versie is leidend** — controleer die voordat u op deze pagina vertrouwt. [Een vertaalfout melden](%s) |
 
 Banner content supports basic MDX — links, bold, italic. Custom components are not supported.
@@ -124,7 +124,7 @@ Shared with the frontend (PRO-275) so the app and the docs never render the same
 
 ### All languages
 
-`maker`, `taker`, `heartbeat`, `token`, `WebSocket`, `REST` stay untranslated.
+`WebSocket` and `REST` stay untranslated everywhere. `maker`, `taker`, `heartbeat` and `token` stay untranslated in **Spanish**; Chinese renders heartbeat as `心跳` and token as `令牌` (derived from the pages). Chinese `taker` is currently **inconsistent** — `taker` in 3 files, `吃单` in 5 — one for the Chinese reviewer to settle alongside 取消/撤单.
 
 `moneyline`, `spread`, `total` stay in English, with a short gloss in the target language on first use per page.
 
@@ -180,13 +180,19 @@ python scripts/gen-zh-hant.py
 
 The script runs OpenCC `s2twp` (Taiwan profile) over prose only — code fences and inline code are stashed and restored so rule 2 holds — then applies the Taiwan terms `s2twp` gets wrong:
 
-| `s2twp` gives | Taiwan uses |
-|---|---|
-| 實時 | 即時 |
-| 賬戶 | 帳戶 |
-| 賬號 | 帳號 |
-| 登錄 | 登入 |
-| 注銷 | 登出 |
+| `s2twp` gives | Taiwan uses | |
+|---|---|---|
+| 實時 | 即時 | real-time |
+| 賬戶 / 賬號 / 賬單 | 帳戶 / 帳號 / 帳單 | account |
+| 登錄 / 注銷 | 登入 / 登出 | log in / out |
+| 響應 (響應頭/體) | 回應 (回應標頭/主體) | response |
+| 請求頭 / 請求體 | 請求標頭 / 請求主體 | request header/body |
+| 返回 | 回傳 | returns (a value) |
+| 撥用 / 調用 | 呼叫 | call — `s2twp` mangles 调用 into 撥用, "appropriate funds" |
+| 標識(符) | 識別碼 | identifier |
+| 載荷 | 酬載 | payload |
+
+The full list is `POST` in `scripts/gen-zh-hant.py`. The script converts fence *labels* and prose but never fence *bodies* or inline code — and it is line-based, so CRLF files are handled.
 
 Regenerate after every change to `zh-Hans/`, and re-check that list afterwards — it is easy to reintroduce.
 

@@ -4,7 +4,7 @@ description: '讀取單場賽事的巢狀訂單簿，以及子市場'
 openapi: 'GET /exchange/getSingleOrderbook'
 ---
 
-返回單場賽事的**巢狀**訂單簿 — 讓分和大小分是按盤口數字鍵控的物件，而不是扁平陣列。同時返回任何子賽事（附加盤、分段盤）以及呼叫方在該聯賽上自己掛單的 `orderSummary`。
+回傳單場賽事的**巢狀**訂單簿 — 讓分和大小分是按盤口數字鍵控的物件，而不是扁平陣列。同時回傳任何子賽事（附加盤、分段盤）以及呼叫方在該聯賽上自己掛單的 `orderSummary`。
 
 若需要更簡單的扁平形態，請優先使用 [獲取訂單簿](/zh-Hant/pages/rest/markets/get-orderbook)。
 
@@ -23,7 +23,7 @@ curl "https://api.4casters.io/exchange/getSingleOrderbook?gameID=65b674505031802
 ```
 </CodeGroup>
 
-## 響應 {#response}
+## 回應 {#response}
 
 <ResponseField name="data.game" type="object">
   帶巢狀訂單簿欄位的賽事物件。適用標準 `Game` 欄位（見 [獲取賽事](/zh-Hant/pages/rest/markets/get-games#response)），此外還有：

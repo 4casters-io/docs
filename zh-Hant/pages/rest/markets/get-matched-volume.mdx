@@ -4,7 +4,7 @@ description: '一段日期範圍內的全站已撮合成交量'
 openapi: 'GET /exchange/getMatchedVolume'
 ---
 
-返回一段包含端點的 **美國東部時間（ET）日曆日** 範圍內的全站已撮合成交量。
+回傳一段包含端點的 **美國東部時間（ET）日曆日** 範圍內的全站已撮合成交量。
 
 ## 成交量如何計算 {#how-volume-is-calculated}
 
@@ -42,7 +42,7 @@ curl "https://api.4casters.io/exchange/getMatchedVolume?startDate=2026-08-10&end
 ```
 </CodeGroup>
 
-## 響應 {#response}
+## 回應 {#response}
 
 <ResponseField name="data" type="object">
   <Expandable title="data">
@@ -52,7 +52,7 @@ curl "https://api.4casters.io/exchange/getMatchedVolume?startDate=2026-08-10&end
   </Expandable>
 </ResponseField>
 
-```json 響應示例
+```json 回應示例
 {
   "data": {
     "startDate": "2026-08-10",
@@ -72,5 +72,5 @@ curl "https://api.4casters.io/exchange/getMatchedVolume?startDate=2026-08-10&end
 |---|---|
 | `400` | `startDate` / `endDate` 缺失或格式錯誤（必須為 `YYYY-MM-DD`），或 `startDate` 晚於 `endDate`。 |
 | `401` | 認證令牌缺失或無效。 |
-| `429` | 超出全域性每 IP 速率限制。請遵守 `Retry-After` 響應頭。 |
+| `429` | 超出全域性每 IP 速率限制。請遵守 `Retry-After` 回應標頭。 |
 | `503` | 觸發了服務端 15 秒超時。可以安全重試。 |

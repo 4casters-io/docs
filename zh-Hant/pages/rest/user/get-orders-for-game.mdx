@@ -4,7 +4,7 @@ description: '列出你在單場賽事上的未成交訂單和已撮合投注'
 openapi: 'GET /user/getOrdersForGame'
 ---
 
-對於給定的 4casters 賽事 ID，返回撥用方在該賽事上的未成交訂單和已撮合（未結算）投注。此端點不返回已結算投注 — 請使用 [獲取已結算注單](/zh-Hant/pages/rest/user/get-graded-wagers)。
+對於給定的 4casters 賽事 ID，回傳呼叫方在該賽事上的未成交訂單和已撮合（未結算）投注。此端點不回傳已結算投注 — 請使用 [獲取已結算注單](/zh-Hant/pages/rest/user/get-graded-wagers)。
 
 ## 請求 {#request}
 
@@ -19,7 +19,7 @@ curl "https://api.4casters.io/user/getOrdersForGame?gameID=688c0516fbc14da0c202d
 ```
 </CodeGroup>
 
-## 響應 {#response}
+## 回應 {#response}
 
 <ResponseField name="data.unmatched" type="array">
   該賽事上的未成交訂單陣列，按開賽時間升序排列。形態與 [獲取未撮合訂單](/zh-Hant/pages/rest/user/get-unmatched-orders) 相同。

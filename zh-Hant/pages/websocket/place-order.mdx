@@ -2,7 +2,7 @@
 title: '下單'
 ---
 
-要透過 WebSocket 連線下一筆或多筆訂單，傳送 `placeV3` 訊息。單次請求可包含一批訂單；每筆結果在 `data` 陣列中返回，並與你的 `orders` 陣列按位置對應。
+要透過 WebSocket 連線下一筆或多筆訂單，傳送 `placeV3` 訊息。單次請求可包含一批訂單；每筆結果在 `data` 陣列中回傳，並與你的 `orders` 陣列按位置對應。
 
 <CodeGroup>
 ```json JSON
@@ -84,7 +84,7 @@ title: '下單'
 
 `postArb` 可避免普通成交中的 **taker 手續費** — 走該流程時，不會像作為 taker 主動吃掉或撞擊掛單流動性那樣被收取 taker 手續費。
 
-以 `postArb` 下的訂單，會在其[使用者推送](/zh-Hant/pages/streaming/user-feed)和[行情推送](/zh-Hant/pages/streaming/price-feed)更新中帶有 `isPostArb: true`；其他訂單型別會省略該欄位。下單響應本身不包含該標誌。
+以 `postArb` 下的訂單，會在其[使用者推送](/zh-Hant/pages/streaming/user-feed)和[行情推送](/zh-Hant/pages/streaming/price-feed)更新中帶有 `isPostArb: true`；其他訂單型別會省略該欄位。下單回應本身不包含該標誌。
 
 ### `fillAndKill`
 
@@ -107,9 +107,9 @@ title: '下單'
   剩餘量 **$10 及以下** 視為已完成：一筆 $1,000 的 `fillOrKill` 若成交 $992 即算成功，因為未能成交的 $8 低於訂單簿上可掛單的最小數量。剩餘量大於 $10 則會拒絕該訂單。
 </Note>
 
-## 響應 {#response}
+## 回應 {#response}
 
-伺服器會返回你的 `requestID` 以及每筆訂單的結果列表。
+伺服器會回傳你的 `requestID` 以及每筆訂單的結果列表。
 
 <CodeGroup>
 ```json JSON
@@ -179,7 +179,7 @@ title: '下單'
 ```
 </CodeGroup>
 
-響應：
+回應：
 
 <CodeGroup>
 ```json JSON
@@ -254,7 +254,7 @@ title: '下單'
 
 ### 場景 2：限價單有剩餘掛單 {#scenario-2-limit-order-with-leftover-liquidity}
 
-下一筆數量為 300 的訂單，立即部分成交，剩餘流動性掛在訂單簿上。響應會同時給出已成交部分和未成交部分。
+下一筆數量為 300 的訂單，立即部分成交，剩餘流動性掛在訂單簿上。回應會同時給出已成交部分和未成交部分。
 
 <CodeGroup>
 ```json JSON
@@ -327,7 +327,7 @@ title: '下單'
 
 ### 場景 4：Fill and Kill 訂單無成交 {#scenario-4-fill-and-kill-order-with-no-match}
 
-一筆沒有成交的 fill-and-kill 訂單。伺服器返回 `error` 和 `error_type`。
+一筆沒有成交的 fill-and-kill 訂單。伺服器回傳 `error` 和 `error_type`。
 
 <CodeGroup>
 ```json JSON
@@ -453,9 +453,9 @@ title: '下單'
     - 若賠率變得更優，則立即成交。
     - 若賠率變差，則不成交。
 
-## 錯誤響應 {#error-responses}
+## 錯誤回應 {#error-responses}
 
-當伺服器未能下一筆單獨訂單時，`data[]` 中對應的**單筆**條目會以下列形態返回：
+當伺服器未能下一筆單獨訂單時，`data[]` 中對應的**單筆**條目會以下列形態回傳：
 
 <CodeGroup>
 ```json JSON
@@ -473,16 +473,16 @@ title: '下單'
 
 如果收到錯誤訊息，該訂單尚未被處理，可以安全地再次提交。
 
-錯誤按位置返回在 `data` 陣列中，與輸入 `orders` 陣列中對應訂單的下標一致。
+錯誤按位置回傳在 `data` 陣列中，與輸入 `orders` 陣列中對應訂單的下標一致。
 
 - `error` 未標準化；它是描述性字串，可能會變化。
 - `error_type` 是可用於程式化處理的列舉：
-    - `validation_error` — 載荷或狀態未透過校驗（例如缺少欄位、賠率/盤口數值無效、方向無效、賽事未啟用）。
+    - `validation_error` — 酬載或狀態未透過校驗（例如缺少欄位、賠率/盤口數值無效、方向無效、賽事未啟用）。
     - `rejected_liability` — 使用者/帳戶/責任約束阻止了掛單或執行。
     - `rejected_order_type_rules` — 訂單型別規則禁止執行（例如 `fillAndKill` 找不到可執行流動性，因此無法成交併被拒絕；`fillOrKill` 無法全部成交；`post` 發現成交但該型別不允許成交；或 `postArb` 因你的美式賠率與將被成交的掛單相差**超過 1%** 而被拒絕）。
     - `system_error` — 瞬時/內部錯誤；重試可能成功。
 
-多筆下單、部分返回錯誤響應的示例：
+多筆下單、部分回傳錯誤回應的示例：
 
 <CodeGroup>
 ```json JSON

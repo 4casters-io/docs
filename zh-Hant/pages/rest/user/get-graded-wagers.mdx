@@ -4,7 +4,7 @@ description: '列出兩個日期之間的已結算注單及盈虧彙總'
 openapi: 'api-reference/openapi.json GET /user/getGradedWagers'
 ---
 
-返回撥用方在兩個日期之間的全部**已結算（已判定）注單**，以及盈虧和成交量彙總。日期對應注單所屬賽事的**開賽時間**（因此 `startDate=06-22-2022` 返回開賽時間晚於 06-21-2022 00:00 GMT 的注單）。
+回傳呼叫方在兩個日期之間的全部**已結算（已判定）注單**，以及盈虧和成交量彙總。日期對應注單所屬賽事的**開賽時間**（因此 `startDate=06-22-2022` 回傳開賽時間晚於 06-21-2022 00:00 GMT 的注單）。
 
 ## 請求 {#request}
 
@@ -24,7 +24,7 @@ curl "https://api.4casters.io/user/getGradedWagers?startDate=01-01-2024&endDate=
 ```
 </CodeGroup>
 
-## 響應 {#response}
+## 回應 {#response}
 
 <ResponseField name="data.graded" type="array">
   已結算注單陣列，按開賽時間降序排列。
@@ -60,7 +60,7 @@ curl "https://api.4casters.io/user/getGradedWagers?startDate=01-01-2024&endDate=
 </ResponseField>
 
 <ResponseField name="data.summary" type="object">
-  返回注單的彙總合計。
+  回傳注單的彙總合計。
   <Expandable title="summary">
     <ResponseField name="pnl" type="integer">`result` 之和（已四捨五入）。</ResponseField>
     <ResponseField name="volume" type="integer">`min(risk, win)` 之和（已四捨五入）。</ResponseField>

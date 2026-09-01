@@ -10,13 +10,13 @@ title: '4casters 訂單 API'
 ## 認證 {#auth}
 
 連線使用 4Casters 令牌進行認證。在 WebSocket 握手時於
-`Authorization` 請求頭中傳送令牌。伺服器從令牌推導使用者
+`Authorization` 請求標頭中傳送令牌。伺服器從令牌推導使用者
 — **URL 中無需使用者名稱**。
 
 ### 獲取令牌 {#get-a-token}
 
 使用你的 4Casters 使用者名稱和密碼，呼叫 4Casters REST API 的 `/user/login`
-端點登入。響應中包含可在此處使用的令牌。
+端點登入。回應中包含可在此處使用的令牌。
 
 見 [4Casters REST API 文件中的 `POST /user/login`](/zh-Hant/pages/rest/authentication)。
 
@@ -34,7 +34,7 @@ const ws = new WebSocket('wss://orders-api.4casters.io/orders/ws', {
 
 ## 訊息格式 {#message-format}
 
-每個客戶端請求都是二元組 `[messageType, payload]`。每個載荷都應包含你生成的 `requestID`；伺服器會原樣回傳，以便你關聯響應。
+每個客戶端請求都是二元組 `[messageType, payload]`。每個酬載都應包含你生成的 `requestID`；伺服器會原樣回傳，以便你關聯回應。
 
 <CodeGroup>
 ```json 請求
@@ -48,7 +48,7 @@ const ws = new WebSocket('wss://orders-api.4casters.io/orders/ws', {
 ```
 </CodeGroup>
 
-伺服器響應是帶有 `requestID` 以及 `data`（成功）或 `error`（失敗）的 JSON 物件：
+伺服器回應是帶有 `requestID` 以及 `data`（成功）或 `error`（失敗）的 JSON 物件：
 
 <CodeGroup>
 ```json 成功

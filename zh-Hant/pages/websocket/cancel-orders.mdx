@@ -2,11 +2,11 @@
 title: '取消訂單'
 ---
 
-支援四種取消方式。它們都使用相同的響應信封：`{ requestID, data: [ ...CancelResponsePayload ] }`。
+支援四種取消方式。它們都使用相同的回應信封：`{ requestID, data: [ ...CancelResponsePayload ] }`。
 
-## 取消響應載荷 {#cancel-response-payload}
+## 取消回應酬載 {#cancel-response-payload}
 
-每次成功取消都會返回一條或多條如下形態的記錄。注意請求與響應的欄位大小寫不同：請求為 `orderId`/`gameId`（`d` 小寫），響應為 `orderID`/`gameID`（`ID` 大寫）。
+每次成功取消都會回傳一條或多條如下形態的記錄。注意請求與回應的欄位大小寫不同：請求為 `orderId`/`gameId`（`d` 小寫），回應為 `orderID`/`gameID`（`ID` 大寫）。
 
 <CodeGroup>
 ```json JSON
@@ -78,7 +78,7 @@ title: '取消訂單'
 ```
 </CodeGroup>
 
-### 響應 {#response}
+### 回應 {#response}
 
 <CodeGroup>
 ```json JSON
@@ -125,7 +125,7 @@ title: '取消訂單'
 ```
 </CodeGroup>
 
-### 響應
+### 回應
 
 `data` 中每個訂單 ID 對應一條記錄；請檢查每條的 `success` 標誌。
 
@@ -191,7 +191,7 @@ title: '取消訂單'
   可選 — 盤口識別符號（例如 `main`）。
 </ResponseField>
 
-### 響應
+### 回應
 
 <CodeGroup>
 ```json JSON
@@ -233,7 +233,7 @@ title: '取消訂單'
 ```
 </CodeGroup>
 
-### 響應
+### 回應
 
 <CodeGroup>
 ```json JSON
@@ -260,7 +260,7 @@ title: '取消訂單'
 
 ## 錯誤 {#errors}
 
-當取消無法處理時，伺服器返回標準錯誤信封（無 `data` 欄位）：
+當取消無法處理時，伺服器回傳標準錯誤信封（無 `data` 欄位）：
 
 <CodeGroup>
 ```json JSON

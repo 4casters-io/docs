@@ -4,7 +4,7 @@ description: '列出已撮合但尚未結算的投注'
 openapi: 'GET /user/getMatchedBets'
 ---
 
-返回撥用方所有**已撮合但尚未結算**的投注 — 即尚未結算的賽事上的未平倉頭寸。
+回傳呼叫方所有**已撮合但尚未結算**的投注 — 即尚未結算的賽事上的未平倉頭寸。
 
 ## 請求 {#request}
 
@@ -19,7 +19,7 @@ curl https://api.4casters.io/user/getMatchedBets \
 ```
 </CodeGroup>
 
-## 響應 {#response}
+## 回應 {#response}
 
 <ResponseField name="data.matchedBets" type="array">
   已撮合投注陣列，按開賽時間升序排列。
@@ -35,7 +35,7 @@ curl https://api.4casters.io/user/getMatchedBets \
     <ResponseField name="participantID" type="string">出現在 `moneyline` 和 `spread` 上。</ResponseField>
     <ResponseField name="market" type="string">出現在 `moneyline1x2` 上。</ResponseField>
     <ResponseField name="side" type="string">用於 `moneyline1x2` — `yes` 或 `no`。</ResponseField>
-    <ResponseField name="userReference" type="string">下單時傳入的可選客戶端自定義標識。</ResponseField>
+    <ResponseField name="userReference" type="string">下單時傳入的可選客戶端自定義識別碼。</ResponseField>
     <ResponseField name="createdAt" type="string">ISO 8601 時間戳。</ResponseField>
     <ResponseField name="matchedTime" type="string">成交發生的 ISO 8601 時間戳。</ResponseField>
     <ResponseField name="origin" type="string">`offer`（你掛單，吃單方成交了你）或 `wager`（你吃掉了已有流動性）。</ResponseField>

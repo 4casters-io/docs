@@ -1,12 +1,12 @@
 ---
 title: '按使用者引用獲取投注'
-description: '查詢與客戶端自定義標識關聯的全部投注'
+description: '查詢與客戶端自定義識別碼關聯的全部投注'
 openapi: 'GET /user/getBetByUserReference'
 ---
 
 查詢與 `userReference` 關聯的全部投注。`userReference` 是可選的客戶端自定義字串，可在下單時附加到訂單以便在你這邊跟蹤 — 此端點是對應的讀取介面。
 
-響應將結果分為三個桶：
+回應將結果分為三個桶：
 
 - `unmatched` — 該引用下仍掛在訂單簿上的未成交掛單。
 - `matched`   — 該引用下已撮合（未結算）的投注。
@@ -30,7 +30,7 @@ curl "https://api.4casters.io/user/getBetByUserReference?userReference=my-order-
 ```
 </CodeGroup>
 
-## 響應 {#response}
+## 回應 {#response}
 
 <ResponseField name="data.unmatched" type="array">
   未成交訂單 — 形態與 [獲取未撮合訂單](/zh-Hant/pages/rest/user/get-unmatched-orders#response) 相同。

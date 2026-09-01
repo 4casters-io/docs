@@ -4,14 +4,14 @@ description: '列出球隊、球員和期貨盤方向'
 openapi: 'GET /exchange/getParticipants'
 ---
 
-返回交易所範圍內去重後的參賽方列表 — 球隊、球員、期貨盤方向。下 `moneyline` 或 `spread` 訂單時，將此端點的 `participantID` 值用作 `side` 欄位。
+回傳交易所範圍內去重後的參賽方列表 — 球隊、球員、期貨盤方向。下 `moneyline` 或 `spread` 訂單時，將此端點的 `participantID` 值用作 `side` 欄位。
 
 ## 請求 {#request}
 
 `GET /exchange/getParticipants`
 
 <ParamField query="active" type="string">
-  當 `active=true` 時，將響應限定為未來開賽賽事的參賽方。當 `active=false`（或省略）時，返回所有賽事的參賽方。
+  當 `active=true` 時，將回應限定為未來開賽賽事的參賽方。當 `active=false`（或省略）時，回傳所有賽事的參賽方。
 </ParamField>
 
 <CodeGroup>
@@ -21,7 +21,7 @@ curl "https://api.4casters.io/exchange/getParticipants?active=true" \
 ```
 </CodeGroup>
 
-## 響應 {#response}
+## 回應 {#response}
 
 <ResponseField name="data.participants" type="array">
   <Expandable title="Participant">

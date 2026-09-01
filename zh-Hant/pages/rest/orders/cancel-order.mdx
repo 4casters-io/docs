@@ -4,7 +4,7 @@ description: '取消單筆未成交訂單'
 openapi: 'POST /session/cancel'
 ---
 
-按 ID 取消單筆未成交訂單。返回取消時的未成交額和已成交額。
+按 ID 取消單筆未成交訂單。回傳取消時的未成交額和已成交額。
 
 ## 請求 {#request}
 
@@ -23,7 +23,7 @@ curl -X POST https://api.4casters.io/session/cancel \
 ```
 </CodeGroup>
 
-## 響應 {#response}
+## 回應 {#response}
 
 <ResponseField name="data" type="object">
   <Expandable title="CancelResult">

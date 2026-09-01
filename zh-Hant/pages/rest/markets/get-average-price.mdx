@@ -4,7 +4,7 @@ description: '某聯賽中每場賽事的最優價與均價'
 openapi: 'GET /exchange/getOddsForAveragePrice'
 ---
 
-返回某聯賽中每場賽事的最優價與均價的截斷列表。對每場賽事和每個市場（moneyline / spread / total），響應包含：
+回傳某聯賽中每場賽事的最優價與均價的截斷列表。對每場賽事和每個市場（moneyline / spread / total），回應包含：
 
 - **最優價格**（最優掛單上的價格）；
 - 掃掉至少 **$500** 流動性時你會支付的**均價**；
@@ -13,7 +13,7 @@ openapi: 'GET /exchange/getOddsForAveragePrice'
 每個賽事上的按市場陣列（`awayMoneylines`、`homeMoneylines` 等）已被剝離；僅保留彙總的 `odds` 塊。
 
 <Note>
-與大多數端點不同，此端點在**頂層**返回賽事（不在 `data` 下）。
+與大多數端點不同，此端點在**頂層**回傳賽事（不在 `data` 下）。
 </Note>
 
 ## 請求 {#request}
@@ -31,7 +31,7 @@ curl "https://api.4casters.io/exchange/getOddsForAveragePrice?leagueRequested=NB
 ```
 </CodeGroup>
 
-## 響應 {#response}
+## 回應 {#response}
 
 <ResponseField name="games" type="array">
   每個 `game` 為標準 [Game](/zh-Hant/pages/rest/markets/get-games#response) 形態，並帶有以下附加欄位：

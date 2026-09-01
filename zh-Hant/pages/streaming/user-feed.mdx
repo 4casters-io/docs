@@ -83,7 +83,7 @@ connectUserFeed();
 
 | 欄位 | 型別 | 是否下發 | 含義 |
 |---|---|---|---|
-| `txID` | string | 始終 | 該注單的 id。用它做成交去重 — 與[獲取已撮合投注](/zh-Hant/pages/rest/user/get-matched-bets)返回的 `txID` 相同。 |
+| `txID` | string | 始終 | 該注單的 id。用它做成交去重 — 與[獲取已撮合投注](/zh-Hant/pages/rest/user/get-matched-bets)回傳的 `txID` 相同。 |
 | `orderID` | string | 始終 | 該成交來自的訂單 id。作為 maker，是你的掛單；作為 taker，是你吃到的訂單。 |
 | `wagerRequestID` | string | 始終 | 該成交背後的下單請求 id。作為 taker，是你自己的請求；作為 maker，是最初掛出你訂單的請求。 |
 | `amount` | number | 始終 | **不含**佣金的本金。在 maker 成交上等於 `risk`，但在 taker 成交上**不等於** — 見下文。 |
@@ -116,7 +116,7 @@ connectUserFeed();
 | `orderID` | string | 始終 | 訂單 id。 |
 | `wagerRequestID` | string | 始終 | 建立該訂單的下單請求 id。 |
 | `filled` | number | 始終 | **在成交上：僅本事件匹配到的風險**，不是累計值。下單時為 `0`。取消時則為取消到達前已匹配的累計風險。 |
-| `offered` | number | 始終 | 該訂單掛出的總風險。`0` 標識取消。 |
+| `offered` | number | 始終 | 該訂單掛出的總風險。`0` 識別碼取消。 |
 | `remaining` | number | 始終 | 仍掛在訂單簿上的風險。`0` 表示全部成交。 |
 | `odds` | integer | 始終 | 該訂單中你這一側的美式賠率。 |
 | `type` | string | 始終 | `moneyline`、`spread`、`total` 或 `moneyline1x2`。 |
@@ -391,16 +391,16 @@ v2 使用者推送支援**連線中斷後的缺口恢復**。每條訊息都帶�
 GET https://streaming-api.4casters.io/v2/user/messages?afterID=<messageID>&beforeID=<messageID>
 ```
 
-鑑權方式與 WebSocket 相同：在 `Authorization` 請求頭、`Auth` 請求頭或 `token` 查詢引數中攜帶 token。僅返回屬於已鑑權使用者的訊息。
+鑑權方式與 WebSocket 相同：在 `Authorization` 請求標頭、`Auth` 請求標頭或 `token` 查詢引數中攜帶 token。僅回傳屬於已鑑權使用者的訊息。
 
 | 引數 | 是否必填 | 含義 |
 |---|---|---|
 | `afterID` | 是 | 斷開前**你處理的最後一條訊息**的 `messageID`。結果從嚴格晚於它的位置開始。 |
 | `beforeID` | 否 | 不包含的上界。省略則讀到保留歷史的末尾。 |
 
-### 響應：`success` {#response-success}
+### 回應：`success` {#response-success}
 
-你的 `afterID` 仍在保留歷史中，因此返回的列表是**完整的**缺口填充 — `afterID` 與 `beforeID` 之間沒有任何丟失：
+你的 `afterID` 仍在保留歷史中，因此回傳的列表是**完整的**缺口填充 — `afterID` 與 `beforeID` 之間沒有任何丟失：
 
 ```json
 {
@@ -413,7 +413,7 @@ GET https://streaming-api.4casters.io/v2/user/messages?afterID=<messageID>&befor
 
 按順序應用這些訊息，然後繼續處理即時訊息。
 
-### 響應：`cache_expired` {#response-cache_expired}
+### 回應：`cache_expired` {#response-cache_expired}
 
 你的 `afterID` 已超出保留歷史，因此伺服器**無法證明回放是完整的**：
 

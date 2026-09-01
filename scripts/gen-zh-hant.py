@@ -1,10 +1,17 @@
-"""Generate zh-Hant from zh-Hans via OpenCC s2twp, protecting code."""
-import os, re, io, json, sys
+"""Generate zh-Hant from zh-Hans via OpenCC s2twp, protecting code.
+
+Fence BODIES and inline code are never converted (rule 2: byte-identical
+to English). Fence labels, prose, headings and MDX text children are.
+Line-based parsing, so CRLF files are handled correctly.
+"""
+import os, re, io
 import opencc
 
 CC = opencc.OpenCC('s2twp')
 
-# s2twp leaves mainland vocabulary in places Taiwan renders differently.
+# s2twp converts script, not register. These are the mainland terms it
+# leaves behind (or mis-converts) that Taiwan API docs render differently.
+# Longest-first: compounds before their substrings.
 POST = [
     ('實時', '即時'),
     ('賬戶', '帳戶'),
@@ -12,10 +19,21 @@ POST = [
     ('賬單', '帳單'),
     ('登錄', '登入'),
     ('注銷', '登出'),
+    ('響應頭', '回應標頭'),
+    ('請求頭', '請求標頭'),
+    ('響應體', '回應主體'),
+    ('請求體', '請求主體'),
+    ('響應', '回應'),
+    ('返回', '回傳'),
+    ('撥用', '呼叫'),      # s2twp mangles 调用 into 撥用 (to appropriate funds)
+    ('調用', '呼叫'),
+    ('標識符', '識別碼'),
+    ('標識', '識別碼'),
+    ('載荷', '酬載'),
 ]
 
-FENCE = re.compile(r'(^|\n)(```+|~~~+)[^\n]*\n.*?\n\2(?=\n|$)', re.S)
 INLINE = re.compile(r'`[^`\n]+`')
+FENCE_MARK = re.compile(r'^(\s*)(```+|~~~+)(.*)$')
 
 
 def convert_text(s):
@@ -26,23 +44,38 @@ def convert_text(s):
 
 
 def convert_doc(text):
-    """Convert prose only; code fences and inline code stay byte-identical."""
-    slots = []
+    """Convert prose; fence bodies and inline code stay byte-identical."""
+    nl = '\r\n' if '\r\n' in text else '\n'
+    lines = text.split(nl)
+    out = []
+    in_fence = False
+    fence_mark = ''
+    for line in lines:
+        m = FENCE_MARK.match(line)
+        if not in_fence and m:
+            in_fence, fence_mark = True, m.group(2)
+            out.append(convert_text(line))     # the label is human-facing
+        elif in_fence:
+            out.append(line)                   # body: byte-identical
+            if line.lstrip().startswith(fence_mark):
+                in_fence = False
+        else:
+            slots = []
 
-    def stash(m):
-        slots.append(m.group(0))
-        return '\x00%d\x00' % (len(slots) - 1)
+            def stash(mm):
+                slots.append(mm.group(0))
+                return '\x00%d\x00' % (len(slots) - 1)
 
-    t = FENCE.sub(stash, text)
-    t = INLINE.sub(stash, t)
-    t = convert_text(t)
-    for i, v in enumerate(slots):
-        t = t.replace('\x00%d\x00' % i, v)
-    return t
+            t = INLINE.sub(stash, line)
+            t = convert_text(t)
+            for i, v in enumerate(slots):
+                t = t.replace('\x00%d\x00' % i, v)
+            out.append(t)
+    return nl.join(out)
 
 
 def retarget(text, frm, to):
-    text = text.replace('](/%s/' % frm, '](/%s/' % to)      # markdown links
+    text = text.replace('](/%s/' % frm, '](/%s/' % to)           # markdown links
     text = text.replace('href="/%s/' % frm, 'href="/%s/' % to)   # Card/Columns hrefs
     text = text.replace("href='/%s/" % frm, "href='/%s/" % to)
     text = text.replace('file="%s/' % frm, 'file="%s/' % to)     # <Snippet file=...>
@@ -58,7 +91,6 @@ def main():
                 if not f.endswith('.mdx'):
                     continue
                 sp = os.path.join(root, f)
-                dp = sp.replace(src, dst, 1) if root.startswith('snippets') else sp.replace(src + os.sep, dst + os.sep, 1)
                 dp = sp.replace(src, dst, 1)
                 os.makedirs(os.path.dirname(dp), exist_ok=True)
                 t = io.open(sp, encoding='utf-8', newline='').read()

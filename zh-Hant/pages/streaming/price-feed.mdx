@@ -69,7 +69,7 @@ connectPriceFeed();
 
 ### 按 gameID、聯賽或運動專案訂閱 {#subscribe-by-gameid-league-or-sport}
 
-安裝過濾器。`gameIDs` 為 24 位 Mongo ObjectID 十六進位制字串；`leagueIDs` 為短程式碼，如 `NBA` / `MLB` / `EPL`；`sportIDs` 為小寫標識，如 `basketball` / `baseball` / `soccer`。
+安裝過濾器。`gameIDs` 為 24 位 Mongo ObjectID 十六進位制字串；`leagueIDs` 為短程式碼，如 `NBA` / `MLB` / `EPL`；`sportIDs` 為小寫識別碼，如 `basketball` / `baseball` / `soccer`。
 
 <CodeGroup>
 ```json 替換（推薦）
@@ -137,7 +137,7 @@ connectPriceFeed();
 
 ### `orderUpdate`
 
-任意市場中的訂單發生變化時發出（新建、修改、成交或取消）。載荷僅包含接收使用者有權看到的 `sideOrders`（自己的訂單以及可成交的對手方）。
+任意市場中的訂單發生變化時發出（新建、修改、成交或取消）。酬載僅包含接收使用者有權看到的 `sideOrders`（自己的訂單以及可成交的對手方）。
 
 以 `orderType: "postArb"` 下的訂單，其 `sideOrders` 條目會包含 `isPostArb: true`；否則省略該欄位。
 
@@ -189,13 +189,13 @@ connectPriceFeed();
 
 #### moneyline1x2 盤口的 `orderUpdate` {#orderupdate-for-moneyline1x2-markets}
 
-對於 `moneyline1x2`（足球三項盤：主勝 / 平局 / 客勝），投注物件由 **`market` + `side` 組合**標識，而不是 `participantID` / `OU`：
+對於 `moneyline1x2`（足球三項盤：主勝 / 平局 / 客勝），投注物件由 **`market` + `side` 組合**識別碼，而不是 `participantID` / `OU`：
 
 - `market` — 該盤口所針對的結果：參賽者 ObjectID 十六進位制（主隊或客隊），或字面字串 `"draw"`。
 - `side` — 對該結果的 `"yes"` 或 `"no"`。
 - `OU`、`total` 和 `spread` 不出現，`participantID` 為空 — 請使用 `market` + `side`。
 
-這兩個欄位既出現在更新層級（標識哪一側訂單簿發生了變化），也出現在 `sideOrders` 的每一條記錄上。
+這兩個欄位既出現在更新層級（識別碼哪一側訂單簿發生了變化），也出現在 `sideOrders` 的每一條記錄上。
 
 <CodeGroup>
 ```json JSON
@@ -268,7 +268,7 @@ connectPriceFeed();
 
 ### `gameUpdate`
 
-賽事被建立或其狀態發生變化時發出（盤口開盤、收盤、開賽時間更新）。載荷為完整渲染後的賽事物件。
+賽事被建立或其狀態發生變化時發出（盤口開盤、收盤、開賽時間更新）。酬載為完整渲染後的賽事物件。
 
 <CodeGroup>
 ```json JSON

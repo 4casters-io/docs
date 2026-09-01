@@ -6,9 +6,9 @@ openapi: 'GET /user/getBetByWagerRequestID'
 
 查詢與單個 `wagerRequestID` 關聯的全部投注。`wagerRequestID` 由伺服器為下單請求中的**每一筆**訂單生成 — 用它把單次提交訂單所產生的每一筆成交和掛單關聯起來。
 
-響應將結果分為三個桶：
+回應將結果分為三個桶：
 
-- `unmatched` — 該請求中仍掛在訂單簿上的未成交掛單。**此端點始終為空** — 若需要響應中包含未成交掛單，請改用 [按使用者引用獲取投注](/zh-Hant/pages/rest/user/get-bet-by-user-reference)。
+- `unmatched` — 該請求中仍掛在訂單簿上的未成交掛單。**此端點始終為空** — 若需要回應中包含未成交掛單，請改用 [按使用者引用獲取投注](/zh-Hant/pages/rest/user/get-bet-by-user-reference)。
 - `matched`   — 該請求中已撮合（未結算）的投注。
 - `graded`    — 該請求中已結算的投注，包含 `risk`、`win`、`fee` 和 `result`。
 
@@ -17,7 +17,7 @@ openapi: 'GET /user/getBetByWagerRequestID'
 `GET /user/getBetByWagerRequestID`
 
 <ParamField query="wagerRequestID" type="string" required>
-  `/session/v3/place` 返回的 `wagerRequestID`（位於 `matched[].wagerRequestID` 或 `unmatched.wagerRequestID` 欄位）。
+  `/session/v3/place` 回傳的 `wagerRequestID`（位於 `matched[].wagerRequestID` 或 `unmatched.wagerRequestID` 欄位）。
 </ParamField>
 
 <CodeGroup>
@@ -27,7 +27,7 @@ curl "https://api.4casters.io/user/getBetByWagerRequestID?wagerRequestID=65f69af
 ```
 </CodeGroup>
 
-## 響應 {#response}
+## 回應 {#response}
 
 <ResponseField name="data.unmatched" type="array">空陣列。</ResponseField>
 <ResponseField name="data.matched" type="array">

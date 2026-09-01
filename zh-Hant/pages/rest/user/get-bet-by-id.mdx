@@ -14,7 +14,7 @@ openapi: 'GET /user/getBetByID'
   來自列表端點（例如 `/user/getMatchedBets`）的投注 `id`。
 </ParamField>
 <ParamField query="txID" type="string">
-  事務 ID，例如 `/session/v3/place` 返回的 `wagerRequestID` 或 `txID`。
+  事務 ID，例如 `/session/v3/place` 回傳的 `wagerRequestID` 或 `txID`。
 </ParamField>
 
 必須恰好傳入 `id` 或 `txID` 之一。
@@ -31,15 +31,15 @@ curl "https://api.4casters.io/user/getBetByID?id=6494ca85c9346058f35b2b1e" \
 ```
 </CodeGroup>
 
-## 響應 {#response}
+## 回應 {#response}
 
 `bet` 的形態取決於投注的當前狀態：
 
-- **已結算**投注返回 [GradedWager](/zh-Hant/pages/rest/user/get-graded-wagers#response) 形態，包含 `risk`、`win`、`fee` 和 `result`。
-- **已撮合**投注返回 [MatchedBet](/zh-Hant/pages/rest/user/get-matched-bets#response) 形態。
-- **未成交掛單**返回 [UnmatchedOrder](/zh-Hant/pages/rest/user/get-unmatched-orders#response) 形態。
+- **已結算**投注回傳 [GradedWager](/zh-Hant/pages/rest/user/get-graded-wagers#response) 形態，包含 `risk`、`win`、`fee` 和 `result`。
+- **已撮合**投注回傳 [MatchedBet](/zh-Hant/pages/rest/user/get-matched-bets#response) 形態。
+- **未成交掛單**回傳 [UnmatchedOrder](/zh-Hant/pages/rest/user/get-unmatched-orders#response) 形態。
 
-注意，與大多數端點不同，此端點在**頂層**返回投注（不在 `data` 下）。
+注意，與大多數端點不同，此端點在**頂層**回傳投注（不在 `data` 下）。
 
 ### 示例 {#example}
 
@@ -73,4 +73,4 @@ curl "https://api.4casters.io/user/getBetByID?id=6494ca85c9346058f35b2b1e" \
 
 | 狀態 | 含義 |
 | ------ | ------- |
-| `400`  | `id` 和 `txID` 均缺失，或未找到所提供標識對應的投注。 |
+| `400`  | `id` 和 `txID` 均缺失，或未找到所提供識別碼對應的投注。 |

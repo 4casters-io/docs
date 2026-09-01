@@ -9,7 +9,7 @@ description: '以程式設計方式訪問 4casters 點對點博彩交易所'
 
 <CardGroup cols={3}>
   <Card title="REST API" icon="globe" href="/zh-Hant/pages/rest/introduction">
-    基於 HTTPS 的請求 / 響應。用於登入、帳戶狀態、歷史記錄、市場查詢，以及批次下單 / 改單 / 取消。
+    基於 HTTPS 的請求 / 回應。用於登入、帳戶狀態、歷史記錄、市場查詢，以及批次下單 / 改單 / 取消。
   </Card>
   <Card title="訂單 WebSocket" icon="bolt" href="/zh-Hant/pages/websocket/introduction">
     用於下單和取消訂單的持久低延遲通道。在你關心往返延遲時使用。
@@ -32,9 +32,9 @@ description: '以程式設計方式訪問 4casters 點對點博彩交易所'
 三套 API 共用一個令牌。
 
 1. 在 REST API 上使用使用者名稱和密碼呼叫 [`POST /user/login`](/zh-Hant/pages/rest/authentication)。
-2. 在後續每個請求中傳送返回的令牌：
-   - **REST**：`Authorization: Bearer <token>` 請求頭。
-   - **WebSockets**：握手時使用 `Authorization: <token>` 請求頭。
+2. 在後續每個請求中傳送回傳的令牌：
+   - **REST**：`Authorization: Bearer <token>` 請求標頭。
+   - **WebSockets**：握手時使用 `Authorization: <token>` 請求標頭。
 
 令牌有效期為 30 天，可在過期前重新整理。令牌重新整理、簽名 Cookie 認證及其他細節見 [認證](/zh-Hant/pages/rest/authentication)。
 
@@ -42,7 +42,7 @@ description: '以程式設計方式訪問 4casters 點對點博彩交易所'
 
 - **傳輸**：僅 HTTPS / WSS。
 - **編碼**：一律使用 JSON。
-- **響應信封（REST）**：成功時為 `{ "data": <payload> }`；HTTP 錯誤時為 `{ "error": "<message>" }`。
+- **回應信封（REST）**：成功時為 `{ "data": <payload> }`；HTTP 錯誤時為 `{ "error": "<message>" }`。
 - **識別符號**：賽事 ID、參賽方 ID 和訂單 ID 均為 MongoDB `ObjectID` 字串（24 位十六進位制）。
 - **賠率**：美式格式（熱門為負，冷門為正），除非另有說明。
 - **時間**：帶 `Z` 的 ISO 8601（UTC）。
@@ -52,13 +52,13 @@ description: '以程式設計方式訪問 4casters 點對點博彩交易所'
 大多數非平凡客戶端會組合使用全部三套介面：
 
 1. **REST** — 呼叫一次 `POST /user/login`，快取令牌，然後呼叫 `GET /user/getMe` 和 `GET /games/v2/leagues` 以引導狀態。
-2. **推送 WebSocket** — 開啟你關心的市場價格推送，以及使用者推送以響應你自己的成交 / 結算。
-3. **訂單 WebSocket** — 開啟持久連線，以低延遲下單 / 取消，並透過 `requestID` 關聯響應。
+2. **推送 WebSocket** — 開啟你關心的市場價格推送，以及使用者推送以回應你自己的成交 / 結算。
+3. **訂單 WebSocket** — 開啟持久連線，以低延遲下單 / 取消，並透過 `requestID` 關聯回應。
 4. **REST** — 回退到 `POST /myBets/getMatchedBets`、`/myBets/getOrdersForGame` 等，用於歷史記錄和對賬。
 
 ## 需要舊版文件？ {#need-the-old-docs}
 
-先前的文件以 Postman 集合形式存在。它仍保留作參考，但這些 Mintlify 文件現為權威來源 — Postman 集合在新端點、引數或響應形態上可能滯後。
+先前的文件以 Postman 集合形式存在。它仍保留作參考，但這些 Mintlify 文件現為權威來源 — Postman 集合在新端點、引數或回應形態上可能滯後。
 
 <Card title="4Casters API — Postman 集合" icon="link" href="https://documenter.getpostman.com/view/6710109/U16gNmHG">
   檢視舊版 Postman 文件

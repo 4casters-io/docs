@@ -4,7 +4,7 @@ description: '讀取某聯賽或賽事的訂單簿（v2，推薦）'
 openapi: 'GET /exchange/v2/getOrderbook'
 ---
 
-以**扁平**形式返回某聯賽或單場賽事的訂單簿：每個市場是訂單陣列，而不是按讓分 / 大小分數鍵控的物件。
+以**扁平**形式回傳某聯賽或單場賽事的訂單簿：每個市場是訂單陣列，而不是按讓分 / 大小分數鍵控的物件。
 
 這是推薦的訂單簿端點。與 [WebSocket 推送](/zh-Hant/pages/streaming/price-feed) 行情推送搭配，可獲取即時更新。
 
@@ -34,7 +34,7 @@ curl "https://api.4casters.io/exchange/v2/getOrderbook?gameID=688c0516fbc14da0c2
 ```
 </CodeGroup>
 
-## 響應 {#response}
+## 回應 {#response}
 
 <ResponseField name="data.games" type="array">
   每個 `game` 為標準 [Game](/zh-Hant/pages/rest/markets/get-games#response) 形態，並帶有以下按市場陣列：

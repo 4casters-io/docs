@@ -24,12 +24,12 @@ description: '4casters API 中對客戶端可見的重要變更。'
 
 <Update label="2026-07-30" tags={["REST API"]}>
   ### 新增
-  - **`GET /exchange/getMatchedVolume`。** 新端點，返回一段包含端點的 ET 日曆日範圍內的全站已撮合成交量。每筆已撮合投注計入雙方本金（風險額 + 可贏額，佣金前）；結束於今天的範圍包含當天的即時彙總。見 [獲取已撮合成交量](/zh-Hant/pages/rest/markets/get-matched-volume)。
+  - **`GET /exchange/getMatchedVolume`。** 新端點，回傳一段包含端點的 ET 日曆日範圍內的全站已撮合成交量。每筆已撮合投注計入雙方本金（風險額 + 可贏額，佣金前）；結束於今天的範圍包含當天的即時彙總。見 [獲取已撮合成交量](/zh-Hant/pages/rest/markets/get-matched-volume)。
 </Update>
 
 <Update label="2026-07-15" tags={["推送 API", "使用者推送"]}>
   ### 修復
-  - **`GET /v2/user/messages` 回放現在會返回訊息。** v2 使用者推送回放端點此前始終返回空列表，因此斷線後的缺口恢復會靜默無效。回放訊息的形態與 WebSocket 送達的完全一致。見 [回放錯過的訊息](/zh-Hant/pages/streaming/user-feed#replaying-missed-messages)。
+  - **`GET /v2/user/messages` 回放現在會回傳訊息。** v2 使用者推送回放端點此前始終回傳空列表，因此斷線後的缺口恢復會靜默無效。回放訊息的形態與 WebSocket 送達的完全一致。見 [回放錯過的訊息](/zh-Hant/pages/streaming/user-feed#replaying-missed-messages)。
 </Update>
 
 <Update label="2026-04-28" tags={["推送 API", "行情推送"]}>

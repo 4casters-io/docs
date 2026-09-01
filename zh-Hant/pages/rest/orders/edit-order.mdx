@@ -9,7 +9,7 @@ openapi: 'POST /session/editOrder'
 對於部分成交的訂單，4casters 會取消現有訂單並按所提供的值提交一筆新訂單。新的 `orderVolume` **不會**計入此前已成交的數量 — 如果你最初下單 `bet: 10`，其中 $5 已成交，然後改單為 `orderVolume: 10`，則原訂單被取消（退回 $5），並建立一筆 $10 的新訂單（扣款 $10），淨效果是你少了 $5。
 
 <Note>
-更新的 gRPC 變體位於 `POST /session/v4/editOrder`。它接受相同的請求體，並在校驗失敗時額外返回 `errorType`。確認形態適合你後，新整合請優先使用它。
+更新的 gRPC 變體位於 `POST /session/v4/editOrder`。它接受相同的請求主體，並在校驗失敗時額外回傳 `errorType`。確認形態適合你後，新整合請優先使用它。
 </Note>
 
 ## 請求 {#request}
@@ -53,7 +53,7 @@ curl -X POST https://api.4casters.io/session/editOrder \
   }'
 ```
 
-```json JSON 請求體
+```json JSON 請求主體
 {
   "sessionID": "6549b6df6634097d2704716f",
   "orderOdds": 185,
@@ -62,9 +62,9 @@ curl -X POST https://api.4casters.io/session/editOrder \
 ```
 </CodeGroup>
 
-## 響應 {#response}
+## 回應 {#response}
 
-結果映象 [下單](/zh-Hant/pages/rest/orders/place-order#response) 的響應形態 — 一個 `cancelled` 彙總，加上新的 `matched` / `unmatched` 結果：
+結果映象 [下單](/zh-Hant/pages/rest/orders/place-order#response) 的回應形態 — 一個 `cancelled` 彙總，加上新的 `matched` / `unmatched` 結果：
 
 <ResponseField name="data.cancelled" type="object">
   被取消並替換的原訂單彙總。
@@ -80,5 +80,5 @@ curl -X POST https://api.4casters.io/session/editOrder \
 
 | 狀態 | 含義 |
 | ------ | ------- |
-| `400`  | 校驗錯誤（`v4/editOrder` 會為這些錯誤返回 `errorType`）。 |
+| `400`  | 校驗錯誤（`v4/editOrder` 會為這些錯誤回傳 `errorType`）。 |
 | `503`  | 訂單服務不可達。 |

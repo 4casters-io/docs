@@ -24,14 +24,14 @@ curl -X POST https://api.4casters.io/user/ordersHeartbeat \
   -d '{"timeout": 30}'
 ```
 
-```json JSON 請求體
+```json JSON 請求主體
 { "timeout": 30 }
 ```
 </CodeGroup>
 
-## 響應 {#response}
+## 回應 {#response}
 
-響應由訂單服務轉發：
+回應由訂單服務轉發：
 
 ```json
 { "data": { /* heartbeat ack payload */ } }

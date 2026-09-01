@@ -4,7 +4,7 @@ description: '列出某聯賽的活躍賽事'
 openapi: 'GET /exchange/v2/getGames'
 ---
 
-返回某聯賽的全部活躍賽事。響應**不**包含訂單簿或任何價格 — 請呼叫 [獲取訂單簿](/zh-Hant/pages/rest/markets/get-orderbook) 獲取。
+回傳某聯賽的全部活躍賽事。回應**不**包含訂單簿或任何價格 — 請呼叫 [獲取訂單簿](/zh-Hant/pages/rest/markets/get-orderbook) 獲取。
 
 ## 請求 {#request}
 
@@ -24,13 +24,13 @@ curl "https://api.4casters.io/exchange/v2/getGames?league=NBA" \
 ```
 </CodeGroup>
 
-## 響應 {#response}
+## 回應 {#response}
 
 <ResponseField name="data.games" type="array">
   <Expandable title="Game">
     <ResponseField name="id"             type="string">賽事 ID。</ResponseField>
     <ResponseField name="parentGameID"   type="string">父賽事 ID（若這是子市場：附加盤、分段盤）。</ResponseField>
-    <ResponseField name="cheapDataUID"   type="string">賽事的穩定跨系統標識（用於盤口關聯）。</ResponseField>
+    <ResponseField name="cheapDataUID"   type="string">賽事的穩定跨系統識別碼（用於盤口關聯）。</ResponseField>
     <ResponseField name="league"         type="string" />
     <ResponseField name="sport"          type="string" />
     <ResponseField name="start"          type="string">ISO 8601 開賽時間。</ResponseField>

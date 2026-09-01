@@ -4,7 +4,7 @@ description: '向交易所提交一筆或多筆訂單'
 openapi: 'POST /session/v3/place'
 ---
 
-提交一筆或多筆訂單。該介面接受批次請求——每筆訂單的結果在 `data.createdSessions` 中返回，並與輸入的 `orders` 陣列**按位置一一對應**。每條結果要麼是成功的 `{ matched, unmatched }`，要麼是失敗的 `{ error, errorType }`。
+提交一筆或多筆訂單。該介面接受批次請求——每筆訂單的結果在 `data.createdSessions` 中回傳，並與輸入的 `orders` 陣列**按位置一一對應**。每條結果要麼是成功的 `{ matched, unmatched }`，要麼是失敗的 `{ error, errorType }`。
 
 ## 請求 {#request}
 
@@ -30,7 +30,7 @@ curl -X POST https://api.4casters.io/session/v3/place \
   }'
 ```
 
-```json JSON 請求體
+```json JSON 請求主體
 {
   "orders": [
     {
@@ -77,13 +77,13 @@ curl -X POST https://api.4casters.io/session/v3/place \
 
 `postArb` 可避免普通成交中的 **taker 手續費** — 走該流程時，不會像作為 taker 主動吃掉掛單流動性那樣被收取 taker 手續費。
 
-以 `postArb` 下的訂單，會在其[使用者推送](/zh-Hant/pages/streaming/user-feed)和[行情推送](/zh-Hant/pages/streaming/price-feed)更新中帶有 `isPostArb: true`；其他訂單型別會省略該欄位。下單響應本身不包含該標誌。
+以 `postArb` 下的訂單，會在其[使用者推送](/zh-Hant/pages/streaming/user-feed)和[行情推送](/zh-Hant/pages/streaming/price-feed)更新中帶有 `isPostArb: true`；其他訂單型別會省略該欄位。下單回應本身不包含該標誌。
 
 ### `fillAndKill`
 
 立即作為 taker 按你的價格或更優價格吃掉當前可成交數量，並取消剩餘部分。`fillAndKill` 永遠不會留在訂單簿上。
 
-**部分成交**也是成功結果：如果你傳送 `bet: 1000` 而可匹配流動性只有 $400，則成交 $400，剩餘 $600 被取消——響應為成功，而非錯誤。僅當完全沒有可匹配流動性時，訂單才會被拒絕（`rejected_order_type_rules`，`"fill and kill has no matches"`）。參見下方[示例](#examples)中的 Fill And Kill 場景。
+**部分成交**也是成功結果：如果你傳送 `bet: 1000` 而可匹配流動性只有 $400，則成交 $400，剩餘 $600 被取消——回應為成功，而非錯誤。僅當完全沒有可匹配流動性時，訂單才會被拒絕（`rejected_order_type_rules`，`"fill and kill has no matches"`）。參見下方[示例](#examples)中的 Fill And Kill 場景。
 
 ### `fillOrKill`
 
@@ -100,7 +100,7 @@ curl -X POST https://api.4casters.io/session/v3/place \
   剩餘量 **$10 及以下** 視為已完成：一筆 $1,000 的 `fillOrKill` 若成交 $992 即算成功，因為未能成交的 $8 低於訂單簿上可掛單的最小數量。剩餘量大於 $10 則會拒絕該訂單。
 </Note>
 
-## 響應 {#response}
+## 回應 {#response}
 
 <ResponseField name="data.createdSessions" type="array">
   每筆訂單的結果，與輸入的 `orders` 陣列按位置對應。每條要麼是成功下單，要麼是錯誤。
@@ -161,7 +161,7 @@ curl -X POST https://api.4casters.io/session/v3/place \
 }
 ```
 
-```json 響應
+```json 回應
 {
   "data": {
     "createdSessions": [
@@ -191,7 +191,7 @@ curl -X POST https://api.4casters.io/session/v3/place \
 一筆數量為 300 的限價單部分成交，剩餘部分掛在訂單簿上。
 
 <CodeGroup>
-```json 響應
+```json 回應
 {
   "data": {
     "createdSessions": [
@@ -222,7 +222,7 @@ curl -X POST https://api.4casters.io/session/v3/place \
 ### 場景 3 — Fill and Kill，全部成交 {#scenario-3-fill-and-kill-full-match}
 
 <CodeGroup>
-```json 響應
+```json 回應
 {
   "data": {
     "createdSessions": [
@@ -248,10 +248,10 @@ curl -X POST https://api.4casters.io/session/v3/place \
 
 ### 場景 4 — Fill and Kill，無成交 {#scenario-4-fill-and-kill-no-match}
 
-沒有成交的 `fillAndKill` 會返回單筆訂單錯誤。
+沒有成交的 `fillAndKill` 會回傳單筆訂單錯誤。
 
 <CodeGroup>
-```json 響應
+```json 回應
 {
   "data": {
     "createdSessions": [
@@ -286,7 +286,7 @@ curl -X POST https://api.4casters.io/session/v3/place \
 }
 ```
 
-```json 響應
+```json 回應
 {
   "data": {
     "createdSessions": [
@@ -371,7 +371,7 @@ curl -X POST https://api.4casters.io/session/v3/place \
 多筆下單、部分出錯的示例：
 
 <CodeGroup>
-```json 響應
+```json 回應
 {
   "data": {
     "createdSessions": [
