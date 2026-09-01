@@ -1,0 +1,60 @@
+---
+title: 'Obter comissão de afiliado'
+description: 'Comissão paga a você pelos jogadores que você convidou'
+openapi: 'GET /affiliate/getAffiliateCommission'
+---
+
+Retorna a comissão paga a quem chama pelos jogadores que ele convidou, agrupada pelo nome de usuário do jogador. Sem parâmetros, retorna os ganhos de toda a vida da conta; com `fromDate` / `toDate`, restringe o intervalo.
+
+<Note>
+Ao contrário da maioria dos endpoints, este retorna o resultado no **nível superior** como `commissionPaid` (não sob `data`).
+</Note>
+
+## Solicitação {#request}
+
+`GET /affiliate/getAffiliateCommission`
+
+<ParamField query="fromDate" type="string">
+  Data de início (`MM-DD-YYYY`). O padrão é `08-02-2021`.
+</ParamField>
+<ParamField query="toDate" type="string">
+  Data de fim (`MM-DD-YYYY`). O padrão é hoje.
+</ParamField>
+
+<CodeGroup>
+```bash curl (intervalo de datas)
+curl "https://api.4casters.io/affiliate/getAffiliateCommission?fromDate=10-03-2022&toDate=10-10-2022" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+
+```bash curl (toda a vida da conta)
+curl https://api.4casters.io/affiliate/getAffiliateCommission \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+</CodeGroup>
+
+## Resposta {#response}
+
+<ResponseField name="commissionPaid" type="array">
+  Cada entrada é um objeto de chave única mapeando o nome de usuário de um jogador para a comissão total paga por esse jogador no intervalo solicitado.
+</ResponseField>
+
+### Exemplo {#example}
+
+<CodeGroup>
+```json JSON
+{
+  "commissionPaid": [
+    { "alice":   124.50 },
+    { "bob":      12.00 },
+    { "charlie":  87.34 }
+  ]
+}
+```
+</CodeGroup>
+
+## Erros {#errors}
+
+| Status | Significado |
+| ------ | ------- |
+| `400`  | `fromDate` não pôde ser interpretado. |

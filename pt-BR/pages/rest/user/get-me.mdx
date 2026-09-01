@@ -1,0 +1,85 @@
+---
+title: 'Obter usuário atual'
+description: 'Leia a conta autenticada'
+openapi: 'GET /user/getMe'
+---
+
+Retorna as informações da conta do usuário atualmente autenticado, incluindo saldo, limite de crédito, responsabilidade atual, formato de odds padrão e flags de acesso.
+
+## Solicitação {#request}
+
+`GET /user/getMe`
+
+Este endpoint não recebe parâmetros. Autenticação é obrigatória (veja [Autenticação](/pt-BR/pages/rest/authentication)).
+
+<CodeGroup>
+```bash curl
+curl https://api.4casters.io/user/getMe \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+</CodeGroup>
+
+## Resposta {#response}
+
+<ResponseField name="data" type="object">
+  <Expandable title="data">
+    <ResponseField name="user" type="object">
+      <Expandable title="user">
+        <ResponseField name="id" type="string">Id do usuário.</ResponseField>
+        <ResponseField name="username" type="string">Nome de usuário da conta.</ResponseField>
+        <ResponseField name="type" type="string">Tipo de conta — `free`, `p2p`, `marketmaker` ou `agent`.</ResponseField>
+        <ResponseField name="oddsFormat" type="string">Formato de odds padrão. `american` ou `decimal`.</ResponseField>
+        <ResponseField name="displayBalance" type="number">Saldo atual (valor de exibição).</ResponseField>
+        <ResponseField name="creditLimit" type="number">Limite de crédito (negativo para contas de crédito).</ResponseField>
+        <ResponseField name="liability" type="number">Responsabilidade atual em aberto em todos os jogos.</ResponseField>
+        <ResponseField name="commissionCharged" type="number">Taxa de comissão cobrada desta conta.</ResponseField>
+        <ResponseField name="maxLiability" type="number">Teto de responsabilidade no nível da conta.</ResponseField>
+        <ResponseField name="hasMarketMakerAccess" type="boolean">Se a conta pode acessar recursos de market maker.</ResponseField>
+        <ResponseField name="isAdmin" type="boolean" />
+        <ResponseField name="isPro" type="boolean" />
+        <ResponseField name="isDeposit" type="boolean" />
+        <ResponseField name="isAlphaUser" type="boolean" />
+        <ResponseField name="defaultExpiry" type="integer">Expiração padrão das ordens, em minutos. `null` para "sem padrão".</ResponseField>
+        <ResponseField name="defaultOffer" type="number">Tamanho de oferta padrão ao enviar ordens.</ResponseField>
+        <ResponseField name="sportsbookDefault" type="boolean" />
+        <ResponseField name="sportsbookMinimumDisplay" type="number" />
+        <ResponseField name="defaultRotationNumbers" type="boolean" />
+        <ResponseField name="displayRotationNumbers" type="boolean" />
+        <ResponseField name="viewOddsWithCommission" type="boolean" />
+        <ResponseField name="defaultSendOrderMessage" type="boolean" />
+        <ResponseField name="showChatLastMessage" type="boolean" />
+        <ResponseField name="yesNoSummary" type="boolean" />
+        <ResponseField name="accessCode" type="string">Código de cadastro da conta.</ResponseField>
+        <ResponseField name="p2pCode" type="string">Se esta é uma conta de agente P2P, o código que seus indicados usam no cadastro.</ResponseField>
+        <ResponseField name="createdAt" type="string">Timestamp ISO 8601 da criação da conta.</ResponseField>
+        <ResponseField name="emailConfirmation" type="boolean">Se o e-mail da conta está confirmado.</ResponseField>
+      </Expandable>
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+### Exemplo {#example}
+
+<CodeGroup>
+```json JSON
+{
+  "data": {
+    "user": {
+      "id": "5fe37acbb5a23600123662c1",
+      "username": "your_username",
+      "type": "p2p",
+      "oddsFormat": "american",
+      "displayBalance": 1250.50,
+      "creditLimit": 500,
+      "liability": -125.00,
+      "commissionCharged": 0.01,
+      "hasMarketMakerAccess": false,
+      "isAdmin": false,
+      "isPro": false,
+      "createdAt": "2020-12-23T17:14:09.000Z",
+      "emailConfirmation": true
+    }
+  }
+}
+```
+</CodeGroup>

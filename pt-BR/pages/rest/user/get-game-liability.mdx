@@ -1,0 +1,38 @@
+---
+title: 'Obter responsabilidade do jogo'
+description: 'Perda no pior cenário em um único jogo'
+openapi: 'GET /user/getGameLiability'
+---
+
+Calcula a **responsabilidade financeira no pior cenário** de quem chama para um único jogo, levando em conta todas as apostas em todos os mercados do jogo.
+
+O valor é sempre `<= 0` — até um livro totalmente protegido (hedge) pode incorrer em perda por cancelamentos por chuva, suspensões ou desclassificações.
+
+## Solicitação {#request}
+
+`GET /user/getGameLiability`
+
+<ParamField query="gameID" type="string" required>O id do jogo para o qual calcular a responsabilidade.</ParamField>
+
+<CodeGroup>
+```bash curl
+curl "https://api.4casters.io/user/getGameLiability?gameID=657f8ea1ea0ce6f62c1fe37d" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+</CodeGroup>
+
+## Resposta {#response}
+
+<ResponseField name="data.liability" type="number">
+  A perda no pior cenário na moeda da conta. Sempre `<= 0`. Retorna `0` quando quem chama não tem apostas no jogo.
+</ResponseField>
+
+### Exemplo {#example}
+
+<CodeGroup>
+```json JSON
+{
+  "data": { "liability": -125.50 }
+}
+```
+</CodeGroup>

@@ -1,0 +1,47 @@
+<ParamField body="gameID" type="string" required>
+  Id de jogo da 4casters. Obtenha um em `GET /exchange/v2/getGames` ou `GET /exchange/v2/getOrderbook`.
+</ParamField>
+
+<ParamField body="type" type="string" required>
+  Tipo de mercado. Um de `moneyline`, `spread`, `total`, `moneyline1x2`. `moneyline1x2` é **exclusivo de futebol** (moneyline de três vias: casa / visitante / empate).
+</ParamField>
+
+<ParamField body="side" type="string" required>
+  Lado da ordem. O significado depende de `type`:
+  - `moneyline`, `spread` — o id do participante em que você está apostando.
+  - `total` — `"over"` ou `"under"`.
+  - `moneyline1x2` — `"yes"` ou `"no"` sobre o resultado indicado por `market`.
+</ParamField>
+
+<ParamField body="market" type="string">
+  **Somente `moneyline1x2`.** Ou `"draw"` ou um id de participante — indica o resultado sobre o qual você está apostando yes/no. Exemplo: `side: "yes"` + `market: "draw"` significa *a partida termina em empate*; `side: "no"` + `market: "<homeTeamId>"` significa *o time da casa não vence*.
+</ParamField>
+
+<ParamField body="odds" type="integer" required>
+  Odds da ordem em formato **americano** (ex.: `-110`, `+150`).
+</ParamField>
+
+<ParamField body="bet" type="number" required>
+  Valor a arriscar na aposta. Uma ordem com `bet: 100, odds: 120` pode ser correspondida por outros usuários por um total de **120 a -120**.
+</ParamField>
+
+<ParamField body="number" type="number">
+  Número do spread ou do total. Obrigatório para `spread` e `total`. Não usado em `moneyline` nem `moneyline1x2`.
+</ParamField>
+
+<ParamField body="orderType" type="string">
+  Um de `limit`, `post`, `postArb`, `fillAndKill`, `fillOrKill`. O padrão é `limit`.
+  - `limit` — corresponde como taker contra qualquer liquidez ao seu preço ou melhor, e deixa o restante em espera como maker.
+  - `post`  — garante maker. Rejeita se a ordem corresponderia a liquidez em espera (`rejected_order_type_rules`, ex.: `"post order cannot have matches"`).
+  - `postArb` — como `post`, mas com permissão para corresponder se suas odds americanas estiverem dentro de **1%** da ordem em espera. Evita as taxas de taker que você pagaria em uma negociação normal.
+  - `fillAndKill` — garante taker. Corresponde ao tamanho disponível ao seu preço ou melhor e cancela o restante; nunca fica em espera. Uma correspondência **parcial** é um sucesso. Rejeitada apenas quando não há nenhuma liquidez correspondível.
+  - `fillOrKill` — taker de tudo ou nada. Corresponde **todo** o seu `bet` imediatamente ou a ordem inteira é rejeitada e as correspondências parciais são revertidas; nunca fica em espera.
+</ParamField>
+
+<ParamField body="expirationMinutes" type="integer">
+  Cancela automaticamente após N minutos do envio. Omita para manter a ordem em espera até o início do jogo (o comportamento padrão — toda ordem em aberto é cancelada automaticamente quando o jogo começa).
+</ParamField>
+
+<ParamField body="userReference" type="string">
+  Identificador definido pelo cliente, preservado em toda correspondência e oferta em espera derivada desta ordem. Use-o para consultar a ordem depois via `GET /user/getBetByUserReference`.
+</ParamField>

@@ -1,0 +1,68 @@
+---
+title: 'API de ordens da 4casters'
+---
+
+A API de ordens da 4casters suporta envio de ordens, cancelamento e gerenciamento de sessão em tempo real por uma conexão WebSocket pura.
+
+## Endpoints {#endpoints}
+- **API de ordens**: `wss://orders-api.4casters.io/orders/ws`
+
+## Autenticação {#auth}
+
+A conexão autentica com um token da 4Casters. Envie o token no cabeçalho
+`Authorization` no handshake do WebSocket. O servidor deriva o usuário
+do token — **sem nome de usuário na URL**.
+
+### Obtenha um token {#get-a-token}
+
+Faça login com seu nome de usuário e senha da 4Casters chamando o endpoint
+`/user/login` da API REST da 4Casters. A resposta inclui um token que você
+pode usar aqui.
+
+Veja [`POST /user/login` na documentação da API REST da 4Casters](/pt-BR/pages/rest/authentication).
+
+### Conectar {#connect}
+
+<CodeGroup>
+```javascript JavaScript
+const WebSocket = require('ws');
+const token = process.env.FOURCASTERS_TOKEN;
+const ws = new WebSocket('wss://orders-api.4casters.io/orders/ws', {
+  headers: { Authorization: token },
+});
+```
+</CodeGroup>
+
+## Formato das mensagens {#message-format}
+
+Toda requisição do cliente é uma 2-tupla `[messageType, payload]`. Todo payload deve incluir um `requestID` gerado por você; o servidor o ecoa de volta para que você possa correlacionar as respostas.
+
+<CodeGroup>
+```json Solicitação
+[
+  "messageType",
+  {
+    "requestID": "YOUR_REQUEST_ID",
+    "...": "..."
+  }
+]
+```
+</CodeGroup>
+
+As respostas do servidor são objetos JSON com `requestID` mais `data` (sucesso) ou `error` (falha):
+
+<CodeGroup>
+```json Sucesso
+{
+  "requestID": "YOUR_REQUEST_ID",
+  "data": { "...": "..." }
+}
+```
+
+```json Erro
+{
+  "requestID": "YOUR_REQUEST_ID",
+  "error": "human-readable error"
+}
+```
+</CodeGroup>
