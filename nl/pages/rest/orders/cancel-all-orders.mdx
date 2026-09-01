@@ -1,0 +1,57 @@
+---
+title: 'Alle orders annuleren'
+description: 'Elke openstaande order van je account annuleren'
+openapi: 'POST /session/cancelAllOrders'
+---
+
+Annuleer **elke** openstaande order van de aanroeper over alle wedstrijden en competities heen. Gebruik dit voor noodstops — bijvoorbeeld een kill switch vanuit een monitoringsysteem.
+
+Voor een minder destructief alternatief waarmee je orders later kunt hervatten, zie `POST /session/pauseOrders` (zuster-endpoint dat annuleert en onthoudt; combineer met `resumeOrders`).
+
+## Verzoek {#request}
+
+`POST /session/cancelAllOrders`
+
+Heeft geen parameters.
+
+<CodeGroup>
+```bash curl
+curl -X POST https://api.4casters.io/session/cancelAllOrders \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+</CodeGroup>
+
+## Antwoord {#response}
+
+<ResponseField name="data" type="array">
+  Annuleringsresultaten per order. Zelfde vorm als [Een order annuleren](/nl/pages/rest/orders/cancel-order#response).
+</ResponseField>
+
+### Voorbeeld {#example}
+
+<CodeGroup>
+```json JSON
+{
+  "data": [
+    {
+      "success": true,
+      "sessionID": "65b036dfb31407c2b6bc1cfe",
+      "odds": -110,
+      "filled": 0,
+      "offered": 0,
+      "remaining": 100,
+      "gameID": "65f0c3c24ef07d0008abc123"
+    },
+    {
+      "success": true,
+      "sessionID": "65b036e0b31407c2b6bc1d08",
+      "odds": 125,
+      "filled": 25,
+      "offered": 0,
+      "remaining": 75,
+      "gameID": "65f0c4ae4ef07d0008abc456"
+    }
+  ]
+}
+```
+</CodeGroup>

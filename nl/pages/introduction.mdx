@@ -1,0 +1,65 @@
+---
+title: '4casters-API'
+description: 'Programmatische toegang tot de peer-to-peer betting exchange van 4casters'
+---
+
+4casters biedt drie API's die hetzelfde auth-token en dezelfde onderliggende engine voor account / orderboek / afwikkeling delen. Kies de API die past bij wat je bouwt, of combineer ze — de meeste integraties gebruiken REST voor setup + geschiedenis en een WebSocket voor live trading.
+
+## Kies je API {#choose-your-api}
+
+<CardGroup cols={3}>
+  <Card title="REST-API" icon="globe" href="/nl/pages/rest/introduction">
+    Verzoek / antwoord over HTTPS. Gebruik dit voor inloggen, accountstatus, geschiedenis, marktopvragingen en batchgewijs plaatsen / bewerken / annuleren.
+  </Card>
+  <Card title="Orders-WebSocket" icon="bolt" href="/nl/pages/websocket/introduction">
+    Persistent kanaal met lage latency voor het plaatsen en annuleren van orders. Gebruik dit wanneer round-trip-latency ertoe doet.
+  </Card>
+  <Card title="Streaming-WebSocket" icon="signal-stream" href="/nl/pages/streaming/introduction">
+    Push-feeds voor orderboek-ticks en fills / afwikkelingen per account. Gebruik dit om je state synchroon te houden zonder polling.
+  </Card>
+</CardGroup>
+
+## Wanneer gebruik je welke {#when-to-use-which}
+
+| Kanaal | Ideaal voor | Vermijd voor |
+| --- | --- | --- |
+| **REST** (`https://api.4casters.io`) | Inloggen, accountinfo, weddenschapsgeschiedenis, opvragingen, markten verkennen, batchgewijs plaatsen / bewerken / annuleren, alles wat je vanuit een script of backend-job draait. | Strakke binnenste lussen waar round-trip-latency ertoe doet. |
+| **Orders-WebSocket** (`wss://orders-api.4casters.io/orders/ws`) | Live trading: plaatsen + annuleren met lage latency, met een persistente sessie en correlatie via `requestID`. | State uitlezen — het is een schrijf-/commandokanaal, geen query-API. |
+| **Streaming-WebSocket** (`wss://streaming-api.4casters.io/...`) | Realtime orderboek-ticks (price feed) en fill- / afwikkelingsevents per account (user feed). | Eenmalige reads — gebruik REST in plaats van een stream te openen. |
+
+## Authenticatie {#authentication}
+
+Alle drie de API's delen één token.
+
+1. Roep [`POST /user/login`](/nl/pages/rest/authentication) aan op de REST-API met je gebruikersnaam en wachtwoord.
+2. Stuur het teruggegeven token mee met elk volgend verzoek:
+   - **REST**: `Authorization: Bearer <token>`-header.
+   - **WebSockets**: `Authorization: <token>`-header op de handshake.
+
+Tokens zijn 30 dagen geldig en kunnen vóór het verlopen worden vernieuwd. Zie [Authenticatie](/nl/pages/rest/authentication) voor tokenvernieuwing, auth met signed cookies en details.
+
+## Conventies {#conventions}
+
+- **Transport**: alleen HTTPS / WSS.
+- **Encoding**: overal JSON.
+- **Response-envelop (REST)**: `{ "data": <payload> }` bij succes; `{ "error": "<message>" }` bij HTTP-fouten.
+- **Identifiers**: wedstrijd-ids, deelnemer-ids en order-ids zijn MongoDB `ObjectID`-strings (24 tekens hex).
+- **Odds**: Amerikaans formaat (negatief voor favorieten, positief voor underdogs), tenzij anders vermeld.
+- **Tijd**: ISO 8601 met `Z` (UTC).
+
+## Een typische integratie {#a-typical-integration}
+
+De meeste niet-triviale clients combineren alle drie:
+
+1. **REST** — eenmalig `POST /user/login`, cache het token, en roep dan `GET /user/getMe` en `GET /games/v2/leagues` aan om je state te bootstrappen.
+2. **Streaming-WebSocket** — open de price feed voor de markten die je volgt en de user feed om te reageren op je eigen fills / afwikkelingen.
+3. **Orders-WebSocket** — open een persistente verbinding en plaats / annuleer orders met lage latency, met correlatie van antwoorden via `requestID`.
+4. **REST** — val terug op `POST /myBets/getMatchedBets`, `/myBets/getOrdersForGame`, enz. voor geschiedenis en reconciliatie.
+
+## De oude docs nodig? {#need-the-old-docs}
+
+De vorige documentatie bestond als Postman-collectie. Die is bewaard ter referentie, maar deze Mintlify-docs zijn nu de bron van waarheid — de Postman-collectie kan achterlopen voor nieuwe endpoints, parameters of response-vormen.
+
+<Card title="4Casters-API — Postman-collectie" icon="link" href="https://documenter.getpostman.com/view/6710109/U16gNmHG">
+  Bekijk de oude Postman-documentatie
+</Card>

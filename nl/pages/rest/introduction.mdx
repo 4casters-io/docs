@@ -1,0 +1,69 @@
+---
+title: 'Introductie'
+description: 'Publieke REST-API voor de peer-to-peer betting exchange van 4casters'
+---
+
+Met de 4casters REST-API kun je programmatisch inloggen, wedstrijden en het orderboek opvragen, orders plaatsen / bewerken / annuleren en je weddenschapsgeschiedenis lezen. Het is dezelfde API die de webapp van 4casters aandrijft.
+
+## Basis-URL {#base-url}
+
+Alle endpoints in deze sectie hangen onder:
+
+```
+https://api.4casters.io
+```
+
+## Conventies {#conventions}
+
+- **Transport**: alleen HTTPS.
+- **Encoding**: JSON. Stuur `Content-Type: application/json` mee met elk verzoek dat een body heeft.
+- **Response-envelop**: op een paar duidelijk gemarkeerde uitzonderingen na (`/affiliate/getAffiliateCommission`, `/exchange/getOddsForAveragePrice`) is elk geslaagd antwoord ingepakt: `{ "data": <payload> }`.
+- **Identifiers**: wedstrijd-ids, deelnemer-ids en order-ids zijn MongoDB `ObjectID`-strings (24 tekens hex).
+- **Odds**: alle odds zijn in Amerikaans formaat (negatief voor favorieten, positief voor underdogs), tenzij anders vermeld.
+- **Tijd**: alle tijdstempels zijn ISO 8601 met `Z` (UTC).
+
+## Authenticatie {#authentication}
+
+Vrijwel elk endpoint vereist authenticatie. Log eenmalig in via [POST `/user/login`](/nl/pages/rest/authentication) en stuur daarna het teruggegeven auth-token mee met elk verzoek — zie [Authenticatie](/nl/pages/rest/authentication) voor details.
+
+## Fouten per order vs. HTTP-fouten {#per-order-errors-vs-http-errors}
+
+De endpoints voor "plaatsen" en "bewerken" accepteren batches en geven resultaten per order terug. Een geslaagd HTTP `200`-antwoord kan nog steeds individuele ordermislukkingen bevatten binnen `data.createdSessions[i]`. Zie de foutvorm per order op elke endpointpagina.
+
+Fouten op HTTP-niveau (`4xx`, `5xx`) worden teruggegeven als `{ "error": "<message>" }`.
+
+## Rate-limiting {#rate-limiting}
+
+Er gelden drie lagen van rate-limiting:
+
+- **Globaal, per IP** — elk verzoek aan de API telt mee voor een budget per IP van **3,000 verzoeken per rollend venster van 60 seconden** (aanhoudend ~50 verzoeken/seconde). Overschrijding geeft `429` met een `Retry-After`-header (seconden) en body `{ "error": "Too many requests. Please try again later." }`.
+- **Authenticatieroutes** (`/user/login`, wachtwoordherstel, registratie) hebben aanvullende throttling per IP en per account.
+- **Routes voor plaatsen / bewerken / annuleren** zijn daarnaast per account rate-limited.
+
+Lees-endpoints hebben geen limiet per account — alleen het globale plafond per IP geldt.
+
+## Timeouts {#timeouts}
+
+Verzoeken die serverzijdig langer duren dan **15 seconden** worden afgebroken en geven `503` terug met body `{ "error": { "message": "Network Error", "code": 503 } }`.
+
+## Realtime updates {#real-time-updates}
+
+De REST-API vormt een paar met de [WebSocket Streaming-API](/nl/pages/streaming/introduction) voor realtime orderboek-ticks en fill- / afwikkelingsevents per account. Het auth-token dat `/user/login` teruggeeft, werkt voor beide.
+
+## Endpoint-index {#endpoint-index}
+
+<CardGroup cols={2}>
+  <Card title="Authenticatie" href="/nl/pages/rest/authentication">Log in en verkrijg een auth-token.</Card>
+  <Card title="Gebruiker"     href="/nl/pages/rest/user/get-me">Accountinfo, saldo, weddenschappen en orders.</Card>
+  <Card title="Orders"        href="/nl/pages/rest/orders/place-order">Orders plaatsen, bewerken, opzoeken en annuleren.</Card>
+  <Card title="Markten"       href="/nl/pages/rest/markets/get-orderbook">Blader door competities, wedstrijden, deelnemers en het orderboek.</Card>
+  <Card title="Affiliate"     href="/nl/pages/rest/affiliate/get-affiliate-commission">Affiliatecommissie.</Card>
+</CardGroup>
+
+## Oude Postman-collectie {#legacy-postman-collection}
+
+De vorige documentatie bestond als Postman-collectie. Die is bewaard ter referentie, maar deze Mintlify-docs zijn nu de bron van waarheid — de Postman-collectie kan achterlopen voor nieuwe endpoints, parameters of response-vormen.
+
+<Card title="4Casters-API — Postman-collectie" icon="link" href="https://documenter.getpostman.com/view/6710109/U16gNmHG">
+  Bekijk de oude Postman-documentatie
+</Card>

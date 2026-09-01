@@ -1,0 +1,49 @@
+---
+title: 'Weddenschap op userreferentie ophalen'
+description: 'Elke weddenschap opzoeken die aan een door de client gedefinieerde identifier hangt'
+openapi: 'GET /user/getBetByUserReference'
+---
+
+Zoek elke weddenschap op die aan een `userReference` hangt. `userReference` is een optionele, door de client gedefinieerde string die je bij het plaatsen aan een order kunt hangen om hem aan jouw kant te volgen — dit endpoint is de lees-tegenhanger.
+
+Het antwoord verdeelt de resultaten in drie groepen:
+
+- `unmatched` — open offers van deze referentie die nog in het boek staan.
+- `matched`   — gematchte (nog niet afgewikkelde) weddenschappen van deze referentie.
+- `graded`    — afgewikkelde weddenschappen van deze referentie, inclusief `risk`, `win`, `fee` en `result`.
+
+## Verzoek {#request}
+
+`GET /user/getBetByUserReference`
+
+<ParamField query="userReference" type="string" required>
+  Door de client gedefinieerde referentie, meegegeven bij het plaatsen.
+</ParamField>
+<ParamField query="gameID" type="string" required>
+  Beperk de zoekopdracht tot één wedstrijd.
+</ParamField>
+
+<CodeGroup>
+```bash curl
+curl "https://api.4casters.io/user/getBetByUserReference?userReference=my-order-1&gameID=67d1c942215edc7ee0c806ef" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+</CodeGroup>
+
+## Antwoord {#response}
+
+<ResponseField name="data.unmatched" type="array">
+  Openstaande orders — zelfde vorm als [Niet-gematchte orders ophalen](/nl/pages/rest/user/get-unmatched-orders#response).
+</ResponseField>
+<ResponseField name="data.matched" type="array">
+  Gematchte (nog niet afgewikkelde) weddenschappen — zelfde vorm als [Gematchte weddenschappen ophalen](/nl/pages/rest/user/get-matched-bets#response).
+</ResponseField>
+<ResponseField name="data.graded" type="array">
+  Afgewikkelde weddenschappen — zelfde vorm als [Afgewikkelde wagers ophalen](/nl/pages/rest/user/get-graded-wagers#response).
+</ResponseField>
+
+## Fouten {#errors}
+
+| Status | Betekenis |
+| ------ | ------- |
+| `408`  | `userReference` of `gameID` ontbreekt. |

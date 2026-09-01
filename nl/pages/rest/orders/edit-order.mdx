@@ -1,0 +1,84 @@
+---
+title: 'Een order bewerken'
+description: 'De prijs of het volume van een openstaande order wijzigen'
+openapi: 'POST /session/editOrder'
+---
+
+Wijzig de prijs (`orderOdds`) en/of het volume (`orderVolume`) van een bestaande **limit**-order.
+
+Bij gedeeltelijk gevulde orders annuleert 4casters de bestaande order en dient het een nieuwe in met de opgegeven waarden. Het nieuwe `orderVolume` houdt **geen** rekening met eerder gevuld volume — als je oorspronkelijk `bet: 10` plaatste, er $5 gevuld was, en je bewerkt naar `orderVolume: 10`, dan wordt de vorige order geannuleerd ($5 terugbetaald) en wordt er een nieuwe order voor $10 aangemaakt ($10 afgeschreven), zodat je netto $5 kwijt bent.
+
+<Note>
+Een nieuwere gRPC-variant staat op `POST /session/v4/editOrder`. Die accepteert dezelfde requestbody en geeft daarnaast `errorType` terug bij validatiefouten. Geef hem de voorkeur voor nieuwe integraties zodra je hebt bevestigd dat de vorm voor jou werkt.
+</Note>
+
+## Verzoek {#request}
+
+`POST /session/editOrder`
+
+<ParamField body="sessionID" type="string" required>
+  Order-id om te bewerken. Haal het uit `data.unmatched.orderID` van `/session/v3/place` of `id` uit `/user/getUnmatched`.
+</ParamField>
+<ParamField body="orderOdds" type="integer">
+  Nieuwe Amerikaanse odds. Geef `null` door om de odds ongewijzigd te laten.
+</ParamField>
+<ParamField body="orderVolume" type="number">
+  Nieuw `bet`-bedrag. Geef `null` door om het volume ongewijzigd te laten.
+</ParamField>
+<ParamField body="orderType" type="string">
+  Standaard `limit`. Zie [ordertypen](/nl/pages/rest/orders/place-order#order-types).
+</ParamField>
+<ParamField body="userReference" type="string">
+  Optioneel. Vervangt de bestaande `userReference` op de order.
+</ParamField>
+<ParamField body="intendedOrderVolume" type="number">
+  Optioneel. Het volume dat je oorspronkelijk wilde plaatsen; wordt door de server gebruikt bij het reconciliëren van gedeeltelijke fills.
+</ParamField>
+<ParamField body="expiryChange" type="string">
+  Optioneel. Nieuwe vervaltijd in minuten (string).
+</ParamField>
+<ParamField body="blockIfNoOtherSideOrders" type="boolean">
+  Alleen v4. Weiger de bewerking als er geen openstaande liquiditeit aan de tegenoverliggende kant is.
+</ParamField>
+
+<CodeGroup>
+```bash curl
+curl -X POST https://api.4casters.io/session/editOrder \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "sessionID": "6549b6df6634097d2704716f",
+    "orderOdds": 185,
+    "orderVolume": 100
+  }'
+```
+
+```json JSON-body
+{
+  "sessionID": "6549b6df6634097d2704716f",
+  "orderOdds": 185,
+  "orderVolume": 100
+}
+```
+</CodeGroup>
+
+## Antwoord {#response}
+
+Het resultaat spiegelt de responsevorm van [order plaatsen](/nl/pages/rest/orders/place-order#response) — een `cancelled`-samenvatting plus het nieuwe `matched`- / `unmatched`-resultaat:
+
+<ResponseField name="data.cancelled" type="object">
+  Samenvatting van de geannuleerde en vervangen oorspronkelijke order.
+</ResponseField>
+<ResponseField name="data.matched" type="array">
+  Fills die het opnieuw indienen tegen de nieuwe prijs/het nieuwe volume opleverde. Zelfde vorm als een `MatchedFill` in [order plaatsen](/nl/pages/rest/orders/place-order#response).
+</ResponseField>
+<ResponseField name="data.unmatched" type="object">
+  Openstaande offer voor het ongevulde restant van de nieuwe order.
+</ResponseField>
+
+## Fouten {#errors}
+
+| Status | Betekenis |
+| ------ | ------- |
+| `400`  | Validatiefout (`v4/editOrder` geeft hiervoor `errorType` terug). |
+| `503`  | Orders-service onbereikbaar. |

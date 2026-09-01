@@ -1,0 +1,68 @@
+---
+title: '4casters Orders-API'
+---
+
+De 4casters Orders-API ondersteunt het realtime plaatsen en annuleren van orders en sessiebeheer over een kale WebSocket-verbinding.
+
+## Endpoints {#endpoints}
+- **Orders-API**: `wss://orders-api.4casters.io/orders/ws`
+
+## Auth {#auth}
+
+De verbinding authenticeert met een 4Casters-token. Stuur het token in de
+`Authorization`-header op de WebSocket-handshake. De server leidt de gebruiker
+af uit het token — **geen gebruikersnaam in de URL**.
+
+### Een token ophalen {#get-a-token}
+
+Log in met je 4Casters-gebruikersnaam en -wachtwoord door het endpoint `/user/login`
+van de 4Casters REST-API aan te roepen. Het antwoord bevat een token dat je
+hier kunt gebruiken.
+
+Zie [`POST /user/login` in de 4Casters REST-API-docs](/nl/pages/rest/authentication).
+
+### Verbinden {#connect}
+
+<CodeGroup>
+```javascript JavaScript
+const WebSocket = require('ws');
+const token = process.env.FOURCASTERS_TOKEN;
+const ws = new WebSocket('wss://orders-api.4casters.io/orders/ws', {
+  headers: { Authorization: token },
+});
+```
+</CodeGroup>
+
+## Berichtformaat {#message-format}
+
+Elk clientverzoek is een 2-tuple `[messageType, payload]`. Elke payload hoort een `requestID` te bevatten die jij genereert; de server stuurt hem terug zodat je antwoorden kunt correleren.
+
+<CodeGroup>
+```json Verzoek
+[
+  "messageType",
+  {
+    "requestID": "YOUR_REQUEST_ID",
+    "...": "..."
+  }
+]
+```
+</CodeGroup>
+
+Serverantwoorden zijn JSON-objecten met `requestID` plus ofwel `data` (succes) ofwel `error` (mislukking):
+
+<CodeGroup>
+```json Succes
+{
+  "requestID": "YOUR_REQUEST_ID",
+  "data": { "...": "..." }
+}
+```
+
+```json Fout
+{
+  "requestID": "YOUR_REQUEST_ID",
+  "error": "human-readable error"
+}
+```
+</CodeGroup>

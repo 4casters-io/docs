@@ -1,0 +1,100 @@
+---
+title: 'Authenticatie'
+description: 'Inloggen en verzoeken autoriseren'
+openapi: 'POST /user/login'
+---
+
+Om een geauthenticeerde route te gebruiken heb je een auth-token nodig. Tokens verkrijg je door in te loggen en zijn **30 dagen** geldig; daarna is opnieuw inloggen vereist.
+
+## Inloggen {#log-in}
+
+`POST /user/login`
+
+<CodeGroup>
+```bash curl
+curl -X POST https://api.4casters.io/user/login \
+  -H "Content-Type: application/json" \
+  -d '{"username": "your_username", "password": "your_password"}'
+```
+
+```json JSON-body
+{
+  "username": "your_username",
+  "password": "your_password"
+}
+```
+</CodeGroup>
+
+### Verzoek {#request}
+
+<ParamField body="username" type="string" required>Gebruikersnaam van het account (of e-mailadres).</ParamField>
+<ParamField body="password" type="string" required>Wachtwoord van het account.</ParamField>
+
+### Antwoord {#response}
+
+Het token wordt zowel als `data.user.auth` **als** als signed `auth`-cookie (`Set-Cookie`) teruggegeven. Voor de meeste serverzijdige integraties wil je `data.user.auth` vastleggen en de cookie negeren.
+
+```json
+{
+  "data": {
+    "user": {
+      "id": "5fe37acbb5a23600123662c1",
+      "username": "your_username",
+      "auth": "5cd551d6...",
+      "type": "p2p",
+      "oddsFormat": "american",
+      "displayBalance": 1250.50,
+      "creditLimit": 500,
+      "liability": -125.00,
+      "commissionCharged": 0.01,
+      "hasMarketMakerAccess": false,
+      "isPro": false,
+      "createdAt": "2020-12-23T17:14:09.000Z"
+    }
+  }
+}
+```
+
+Zie [`User`](/api-reference/openapi.json) in het OpenAPI-schema voor elk veld.
+
+### Foutantwoorden {#error-responses}
+
+| Status | Betekenis |
+| ------ | ------- |
+| `400`  | `username` en `password` zijn vereist. |
+| `401`  | Gebruikersnaam of wachtwoord is onjuist. |
+| `403`  | Account verbannen, vergrendeld of gesloten. |
+| `429`  | Rate-limit voor inloggen overschreden. |
+
+## Verzoeken autoriseren {#authorizing-requests}
+
+Stuur het token uit `data.user.auth` mee met elk volgend verzoek. Drie header-/payloadformaten worden geaccepteerd, in deze volgorde van voorkeur:
+
+<Tabs>
+  <Tab title="Authorization-header (aanbevolen)">
+    ```bash
+    curl https://api.4casters.io/user/getMe \
+      -H "Authorization: Bearer 5cd551d6..."
+    ```
+    Het voorvoegsel `Bearer ` is optioneel — het kale token doorgeven werkt ook.
+  </Tab>
+  <Tab title="Cookie">
+    De signed `auth`-cookie die `/user/login` zet, wordt automatisch geaccepteerd op elk endpoint wanneer hij op dezelfde client wordt hergebruikt.
+  </Tab>
+  <Tab title="Body-veld (alleen POST)">
+    ```json
+    { "token": "5cd551d6...", "...": "..." }
+    ```
+    Bedoeld als terugvaloptie voor clients die niet gemakkelijk eigen headers kunnen zetten (bijv. sommige webhook-verzenders).
+  </Tab>
+</Tabs>
+
+Wordt er geen token meegestuurd — of is het token onbekend / verlopen — dan antwoordt de server met `401 InvalidCredentials`.
+
+## Tokenrotatie {#token-rotation}
+
+Geauthenticeerde verzoeken met tokens ouder dan 30 dagen roteren automatisch naar een nieuw token. Wanneer dat gebeurt, wordt het nieuwe token teruggegeven in de responseheader `X-Auth-Token` (en als bijgewerkte signed `auth`-cookie). Langlopende integraties horen op deze header te letten en de nieuwe waarde te bewaren.
+
+## Uitloggen {#logging-out}
+
+`POST /user/logout` maakt het huidige token ongeldig. Volgende verzoeken met dat token geven `401` terug.

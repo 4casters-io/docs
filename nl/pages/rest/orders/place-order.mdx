@@ -1,0 +1,387 @@
+---
+title: 'Orders plaatsen'
+description: 'Eén of meer orders indienen bij de exchange'
+openapi: 'POST /session/v3/place'
+---
+
+Dien één of meer orders in. Het endpoint accepteert een batch — de resultaten per order komen terug in `data.createdSessions`, **positioneel** ten opzichte van je invoerarray `orders`. Elke entry is ofwel een geslaagd `{ matched, unmatched }`-resultaat, ofwel een `{ error, errorType }`-mislukking.
+
+## Verzoek {#request}
+
+`POST /session/v3/place`
+
+<CodeGroup>
+```bash curl
+curl -X POST https://api.4casters.io/session/v3/place \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "orders": [
+      {
+        "gameID": "688c0516fbc14da0c202d426",
+        "type": "moneyline",
+        "side": "5c12bc1ce0daba000f47ba8b",
+        "odds": -175,
+        "bet": 100,
+        "orderType": "post",
+        "userReference": "docs-example"
+      }
+    ]
+  }'
+```
+
+```json JSON-body
+{
+  "orders": [
+    {
+      "gameID": "4CASTER_GAME_ID",
+      "type": "moneyline | spread | total | moneyline1x2",
+      "side": "PARTICIPANT_ID | over | under | yes | no",
+      "market": "PARTICIPANT_ID | draw",
+      "odds": -110,
+      "bet": 100,
+      "number": 3.5,
+      "orderType": "limit | post | postArb | fillAndKill | fillOrKill",
+      "expirationMinutes": 10,
+      "userReference": "OPTIONAL_CLIENT_SIDE_IDENTIFIER"
+    }
+  ]
+}
+```
+</CodeGroup>
+
+### Ordervelden {#order-fields}
+
+<Snippet file="nl/types/order-fields.mdx" />
+
+## Ordertypen {#order-types}
+
+### `limit` {#limit}
+
+Het standaard-ordertype. Voert als taker uit tegen alle matchende liquiditeit op jouw prijs of beter (met taker-commissie) en zet de rest als maker in het boek. Een `limit`-order kan eindigen als volledig gematcht, volledig openstaand, of gedeeltelijk gematcht met de rest openstaand.
+
+### `post` {#post}
+
+Maak een openstaande offer aan. Als de order bij plaatsing tegen bestaande liquiditeit **zou matchen**, weigert de server hem (`rejected_order_type_rules`, bijv. `"post order cannot have matches"`).
+
+### `postArb` {#postarb}
+
+Gedraagt zich als `post`, maar je mag posten **ook wanneer de order zou matchen**, **alleen als** je Amerikaanse odds binnen **1%** liggen van de odds op de openstaande order waartegen je zou matchen. Is het prijsverschil meer dan 1%, dan wordt de plaatsing geweigerd.
+
+Voorbeelden:
+
+- Beste offer **+100** en jij post **+100** — `post` wordt geweigerd (hij zou matchen); `postArb` is toegestaan.
+- Beste offer **+200** — `postArb` op **+190** wordt geweigerd (te ver van **+200**). Rond **+198** zit op de rand van de 1%-band t.o.v. **+200**.
+- Beste order **−200** — de band loopt aan de negatieve kant tot ongeveer **−202** (dezelfde 1%-regel).
+- Met **+100** in het boek is **−101** de referentiegrens aan de andere kant voor de 1%-tolerantie.
+
+`postArb` vermijdt **taker-fees** over een normale trade — je betaalt op deze route geen taker-fees zoals je die wel zou betalen als je openstaande liquiditeit als taker zou wegnemen.
+
+Orders geplaatst als `postArb` krijgen de vlag `isPostArb: true` op hun updates in de [user feed](/nl/pages/streaming/user-feed) en [price feed](/nl/pages/streaming/price-feed); voor andere ordertypen wordt het veld weggelaten. Het antwoord op de plaatsing zelf bevat de vlag niet.
+
+### `fillAndKill` {#fillandkill}
+
+Voer onmiddellijk als taker uit tegen de omvang die beschikbaar is op jouw prijs of beter, en annuleer de rest. Een `fillAndKill` blijft nooit in het boek staan.
+
+Een **gedeeltelijke** fill is een geslaagd resultaat: stuur je `bet: 1000` terwijl er maar $400 aan matchbare liquiditeit bestaat, dan word je gevuld voor $400 en wordt de resterende $600 geannuleerd — het antwoord is een succes, geen fout. De order wordt alleen geweigerd (`rejected_order_type_rules`, `"fill and kill has no matches"`) wanneer er helemaal geen matchbare liquiditeit is. Zie de Fill And Kill-scenario's in de [voorbeelden](#examples) hieronder.
+
+### `fillOrKill` {#fillorkill}
+
+Alles of niets. Je **volledige** `bet` moet onmiddellijk matchen op jouw prijs of beter, anders wordt de hele order geweigerd — inclusief eventuele fills die onderweg gemaakt zijn; die worden teruggedraaid. Een `fillOrKill` blijft nooit in het boek staan, en je blijft nooit gedeeltelijk gevuld achter.
+
+Gebruik dit wanneer een gedeeltelijke positie erger is dan geen positie, bijvoorbeeld wanneer de order één poot is van een hedge die je alleen volledig kunt uitvoeren.
+
+Weigeringen dragen `errorType: rejected_order_type_rules` met één van twee meldingen, die "er was niets" onderscheiden van "er was niet genoeg":
+
+- `"fill or kill has no matches"` — geen matchbare liquiditeit op jouw prijs.
+- `"fill or kill matched but not fully"` — een deel van de liquiditeit matchte, maar niet je volledige omvang. Die fills zijn teruggedraaid.
+
+<Note>
+  Een restant van **$10 of minder** telt als volledig: een `fillOrKill` van $1,000 die $992 matcht, slaagt, omdat de $8 die niet gevuld kon worden onder de minimale omvang ligt die ooit in het boek zou kunnen staan. Een restant groter dan $10 laat de order weigeren.
+</Note>
+
+## Antwoord {#response}
+
+<ResponseField name="data.createdSessions" type="array">
+  Resultaten per order, positioneel ten opzichte van de invoerarray `orders`. Elke entry is ofwel een geslaagde plaatsing, ofwel een fout.
+  <Expandable title="Geslaagde plaatsing">
+    <ResponseField name="matched" type="array">
+      Gematchte fills die deze order opleverde. Leeg wanneer de order niet matchte.
+      <Expandable title="MatchedFill">
+        <ResponseField name="amount"               type="number">Inzet op het gematchte deel.</ResponseField>
+        <ResponseField name="odds"                 type="integer">Amerikaanse odds van de fill.</ResponseField>
+        <ResponseField name="number"               type="number">Spread of total van de fill (`null` voor moneylines).</ResponseField>
+        <ResponseField name="type"                 type="string">Markttype.</ResponseField>
+        <ResponseField name="side"                 type="string">Kant van de order.</ResponseField>
+        <ResponseField name="market"               type="string">Aanwezig voor `moneyline1x2`.</ResponseField>
+        <ResponseField name="orderID"              type="string">Order-id van de gematchte offer aan de andere kant.</ResponseField>
+        <ResponseField name="txID"                 type="string">Transactie-id van de fill.</ResponseField>
+        <ResponseField name="wagerRequestID"       type="string">Door de server gegenereerd id dat elke fill / offer groepeert die uit deze invoerorder voortkomt.</ResponseField>
+        <ResponseField name="userReference"        type="string" />
+        <ResponseField name="risk"                 type="number" />
+        <ResponseField name="win"                  type="number">Winbedrag, netto na taker-commissie.</ResponseField>
+        <ResponseField name="winWithoutCommission" type="number">Winbedrag vóór commissie.</ResponseField>
+      </Expandable>
+    </ResponseField>
+    <ResponseField name="unmatched" type="object">
+      Openstaande offer aangemaakt uit het ongevulde restant. Kan leeg zijn (`{}`) wanneer de order volledig matchte.
+      <Expandable title="UnmatchedOffer">
+        <ResponseField name="orderID"        type="string">Id van de nieuwe openstaande order. Gebruik dit om te annuleren.</ResponseField>
+        <ResponseField name="wagerRequestID" type="string" />
+        <ResponseField name="offered"        type="number" />
+        <ResponseField name="odds"           type="integer" />
+        <ResponseField name="type"           type="string" />
+        <ResponseField name="side"           type="string" />
+        <ResponseField name="market"         type="string">Aanwezig voor `moneyline1x2`.</ResponseField>
+        <ResponseField name="number"         type="number" />
+        <ResponseField name="userReference"  type="string" />
+      </Expandable>
+    </ResponseField>
+  </Expandable>
+  <Expandable title="Fout per order">
+    <ResponseField name="error"     type="string">Leesbare beschrijving van de mislukking.</ResponseField>
+    <ResponseField name="errorType" type="string">`validation_error`, `rejected_liability`, `rejected_order_type_rules` of `system_error`.</ResponseField>
+  </Expandable>
+</ResponseField>
+
+## Voorbeelden {#examples}
+
+### Scenario 1 — orders die matchen zonder resterende liquiditeit {#scenario-1--match-orders-with-no-leftover-liquidity}
+
+Drie orders die alle drie direct matchen met beschikbare liquiditeit.
+
+<CodeGroup>
+```json Verzoek
+{
+  "orders": [
+    { "gameID": "688c0516fbc14da0c202d426", "type": "moneyline", "side": "5c12bc1ce0daba000f47ba8b", "odds": -175, "bet": 100, "orderType": "post" },
+    { "gameID": "688c0516fbc14da0c202d426", "type": "spread",    "side": "5c12bc1ce0daba000f47ba8b", "odds": -110, "bet": 100, "orderType": "post", "number": 3.5 },
+    { "gameID": "688c0516fbc14da0c202d426", "type": "total",     "side": "over",                     "odds": -104, "bet": 100, "orderType": "post", "number": 50 }
+  ]
+}
+```
+
+```json Antwoord
+{
+  "data": {
+    "createdSessions": [
+      {
+        "matched": [
+          {
+            "amount": 50, "odds": -175, "type": "moneyline",
+            "side": "5d48bd5198366d41ec7238da",
+            "orderID": "68d42f82cfebf0b249a2c26e",
+            "txID":    "68d42f83cfebf0b249a2c279",
+            "wagerRequestID": "68d42f83cfebf0b249a2c278",
+            "risk": 50.286, "win": 28.286, "winWithoutCommission": 28.571
+          }
+        ],
+        "unmatched": {}
+      },
+      { "matched": [/* spread fill */], "unmatched": {} },
+      { "matched": [/* total fill  */], "unmatched": {} }
+    ]
+  }
+}
+```
+</CodeGroup>
+
+### Scenario 2 — limit-order met resterende liquiditeit {#scenario-2--limit-order-with-leftover-liquidity}
+
+Een limit-order van 300 die gedeeltelijk matcht en het restant openstaand achterlaat.
+
+<CodeGroup>
+```json Antwoord
+{
+  "data": {
+    "createdSessions": [
+      {
+        "matched": [
+          {
+            "amount": 185, "odds": -185, "type": "moneyline",
+            "side": "5d48bd5198366d41ec7238da",
+            "orderID": "68d43574cfebf0b249a2c28d",
+            "txID":    "68d43574cfebf0b249a2c290",
+            "wagerRequestID": "68d43574cfebf0b249a2c28f",
+            "risk": 186, "win": 99, "winWithoutCommission": 100
+          }
+        ],
+        "unmatched": {
+          "orderID": "68d43575cfebf0b249a2c292",
+          "wagerRequestID": "68d43574cfebf0b249a2c28f",
+          "offered": 115, "odds": -185, "type": "moneyline",
+          "side": "5d48bd5198366d41ec7238da", "number": null
+        }
+      }
+    ]
+  }
+}
+```
+</CodeGroup>
+
+### Scenario 3 — Fill and Kill, volledige match {#scenario-3--fill-and-kill-full-match}
+
+<CodeGroup>
+```json Antwoord
+{
+  "data": {
+    "createdSessions": [
+      {
+        "matched": [
+          {
+            "amount": 100, "odds": -186, "type": "moneyline",
+            "side": "5d48bd5198366d41ec7238da",
+            "orderID": "68d4368acfebf0b249a2c298",
+            "txID":    "68d436bacfebf0b249a2c29b",
+            "wagerRequestID": "68d436bacfebf0b249a2c29a",
+            "userReference": "docs-fillandkill-match",
+            "risk": 100.538, "win": 53.226, "winWithoutCommission": 53.763
+          }
+        ],
+        "unmatched": {}
+      }
+    ]
+  }
+}
+```
+</CodeGroup>
+
+### Scenario 4 — Fill and Kill, geen match {#scenario-4--fill-and-kill-no-match}
+
+Een `fillAndKill` zonder match geeft een fout per order terug.
+
+<CodeGroup>
+```json Antwoord
+{
+  "data": {
+    "createdSessions": [
+      {
+        "error": "fill and kill has no matches",
+        "errorType": "rejected_order_type_rules"
+      }
+    ]
+  }
+}
+```
+</CodeGroup>
+
+### Scenario 5 — Fill or Kill, onvoldoende liquiditeit {#scenario-5--fill-or-kill-not-enough-liquidity}
+
+`fillOrKill` is de alles-of-niets-tegenhanger van `fillAndKill`. Waar een `fillAndKill` van $1,000 tegen $400 aan liquiditeit $400 vult en de rest annuleert, weigert een `fillOrKill` de hele order en draait hij die $400 terug — je blijft nooit gedeeltelijk gevuld achter.
+
+<CodeGroup>
+```json Verzoek
+{
+  "orders": [
+    {
+      "gameID": "688c0516fbc14da0c202d426",
+      "type": "moneyline",
+      "side": "5c12bc1ce0daba000f47ba8b",
+      "odds": -110,
+      "bet": 1000,
+      "orderType": "fillOrKill",
+      "userReference": "docs-fillorkill-partial"
+    }
+  ]
+}
+```
+
+```json Antwoord
+{
+  "data": {
+    "createdSessions": [
+      {
+        "error": "fill or kill matched but not fully",
+        "errorType": "rejected_order_type_rules"
+      }
+    ]
+  }
+}
+```
+</CodeGroup>
+
+Zonder enige matchbare liquiditeit wordt dezelfde order in plaats daarvan geweigerd met `"fill or kill has no matches"`.
+
+### Scenario 6 — `postArb` vs. `post` wanneer het boek zou matchen {#scenario-6--postarb-vs-post-when-the-book-would-match}
+
+`post` weigert een order die tegen openstaande liquiditeit zou matchen (bijvoorbeeld: beste offer **+100** en jij probeert **+100** te posten). `postArb` staat die situatie toe wanneer jouw odds binnen **1%** liggen van de order waartegen je zou matchen — dezelfde **+100**-post kan dus slagen als `postArb`, en je vermijdt de taker-fees die je over een normale trade zou betalen. Ligt je prijs te ver van de openstaande notering (bijv. beste offer **+200** maar jij stuurt **+190**), dan wordt `postArb` geweigerd.
+
+<CodeGroup>
+```json Verzoek
+{
+  "orders": [
+    {
+      "gameID": "688c0516fbc14da0c202d426",
+      "type": "moneyline",
+      "side": "5c12bc1ce0daba000f47ba8b",
+      "odds": 100,
+      "bet": 50,
+      "orderType": "postArb",
+      "userReference": "docs-postarb-same-line-as-offer"
+    }
+  ]
+}
+```
+</CodeGroup>
+
+### Scenario 7 — `moneyline1x2` (driewegsmarkt voor voetbal) {#scenario-7--moneyline1x2-soccer-three-way}
+
+`moneyline1x2` is de driewegsmarkt voor voetbal — thuis / uit / gelijkspel — geplaatst als een yes/no-weddenschap op de uitkomst die `market` benoemt. Hieronder: **yes op het gelijkspel** tegen +250.
+
+<CodeGroup>
+```json Verzoek
+{
+  "orders": [
+    {
+      "gameID": "65f0c3...",
+      "type": "moneyline1x2",
+      "side": "yes",
+      "market": "draw",
+      "odds": 250,
+      "bet": 50,
+      "orderType": "post",
+      "userReference": "docs-ml1x2-yes-draw"
+    }
+  ]
+}
+```
+</CodeGroup>
+
+Om te wedden dat het **thuisteam niet wint**, stuur je `side: "no"` en zet je `market` op het id van de thuisdeelnemer.
+
+## Live-vertraging {#live-delay}
+
+Orders geplaatst op een wedstrijd die als live is gemarkeerd, volgen deze regels:
+
+1. Als de order geen bestaande liquiditeit matcht, wordt hij onmiddellijk geplaatst.
+2. Als de order wél bestaande liquiditeit matcht, geldt er een vertraging vóór uitvoering.
+3. Verschillende competities hebben verschillende live-vertragingen:
+    - **NFL, UFCMMA, NCAAF** — 3 seconden.
+    - **NCAAB, NBA** — 5 seconden.
+    - **ATP, WTA** — 8 seconden.
+    - **Standaard** — 10 seconden.
+4. Na de vertraging probeert de order uit te voeren:
+    - Als de odds zijn verbeterd, matcht hij direct.
+    - Als de odds zijn verslechterd, matcht hij niet.
+
+## Fouten per order {#per-order-errors}
+
+<Snippet file="nl/types/order-error.mdx" />
+
+Voorbeeld met meerdere plaatsingen, waarvan sommige een fout geven:
+
+<CodeGroup>
+```json Antwoord
+{
+  "data": {
+    "createdSessions": [
+      { "matched": [/* successful fill */], "unmatched": {} },
+      { "error": "game not found: invalid gameID", "errorType": "validation_error" },
+      { "error": "Insufficient balance.",          "errorType": "rejected_liability" },
+      { "error": "post order cannot have matches", "errorType": "rejected_order_type_rules" },
+      { "error": "failed to interact with database","errorType": "system_error" }
+    ]
+  }
+}
+```
+</CodeGroup>

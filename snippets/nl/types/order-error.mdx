@@ -1,0 +1,17 @@
+Wanneer de server een individuele order in een batch voor plaatsen, bewerken of per-order annuleren afkeurt, wordt de **per-order**-entry teruggegeven als:
+
+```json
+{
+  "error": "<human-readable message>",
+  "errorType": "validation_error | rejected_liability | rejected_order_type_rules | system_error"
+}
+```
+
+Fouten worden **positioneel** teruggegeven in de resultaat-array, op dezelfde index als de invoerorder. Als je voor een order een fout ontvangt, is die order niet verwerkt en kun je hem veilig opnieuw proberen.
+
+- `error` is niet gestandaardiseerd — het is een beschrijvende string en kan veranderen.
+- `errorType` is een stabiele enum waarop je kunt vertrouwen voor programmatische afhandeling:
+  - `validation_error` — payload of state kwam niet door de validatie (ontbrekende velden, ongeldige odds of ongeldig getal, ongeldige side, inactieve wedstrijd).
+  - `rejected_liability` — beperkingen op gebruiker / account / liability (je maximale verlies) verhinderden plaatsing of uitvoering.
+  - `rejected_order_type_rules` — de regels van het ordertype verboden uitvoering. Voorbeelden: `fillAndKill` had geen uitvoerbare liquiditeit, `fillOrKill` kon niet volledig worden gevuld, `post` zou tegen openstaande orders matchen, of `postArb` ligt meer dan 1% van de matchbare prijs af.
+  - `system_error` — tijdelijke interne fout; opnieuw proberen kan slagen.

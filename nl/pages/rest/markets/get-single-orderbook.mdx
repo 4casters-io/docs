@@ -1,0 +1,66 @@
+---
+title: 'Enkel orderboek ophalen'
+description: 'Het geneste orderboek voor één wedstrijd lezen, plus onderliggende markten'
+openapi: 'GET /exchange/getSingleOrderbook'
+---
+
+Geeft het **geneste** orderboek voor één wedstrijd terug — spreads en totals zijn objecten met spread- / total-getal als sleutel in plaats van platgeslagen arrays. Geeft ook eventuele onderliggende wedstrijden terug (props, alternatieve periodes) en een `orderSummary` van de eigen openstaande orders van de aanroeper voor de competitie.
+
+Voor de eenvoudigere platte vorm heeft [Orderboek ophalen](/nl/pages/rest/markets/get-orderbook) de voorkeur.
+
+## Verzoek {#request}
+
+`GET /exchange/getSingleOrderbook`
+
+<ParamField query="gameID" type="string" required>
+  Wedstrijd-id.
+</ParamField>
+
+<CodeGroup>
+```bash curl
+curl "https://api.4casters.io/exchange/getSingleOrderbook?gameID=65b67450503180295ade9216" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+</CodeGroup>
+
+## Antwoord {#response}
+
+<ResponseField name="data.game" type="object">
+  Wedstrijdobject met genest-orderboekvelden. De standaard `Game`-velden gelden (zie [Wedstrijden ophalen](/nl/pages/rest/markets/get-games#response)), plus:
+
+  <Expandable title="Orderboekvelden per wedstrijd">
+    <ResponseField name="awayMoneylines" type="array">Openstaande moneyline-orders aan de uitkant. Gesorteerd op beste prijs eerst.</ResponseField>
+    <ResponseField name="homeMoneylines" type="array">Openstaande moneyline-orders aan de thuiskant.</ResponseField>
+    <ResponseField name="awaySpreads"    type="object">Object met spread-getal als sleutel (bijv. `"-3.5"`). Elke waarde is een array van orders.</ResponseField>
+    <ResponseField name="homeSpreads"    type="object">Object met spread-getal als sleutel.</ResponseField>
+    <ResponseField name="over"           type="object">Object met total-getal als sleutel (bijv. `"220.5"`). Elke waarde is een array van orders.</ResponseField>
+    <ResponseField name="under"          type="object" />
+    <ResponseField name="homeMoneylines1x2" type="object">**Alleen voetbal.** Object met `homeYes`- / `homeNo`-arrays.</ResponseField>
+    <ResponseField name="awayMoneylines1x2" type="object">**Alleen voetbal.** Object met `awayYes`- / `awayNo`-arrays.</ResponseField>
+    <ResponseField name="draw1x2"           type="object">**Alleen voetbal.** Object met `drawYes`- / `drawNo`-arrays.</ResponseField>
+    <ResponseField name="mainHomeSpread"  type="string">De momenteel getoonde hoofdspread voor thuis (de consensuslijn).</ResponseField>
+    <ResponseField name="mainAwaySpread"  type="number" />
+    <ResponseField name="mainTotal"       type="string" />
+    <ResponseField name="openInterest"    type="number" />
+    <ResponseField name="matchedVolume"   type="number" />
+  </Expandable>
+</ResponseField>
+<ResponseField name="data.orderSummary" type="array">
+  De eigen openstaande orders van de aanroeper over de hele competitie (niet alleen deze wedstrijd). Handig om "jouw offers"-badges in een UI te tonen.
+</ResponseField>
+<ResponseField name="data.childGames" type="array">
+  Onderliggende wedstrijden (alternatieve periodes enz.) van de opgevraagde wedstrijd. Zelfde vorm als `data.game`.
+</ResponseField>
+<ResponseField name="data.propGames" type="array">
+  Prop-wedstrijden gekoppeld aan de opgevraagde wedstrijd.
+</ResponseField>
+
+Elke individuele order heeft de standaard ordervorm:
+
+<Snippet file="nl/types/orderbook-order.mdx" />
+
+## Fouten {#errors}
+
+| Status | Betekenis |
+| ------ | ------- |
+| `400`  | `gameID` ontbreekt. |

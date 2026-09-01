@@ -1,0 +1,111 @@
+---
+title: 'Afgewikkelde wagers ophalen'
+description: 'Afgewikkelde wagers tussen twee datums weergeven met een P&L-samenvatting'
+openapi: 'api-reference/openapi.json GET /user/getGradedWagers'
+---
+
+Geeft alle **afgewikkelde (graded) wagers** van de aanroeper tussen twee datums terug, plus een samenvatting van P&L en volume. Datums horen bij de **starttijd van de wedstrijd** waar de wager op staat (dus `startDate=06-22-2022` geeft wagers terug op wedstrijden die beginnen na 06-21-2022 00:00 GMT).
+
+## Verzoek {#request}
+
+`GET /user/getGradedWagers`
+
+<ParamField query="startDate" type="string">
+  Startdatum (`MM-DD-YYYY`). Standaard `10-21-2020`.
+</ParamField>
+<ParamField query="endDate" type="string">
+  Einddatum (`MM-DD-YYYY`). Standaard vandaag.
+</ParamField>
+
+<CodeGroup>
+```bash curl
+curl "https://api.4casters.io/user/getGradedWagers?startDate=01-01-2024&endDate=02-01-2024" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+</CodeGroup>
+
+## Antwoord {#response}
+
+<ResponseField name="data.graded" type="array">
+  Array van afgewikkelde wagers, aflopend gesorteerd op starttijd van de wedstrijd.
+  <Expandable title="GradedWager">
+    <ResponseField name="id" type="string">Weddenschap-id.</ResponseField>
+    <ResponseField name="txID" type="string">Transactie-id van de fill.</ResponseField>
+    <ResponseField name="ticketNumber" type="string">Weergegeven ticketnummer.</ResponseField>
+    <ResponseField name="type" type="string">`moneyline`, `spread`, `total` of `moneyline1x2`.</ResponseField>
+    <ResponseField name="outcome" type="string">`winner`, `loser`, `push` of `refund`.</ResponseField>
+    <ResponseField name="bet" type="number">Oorspronkelijke inzetgrootte.</ResponseField>
+    <ResponseField name="odds" type="integer">Amerikaanse odds op het moment van de fill.</ResponseField>
+    <ResponseField name="spread" type="number">Aanwezig voor `spread`.</ResponseField>
+    <ResponseField name="total" type="number">Aanwezig voor `total`.</ResponseField>
+    <ResponseField name="OU" type="string">Aanwezig voor `total`.</ResponseField>
+    <ResponseField name="participantID" type="string">Aanwezig voor `moneyline` en `spread`.</ResponseField>
+    <ResponseField name="market" type="string">Aanwezig voor `moneyline1x2`.</ResponseField>
+    <ResponseField name="side" type="string">Voor `moneyline1x2` — `yes` of `no`.</ResponseField>
+    <ResponseField name="matchedTime" type="string">Tijdstip van de fill in ISO 8601.</ResponseField>
+    <ResponseField name="settledAt" type="string">Tijdstip waarop de weddenschap is afgewikkeld, in ISO 8601.</ResponseField>
+    <ResponseField name="createdAt" type="string">Tijdstip waarop de order is geplaatst, in ISO 8601.</ResponseField>
+    <ResponseField name="cancelled" type="boolean" />
+    <ResponseField name="closed" type="boolean" />
+    <ResponseField name="graded" type="boolean">Hier altijd `true`.</ResponseField>
+    <ResponseField name="adminRefund" type="boolean" />
+    <ResponseField name="platform" type="string">Waar de order vandaan kwam, bijv. `api`, `web`, `mobile`.</ResponseField>
+    <ResponseField name="risk" type="string">Risico op het gematchte deel (string, 2 decimalen).</ResponseField>
+    <ResponseField name="win" type="string">Winbedrag, netto na commissie.</ResponseField>
+    <ResponseField name="fee" type="string">Commissie in rekening gebracht op het gematchte deel.</ResponseField>
+    <ResponseField name="result" type="string">Netto P&L op deze wager. Negatief wanneer je verloor, positief wanneer je won, `0` bij push.</ResponseField>
+    <ResponseField name="pinnacleLine" type="object">Momentopname van de vergelijkbare Pinnacle-lijn op het moment van de fill, indien beschikbaar.</ResponseField>
+    <Snippet file="nl/types/game-summary.mdx" />
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="data.summary" type="object">
+  Geaggregeerde totalen over de teruggegeven wagers.
+  <Expandable title="summary">
+    <ResponseField name="pnl" type="integer">Som van `result` (afgerond).</ResponseField>
+    <ResponseField name="volume" type="integer">Som van `min(risk, win)` (afgerond).</ResponseField>
+  </Expandable>
+</ResponseField>
+
+### Voorbeeld {#example}
+
+<CodeGroup>
+```json JSON
+{
+  "data": {
+    "graded": [
+      {
+        "id": "64c98e8c0745a206acf18ad7",
+        "txID": "64c99640453fd2ad91206018",
+        "ticketNumber": "5a5494406ef9e2c5988b30bf666ce55e",
+        "type": "total",
+        "outcome": "loser",
+        "bet": 1,
+        "odds": 101,
+        "total": 8.5,
+        "OU": "over",
+        "matchedTime": "2023-08-01T23:33:20.273Z",
+        "settledAt": "2023-08-02T02:26:16.152Z",
+        "createdAt": "2023-08-01T23:33:20.273Z",
+        "graded": true,
+        "platform": "api",
+        "risk": "1.01",
+        "win": "1.00",
+        "fee": "0.01",
+        "result": "-1.01",
+        "pinnacleLine": { "odds": -102, "total": 8.5, "OU": "over" },
+        "game": {
+          "id": "64c7fa454803b0ff0f7f5741",
+          "league": "MLB",
+          "sport": "baseball",
+          "start": "2023-08-01T23:45:00.000Z",
+          "ended": true,
+          "participants": [/* ... */]
+        }
+      }
+    ],
+    "summary": { "pnl": -1, "volume": 1 }
+  }
+}
+```
+</CodeGroup>
