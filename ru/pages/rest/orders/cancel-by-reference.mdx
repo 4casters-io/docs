@@ -1,0 +1,42 @@
+---
+title: 'Отмена по пользовательской ссылке'
+description: 'Отмена ордеров по их определяемому клиентом идентификатору'
+openapi: 'POST /session/cancelByReference'
+---
+
+Отмена каждого открытого ордера в указанной игре, чей `userReference` совпадает с одним из переданных значений. Полезно, когда вы пометили ордера собственными id и хотите отменять по ним, а не отслеживать id ордеров 4casters.
+
+## Запрос {#request}
+
+`POST /session/cancelByReference`
+
+<ParamField body="gameID" type="string" required>
+  Ограничивает поиск одной игрой.
+</ParamField>
+<ParamField body="userReferences" type="array" required>
+  Массив строк `userReference`. Каждый открытый ордер в `gameID`, чей `userReference` входит в этот массив, отменяется.
+</ParamField>
+
+<CodeGroup>
+```bash curl
+curl -X POST https://api.4casters.io/session/cancelByReference \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "gameID": "6924f82640a7e89c3d3acc41",
+    "userReferences": ["my-order-1", "my-order-2"]
+  }'
+```
+</CodeGroup>
+
+## Ответ {#response}
+
+<ResponseField name="data" type="array">
+  Результаты отмены по каждому ордеру. Тот же формат, что и в [Отмена ордера](/ru/pages/rest/orders/cancel-order#response).
+</ResponseField>
+
+## Ошибки {#errors}
+
+| Статус | Значение |
+| ------ | ------- |
+| `400`  | `userReferences` отсутствует или не является массивом. |

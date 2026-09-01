@@ -1,0 +1,60 @@
+---
+title: 'Получить партнёрскую комиссию'
+description: 'Комиссия, выплаченная вам приглашёнными игроками'
+openapi: 'GET /affiliate/getAffiliateCommission'
+---
+
+Возвращает комиссию, выплаченную вызывающему приглашёнными им игроками, сгруппированную по именам пользователей. Без параметров возвращает заработок за всё время; с `fromDate` / `toDate` ограничивает диапазон.
+
+<Note>
+В отличие от большинства эндпоинтов, этот возвращает результат на **верхнем уровне** как `commissionPaid` (не под `data`).
+</Note>
+
+## Запрос {#request}
+
+`GET /affiliate/getAffiliateCommission`
+
+<ParamField query="fromDate" type="string">
+  Начальная дата (`MM-DD-YYYY`). По умолчанию `08-02-2021`.
+</ParamField>
+<ParamField query="toDate" type="string">
+  Конечная дата (`MM-DD-YYYY`). По умолчанию — сегодня.
+</ParamField>
+
+<CodeGroup>
+```bash curl (диапазон дат)
+curl "https://api.4casters.io/affiliate/getAffiliateCommission?fromDate=10-03-2022&toDate=10-10-2022" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+
+```bash curl (за всё время)
+curl https://api.4casters.io/affiliate/getAffiliateCommission \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+</CodeGroup>
+
+## Ответ {#response}
+
+<ResponseField name="commissionPaid" type="array">
+  Каждая запись — объект с одним ключом, сопоставляющий имя пользователя игрока с общей комиссией, выплаченной этим игроком в запрошенном диапазоне.
+</ResponseField>
+
+### Пример {#example}
+
+<CodeGroup>
+```json JSON
+{
+  "commissionPaid": [
+    { "alice":   124.50 },
+    { "bob":      12.00 },
+    { "charlie":  87.34 }
+  ]
+}
+```
+</CodeGroup>
+
+## Ошибки {#errors}
+
+| Статус | Значение |
+| ------ | ------- |
+| `400`  | `fromDate` не удаётся разобрать. |

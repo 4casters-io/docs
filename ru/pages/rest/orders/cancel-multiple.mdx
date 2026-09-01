@@ -1,0 +1,62 @@
+---
+title: 'Отмена нескольких ордеров'
+description: 'Отмена пакета ордеров по id'
+openapi: 'POST /session/cancelMultiple'
+---
+
+Отмена пакета ордеров по id. Результат позиционен относительно входного массива `sessionIDs` и может содержать смесь успешных отмен и поштучных отказов.
+
+## Запрос {#request}
+
+`POST /session/cancelMultiple`
+
+<ParamField body="sessionIDs" type="array" required>
+  Массив id ордеров для отмены. Каждый id должен быть валидным `ObjectID` — если хотя бы один из них некорректен, весь запрос завершается с `400`.
+</ParamField>
+
+<CodeGroup>
+```bash curl
+curl -X POST https://api.4casters.io/session/cancelMultiple \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "sessionIDs": [
+      "65b036dfb31407c2b6bc1cfe",
+      "65b036e0b31407c2b6bc1d08"
+    ]
+  }'
+```
+</CodeGroup>
+
+## Ответ {#response}
+
+<ResponseField name="data" type="array">
+  Результаты отмены по каждому ордеру. Тот же формат, что и в [Отмена ордера](/ru/pages/rest/orders/cancel-order#response). При отказе записи содержат `{ success: false, reason: "..." }` (без поля `sessionID` при отклонениях из-за неверного id / отсутствия ордера / чужого ордера).
+</ResponseField>
+
+### Пример {#example}
+
+<CodeGroup>
+```json JSON
+{
+  "data": [
+    {
+      "success": true,
+      "sessionID": "65b036dfb31407c2b6bc1cfe",
+      "odds": 125,
+      "filled": 0,
+      "offered": 0,
+      "remaining": 100,
+      "gameID": "65f0c3c24ef07d0008abc123"
+    },
+    { "success": false, "reason": "Not your order" }
+  ]
+}
+```
+</CodeGroup>
+
+## Ошибки {#errors}
+
+| Статус | Значение |
+| ------ | ------- |
+| `400`  | `sessionIDs` отсутствует, не является массивом, или какой-то id некорректен. |

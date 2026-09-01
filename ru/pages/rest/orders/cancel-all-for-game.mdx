@@ -1,0 +1,49 @@
+---
+title: 'Отмена всех ордеров на игру'
+description: 'Отмена каждого открытого ордера на одну игру'
+openapi: 'POST /session/cancelAllOrdersForGame'
+---
+
+Отмена каждого открытого ордера на одну игру. При желании ограничьте одним типом рынка `type`, чтобы оставить другие рынки нетронутыми.
+
+## Запрос {#request}
+
+`POST /session/cancelAllOrdersForGame`
+
+<ParamField body="gameID" type="string" required>
+  Игра, ордера по которой нужно отменить.
+</ParamField>
+<ParamField body="type" type="string">
+  Необязательный. Отменять только ордера этого типа рынка — одно из: `moneyline` (ставка на победителя), `spread` (фора), `total` (тотал). Если опущен, отменяются все типы рынков.
+</ParamField>
+
+<CodeGroup>
+```bash curl (один рынок)
+curl -X POST https://api.4casters.io/session/cancelAllOrdersForGame \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "gameID": "688c0516fbc14da0c202d426",
+    "type": "spread"
+  }'
+```
+
+```bash curl (все рынки)
+curl -X POST https://api.4casters.io/session/cancelAllOrdersForGame \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{ "gameID": "688c0516fbc14da0c202d426" }'
+```
+</CodeGroup>
+
+## Ответ {#response}
+
+<ResponseField name="data" type="array">
+  Результаты отмены по каждому ордеру. Тот же формат, что и в [Отмена ордера](/ru/pages/rest/orders/cancel-order#response).
+</ResponseField>
+
+## Ошибки {#errors}
+
+| Статус | Значение |
+| ------ | ------- |
+| `400`  | `gameID` отсутствует / неверен, или `type` не входит в допустимые значения. |

@@ -1,0 +1,54 @@
+---
+title: 'Получить лиги'
+description: 'Список лиг с активными рынками'
+openapi: 'GET /exchange/getLeagues'
+---
+
+Возвращает каждую лигу с активными рынками на бирже. Используйте коды лиг из этого эндпоинта, чтобы получать игры (`/exchange/v2/getGames`) и книги ордеров (`/exchange/v2/getOrderbook`).
+
+Если ответ содержит название лиги со словом `LIVE` (кроме лайв-лиг отдельных видов спорта `NFL-LIVE`, `NBA-LIVE`, `NCAAF-LIVE`, `NCAAB-LIVE`), в конец добавляется значение `"LIVE"` как псевдоним для «всех лайв-игр».
+
+## Запрос {#request}
+
+`GET /exchange/getLeagues`
+
+<ParamField query="sport" type="string">
+  Необязательный фильтр по виду спорта (`basketball`, `baseball`, `hockey`, `football`, `soccer`, `golf`, `tennis`, `mma` и т. д.). При `sport=soccer` или `sport=golf` в конец списка добавляется значение `"all"`.
+</ParamField>
+
+<CodeGroup>
+```bash curl
+curl https://api.4casters.io/exchange/getLeagues \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+</CodeGroup>
+
+## Ответ {#response}
+
+<ResponseField name="data.availableLeagues" type="array">
+  Массив кодов лиг.
+</ResponseField>
+
+### Пример {#example}
+
+<CodeGroup>
+```json JSON
+{
+  "data": {
+    "availableLeagues": [
+      "CHAMPIONS-LEAGUE",
+      "NBA",
+      "NHL",
+      "BUNDESLIGA",
+      "PREMIER-LEAGUE",
+      "PGA",
+      "LA-LIGA",
+      "NON-UFC",
+      "SERIE-A",
+      "MLS",
+      "UFCMMA"
+    ]
+  }
+}
+```
+</CodeGroup>

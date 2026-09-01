@@ -1,0 +1,18 @@
+<ResponseField name="id" type="string">Id ордера.</ResponseField>
+<ResponseField name="type" type="string">`moneyline`, `spread`, `total` или `moneyline1x2`.</ResponseField>
+<ResponseField name="createdBy" type="string">Присутствует **только** когда ордер принадлежит вызывающему. Удобно, чтобы отфильтровать собственные ожидающие ордера из книги ордеров.</ResponseField>
+<ResponseField name="sumUntaken" type="number">Сумма выигрыша, всё ещё доступная по этому ордеру — taker платит риск, чтобы забрать её по указанным `odds`.</ResponseField>
+<ResponseField name="bet" type="number">Исходный `bet` (риск), размещённый maker.</ResponseField>
+<ResponseField name="odds" type="integer">Американские коэффициенты (отрицательные для фаворитов, положительные для андердогов).</ResponseField>
+<ResponseField name="gameID" type="string">Id игры, к которой относится этот ордер.</ResponseField>
+<ResponseField name="takenRatio" type="number">Доля ордера, которая уже сведена, от `0` до `1`.</ResponseField>
+<ResponseField name="expiry" type="string">Время автоматической отмены (ISO 8601). `null`, если срок действия не задан.</ResponseField>
+<ResponseField name="createdAt" type="string">Время размещения ордера.</ResponseField>
+<ResponseField name="gameStartExpiry" type="boolean">Если `true`, ордер будет автоматически отменён при начале игры.</ResponseField>
+<ResponseField name="isPostArb" type="boolean">Присутствует только когда ордер размещён с `orderType: postArb`.</ResponseField>
+<ResponseField name="participantID" type="string">Присутствует для `moneyline` и `spread` — участник, на которого сделана ставка.</ResponseField>
+<ResponseField name="spread" type="number">Присутствует для `spread`.</ResponseField>
+<ResponseField name="total" type="number">Присутствует для `total`.</ResponseField>
+<ResponseField name="OU" type="string">`over` или `under`. Присутствует для `total`.</ResponseField>
+<ResponseField name="market" type="string">Присутствует для `moneyline1x2` — название исхода (`"draw"` или id участника).</ResponseField>
+<ResponseField name="side" type="string">Для `moneyline1x2` — `yes` или `no`.</ResponseField>

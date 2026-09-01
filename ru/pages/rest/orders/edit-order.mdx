@@ -1,0 +1,84 @@
+---
+title: 'Изменение ордера'
+description: 'Изменение цены или объёма ожидающего ордера'
+openapi: 'POST /session/editOrder'
+---
+
+Измените цену (`orderOdds`) и/или объём (`orderVolume`) существующего **лимитного** ордера.
+
+Для частично исполненных ордеров 4casters отменяет существующий ордер и отправляет новый с указанными значениями. Новый `orderVolume` **не** учитывает уже исполненный объём — если вы изначально разместили `bet: 10`, $5 было исполнено, и вы изменяете на `orderVolume: 10`, предыдущий ордер отменяется (возврат $5) и создаётся новый ордер на $10 (списание $10), в итоге вы в минусе на $5.
+
+<Note>
+Более новый gRPC-вариант живёт по адресу `POST /session/v4/editOrder`. Он принимает то же тело запроса и дополнительно возвращает `errorType` при ошибках валидации. Предпочитайте его для новых интеграций, как только убедитесь, что формат вам подходит.
+</Note>
+
+## Запрос {#request}
+
+`POST /session/editOrder`
+
+<ParamField body="sessionID" type="string" required>
+  Id изменяемого ордера. Возьмите его из `data.unmatched.orderID` ответа `/session/v3/place` или `id` из `/user/getUnmatched`.
+</ParamField>
+<ParamField body="orderOdds" type="integer">
+  Новые американские коэффициенты. Передайте `null`, чтобы оставить коэффициенты без изменений.
+</ParamField>
+<ParamField body="orderVolume" type="number">
+  Новая сумма `bet`. Передайте `null`, чтобы оставить объём без изменений.
+</ParamField>
+<ParamField body="orderType" type="string">
+  По умолчанию `limit`. См. [типы ордеров](/ru/pages/rest/orders/place-order#order-types).
+</ParamField>
+<ParamField body="userReference" type="string">
+  Необязательный. Заменяет существующий `userReference` ордера.
+</ParamField>
+<ParamField body="intendedOrderVolume" type="number">
+  Необязательный. Объём, который вы изначально намеревались разместить; используется сервером при сверке частичных исполнений.
+</ParamField>
+<ParamField body="expiryChange" type="string">
+  Необязательный. Новый срок действия в минутах (строка).
+</ParamField>
+<ParamField body="blockIfNoOtherSideOrders" type="boolean">
+  Только v4. Отклонить изменение, если на противоположной стороне нет ожидающей ликвидности.
+</ParamField>
+
+<CodeGroup>
+```bash curl
+curl -X POST https://api.4casters.io/session/editOrder \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "sessionID": "6549b6df6634097d2704716f",
+    "orderOdds": 185,
+    "orderVolume": 100
+  }'
+```
+
+```json Тело JSON
+{
+  "sessionID": "6549b6df6634097d2704716f",
+  "orderOdds": 185,
+  "orderVolume": 100
+}
+```
+</CodeGroup>
+
+## Ответ {#response}
+
+Результат повторяет формат ответа [размещения ордера](/ru/pages/rest/orders/place-order#response) — сводка `cancelled` плюс новый результат `matched` / `unmatched`:
+
+<ResponseField name="data.cancelled" type="object">
+  Сводка по отменённому и заменённому исходному ордеру.
+</ResponseField>
+<ResponseField name="data.matched" type="array">
+  Исполнения, порождённые повторной отправкой с новой ценой/объёмом. Тот же формат, что и `MatchedFill` в [размещении ордера](/ru/pages/rest/orders/place-order#response).
+</ResponseField>
+<ResponseField name="data.unmatched" type="object">
+  Ожидающее предложение для неисполненного остатка нового ордера.
+</ResponseField>
+
+## Ошибки {#errors}
+
+| Статус | Значение |
+| ------ | ------- |
+| `400`  | Ошибка валидации (`v4/editOrder` возвращает для них `errorType`). |
+| `503`  | Сервис ордеров недоступен. |

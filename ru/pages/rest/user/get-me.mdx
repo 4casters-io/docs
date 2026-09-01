@@ -1,0 +1,85 @@
+---
+title: 'Получить текущего пользователя'
+description: 'Чтение аутентифицированного аккаунта'
+openapi: 'GET /user/getMe'
+---
+
+Возвращает информацию об аккаунте текущего аутентифицированного пользователя, включая баланс, кредитный лимит, текущую ответственность, формат коэффициентов по умолчанию и флаги доступа.
+
+## Запрос {#request}
+
+`GET /user/getMe`
+
+Этот эндпоинт не принимает параметров. Требуется аутентификация (см. [Аутентификация](/ru/pages/rest/authentication)).
+
+<CodeGroup>
+```bash curl
+curl https://api.4casters.io/user/getMe \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+</CodeGroup>
+
+## Ответ {#response}
+
+<ResponseField name="data" type="object">
+  <Expandable title="data">
+    <ResponseField name="user" type="object">
+      <Expandable title="user">
+        <ResponseField name="id" type="string">Id пользователя.</ResponseField>
+        <ResponseField name="username" type="string">Имя пользователя аккаунта.</ResponseField>
+        <ResponseField name="type" type="string">Тип аккаунта — `free`, `p2p`, `marketmaker` или `agent`.</ResponseField>
+        <ResponseField name="oddsFormat" type="string">Формат коэффициентов по умолчанию. `american` или `decimal`.</ResponseField>
+        <ResponseField name="displayBalance" type="number">Текущий баланс (отображаемое значение).</ResponseField>
+        <ResponseField name="creditLimit" type="number">Кредитный лимит (отрицательный для кредитных аккаунтов).</ResponseField>
+        <ResponseField name="liability" type="number">Текущая открытая ответственность по всем играм.</ResponseField>
+        <ResponseField name="commissionCharged" type="number">Ставка комиссии, взимаемой с этого аккаунта.</ResponseField>
+        <ResponseField name="maxLiability" type="number">Потолок ответственности на уровне аккаунта.</ResponseField>
+        <ResponseField name="hasMarketMakerAccess" type="boolean">Имеет ли аккаунт доступ к функциям маркет-мейкера.</ResponseField>
+        <ResponseField name="isAdmin" type="boolean" />
+        <ResponseField name="isPro" type="boolean" />
+        <ResponseField name="isDeposit" type="boolean" />
+        <ResponseField name="isAlphaUser" type="boolean" />
+        <ResponseField name="defaultExpiry" type="integer">Срок действия ордеров по умолчанию, в минутах. `null` — «нет значения по умолчанию».</ResponseField>
+        <ResponseField name="defaultOffer" type="number">Размер предложения по умолчанию при размещении ордеров.</ResponseField>
+        <ResponseField name="sportsbookDefault" type="boolean" />
+        <ResponseField name="sportsbookMinimumDisplay" type="number" />
+        <ResponseField name="defaultRotationNumbers" type="boolean" />
+        <ResponseField name="displayRotationNumbers" type="boolean" />
+        <ResponseField name="viewOddsWithCommission" type="boolean" />
+        <ResponseField name="defaultSendOrderMessage" type="boolean" />
+        <ResponseField name="showChatLastMessage" type="boolean" />
+        <ResponseField name="yesNoSummary" type="boolean" />
+        <ResponseField name="accessCode" type="string">Регистрационный код аккаунта.</ResponseField>
+        <ResponseField name="p2pCode" type="string">Если это аккаунт P2P-агента — код, который его рефералы используют при регистрации.</ResponseField>
+        <ResponseField name="createdAt" type="string">Время создания аккаунта в ISO 8601.</ResponseField>
+        <ResponseField name="emailConfirmation" type="boolean">Подтверждён ли email аккаунта.</ResponseField>
+      </Expandable>
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+### Пример {#example}
+
+<CodeGroup>
+```json JSON
+{
+  "data": {
+    "user": {
+      "id": "5fe37acbb5a23600123662c1",
+      "username": "your_username",
+      "type": "p2p",
+      "oddsFormat": "american",
+      "displayBalance": 1250.50,
+      "creditLimit": 500,
+      "liability": -125.00,
+      "commissionCharged": 0.01,
+      "hasMarketMakerAccess": false,
+      "isAdmin": false,
+      "isPro": false,
+      "createdAt": "2020-12-23T17:14:09.000Z",
+      "emailConfirmation": true
+    }
+  }
+}
+```
+</CodeGroup>

@@ -1,0 +1,51 @@
+---
+title: 'Поиск ордера'
+description: 'Получение текущего состояния одного из ваших ордеров'
+openapi: 'GET /session/lookupOrder'
+---
+
+Получите текущее состояние одного из ордеров вызывающего. Возвращает ордер с учётом `matchedRisk` / `unmatchedRisk` и денормализованным снимком соответствующей игры.
+
+## Запрос {#request}
+
+`GET /session/lookupOrder`
+
+<ParamField query="orderID" type="string" required>
+  Id ордера 4casters. Возьмите его из `data.unmatched.orderID` ответа `/session/v3/place` или `id` из `/user/getUnmatched`.
+</ParamField>
+
+<CodeGroup>
+```bash curl
+curl "https://api.4casters.io/session/lookupOrder?orderID=ORDER_ID" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+</CodeGroup>
+
+## Ответ {#response}
+
+<ResponseField name="data.order" type="object">
+  <Expandable title="order">
+    <ResponseField name="id" type="string" />
+    <ResponseField name="cancelled" type="boolean" />
+    <ResponseField name="isTheBestOffer" type="boolean">
+      `true`, когда на другой стороне нет конкурирующего предложения с лучшими коэффициентами, чем у этого ордера.
+    </ResponseField>
+    <ResponseField name="odds" type="integer">Американские коэффициенты этого ордера (знак инвертирован относительно внутреннего хранения).</ResponseField>
+    <ResponseField name="type" type="string">`moneyline` (ставка на победителя), `spread` (фора), `total` (тотал) или `moneyline1x2`.</ResponseField>
+    <ResponseField name="OU" type="string">Противоположность стороне ордера для рынков `total`. `null` для остальных.</ResponseField>
+    <ResponseField name="participant" type="string">Id участника, на которого вы поставили. `null` для `total`.</ResponseField>
+    <ResponseField name="participantLongName" type="string" />
+    <ResponseField name="spread" type="number" />
+    <ResponseField name="total" type="number" />
+    <ResponseField name="matchedRisk" type="string">Риск, который уже сведён (строка, 2 знака после запятой).</ResponseField>
+    <ResponseField name="unmatchedRisk" type="string">Оставшийся риск, всё ещё лежащий в книге.</ResponseField>
+    <Snippet file="ru/types/game-summary.mdx" />
+  </Expandable>
+</ResponseField>
+
+## Ошибки {#errors}
+
+| Статус | Значение |
+| ------ | ------- |
+| `403`  | Не ваш ордер. |
+| `404`  | Неверный id ордера. |

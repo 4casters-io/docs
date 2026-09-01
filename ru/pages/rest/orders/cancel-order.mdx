@@ -1,0 +1,68 @@
+---
+title: 'Отмена ордера'
+description: 'Отмена одного открытого ордера'
+openapi: 'POST /session/cancel'
+---
+
+Отмена одного открытого ордера по id. Возвращает неисполненные и исполненные суммы на момент отмены.
+
+## Запрос {#request}
+
+`POST /session/cancel`
+
+<ParamField body="sessionID" type="string" required>
+  Id отменяемого ордера.
+</ParamField>
+
+<CodeGroup>
+```bash curl
+curl -X POST https://api.4casters.io/session/cancel \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"sessionID": "65b036dfb31407c2b6bc1cfe"}'
+```
+</CodeGroup>
+
+## Ответ {#response}
+
+<ResponseField name="data" type="object">
+  <Expandable title="CancelResult">
+    <ResponseField name="success"      type="boolean" />
+    <ResponseField name="sessionID"    type="string">Id отменённого ордера.</ResponseField>
+    <ResponseField name="description"  type="string">Человекочитаемое описание ордера (например, `Lakers -3.5 -110`).</ResponseField>
+    <ResponseField name="odds"         type="integer">Американские коэффициенты отменённого ордера.</ResponseField>
+    <ResponseField name="filled"       type="number">Риск, который уже был сведён на момент отмены.</ResponseField>
+    <ResponseField name="offered"      type="number" />
+    <ResponseField name="remaining"    type="number">Риск, который оставался несведённым и теперь возвращён.</ResponseField>
+    <ResponseField name="gameID"       type="string" />
+    <ResponseField name="userReference" type="string" />
+  </Expandable>
+</ResponseField>
+
+### Пример {#example}
+
+<CodeGroup>
+```json JSON
+{
+  "data": {
+    "success": true,
+    "sessionID": "65b036dfb31407c2b6bc1cfe",
+    "description": "Lakers ML +125",
+    "odds": 125,
+    "filled": 0,
+    "offered": 0,
+    "remaining": 100,
+    "gameID": "65f0c3c24ef07d0008abc123",
+    "userReference": "my-order-1"
+  }
+}
+```
+</CodeGroup>
+
+## Ошибки {#errors}
+
+| Статус | Значение |
+| ------ | ------- |
+| `400`  | Неверный id ордера. |
+| `403`  | Не ваш ордер. |
+| `409`  | Ордер не может быть отменён (например, уже полностью исполнен). |

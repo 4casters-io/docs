@@ -1,0 +1,45 @@
+---
+title: 'Heartbeat ордеров'
+description: 'Автоотмена ваших ордеров при разрыве соединения клиента'
+openapi: 'POST /user/ordersHeartbeat'
+---
+
+Механизм безопасности: отправьте heartbeat с `timeout` (в секундах). Если следующий heartbeat не будет получен в течение `timeout` секунд, **все ваши открытые ордера отменяются**.
+
+Используйте этот эндпоинт в любом клиенте, размещающем ожидающие ордера: если ваш процесс упадёт или потеряет связь, heartbeat гарантирует, что устаревшие ордера будут сняты, а не останутся в книге.
+
+## Запрос {#request}
+
+`POST /user/ordersHeartbeat`
+
+<ParamField body="timeout" type="integer" required>
+  Тайм-аут до отмены, в секундах. Должен быть больше `5`.
+</ParamField>
+
+<CodeGroup>
+```bash curl
+curl -X POST https://api.4casters.io/user/ordersHeartbeat \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"timeout": 30}'
+```
+
+```json Тело JSON
+{ "timeout": 30 }
+```
+</CodeGroup>
+
+## Ответ {#response}
+
+Ответ пересылается от сервиса ордеров:
+
+```json
+{ "data": { /* heartbeat ack payload */ } }
+```
+
+## Ошибки {#errors}
+
+| Статус | Значение |
+| ------ | ------- |
+| `400`  | `timeout` отсутствует, не число или `<= 5`. |
+| `503`  | Сервис ордеров недоступен. |

@@ -1,0 +1,37 @@
+---
+title: 'Стриминговый API 4casters'
+---
+
+Стриминговый API 4casters доставляет обновления по пользователю и рынкам в реальном времени по «сырому» WebSocket-соединению.
+
+## Эндпоинты {#endpoints}
+- **Фид пользователя**: `wss://streaming-api.4casters.io/v2/user`
+- **Фид цен**: `wss://streaming-api.4casters.io/price-stream`
+
+По умолчанию фид цен транслирует все обновления рынков. Клиенты могут при желании сузить поток до конкретных игр, лиг или видов спорта — см. [Подписки](/ru/pages/streaming/price-feed#subscriptions).
+
+## Аутентификация {#auth}
+
+Оба фида аутентифицируются token 4Casters. Отправьте token в заголовке
+`Authorization` при рукопожатии WebSocket. Сервер определяет пользователя
+по token — **без имени пользователя в URL**.
+
+### Получить token {#get-a-token}
+
+Выполните вход со своими именем пользователя и паролем 4Casters, вызвав эндпоинт `/user/login`
+REST API 4Casters. Ответ содержит token, который можно использовать
+здесь.
+
+См. [`POST /user/login` в документации REST API 4Casters](/ru/pages/rest/authentication).
+
+### Подключение {#connect}
+
+<CodeGroup>
+```javascript JavaScript
+const WebSocket = require('ws');
+const token = process.env.FOURCASTERS_TOKEN;
+const ws = new WebSocket('wss://streaming-api.4casters.io/v2/user', {
+  headers: { Authorization: token },
+});
+```
+</CodeGroup>
