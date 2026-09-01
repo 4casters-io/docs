@@ -24,7 +24,7 @@ description: '4casters API 中对客户端可见的重要变更。'
 
 <Update label="2026-07-30" tags={["REST API"]}>
   ### 新增
-  - **`GET /exchange/getMatchedVolume`。** 新端点，返回一段包含端点的 ET 日历日范围内的全站已撮合成交量。每笔已撮合投注计入双方本金（风险额 + 可赢额，佣金前）；结束于今天的范围包含当天的实时汇总。见 [获取已撮合成交量](/zh-Hans/pages/rest/markets/get-matched-volume)。
+  - **`GET /exchange/getMatchedVolume`。** 新端点，返回一段 ET 日历日范围（首尾两天均含）内的全站已撮合成交量。每笔已撮合投注计入双方本金（风险额 + 可赢额，佣金前）；结束于今天的范围包含当天的实时汇总。见 [获取已撮合成交量](/zh-Hans/pages/rest/markets/get-matched-volume)。
 </Update>
 
 <Update label="2026-07-15" tags={["推送 API", "用户推送"]}>

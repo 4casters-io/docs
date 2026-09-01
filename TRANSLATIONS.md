@@ -153,6 +153,10 @@ Address the user as `tú`, never `usted`. Neutral between Spain and Latin Americ
 
 `matched` and `unmatched` as **API field names** stay in English everywhere — they are keys in the payload (rule 2). The Spanish words above are for the concept in prose.
 
+**Spanish typography is intentional:** `3,000` renders as `3.000` and `1%` as `1 %` — correct Spanish convention, applied consistently. Do not "fix" these back. Note the deliberate difference from the frontend (PRO-275), which keeps `en-US` number formatting by PM decision.
+
+**Two drift items for the Spanish reviewer:** *exchange* is kept in English on most pages but rendered `intercambio` in 5 — pick one (recommend keeping `exchange`); and one raw English "liability" survives in `websocket/place-order`'s error section where the pages otherwise use `exposición`.
+
 `exposición` and `riesgo` are **not interchangeable**: `exposición` renders *liability* (worst-case exposure across a game), `riesgo` renders *risk* (the stake side of a bet, the `risk`/`bet` field). The frontend must keep them apart the same way.
 
 ### Simplified Chinese (`zh-Hans`)
@@ -167,6 +171,19 @@ Address the user as `tú`, never `usted`. Neutral between Spain and Latin Americ
 | in-play | 滚球 |
 | account | 账户 |
 | real-time | 实时 |
+
+**The zh `注单` (graded wager) / `投注` (bet) distinction is intentional** — it mirrors the API's wager/bet split. Keep it.
+
+**Unsettled — one decision per row, applied tree-wide in one commit, for the Chinese reviewer** (counts are files):
+
+| Concept | Variants in the pages today |
+|---|---|
+| matched / fill | 成交 26 · 撮合 14 · 匹配 6 |
+| maker | English 5 · 挂单方 1 · 做市商 1 · 对手方 2 |
+| moneyline | `moneyline` · 单胜盘 · 胜负盘 · 独赢 (and 三项盘 / 三项胜平负 for 1x2) |
+| liability | 负债 2 · 责任 1 |
+
+The taker fee-vs-act split above is idiomatic and stays; the *maker* row is genuine drift — three renderings plus English.
 
 **Unsettled: "cancel an order."** The current pages use `取消` (the ordinary word for cancel). `撤单` is the exchange term — what Chinese brokerages use for pulling a resting order — and is more domain-idiomatic. Needs a Chinese speaker to decide, then applied everywhere in one commit, in the docs and the frontend together.
 
