@@ -1,0 +1,42 @@
+---
+title: 'Changelog'
+description: 'Changements notables et observables par les clients des APIs 4casters.'
+---
+
+Ce changelog recense les changements des APIs publiques 4casters visibles pour les intégrateurs. Les refactorisations internes, les correctifs de performance sans changement de comportement et les changements d'infrastructure sont volontairement omis.
+
+Conventions :
+
+- Les entrées les plus récentes d'abord. Les dates sont au format ISO `YYYY-MM-DD`.
+- Chaque entrée est étiquetée avec la surface d'API concernée.
+- Les changements sont regroupés sous `Ajouté`, `Modifié`, `Corrigé`, `Déprécié` ou `Supprimé` (les sections sans objet sont omises).
+- Les changements cassants sont étiquetés `Breaking`.
+
+---
+
+<Update label="2026-08-13" tags={["REST API", "Orders API"]}>
+  ### Ajouté {#added}
+  - **Type d'ordre `fillOrKill`.** Ordre taker tout-ou-rien : l'intégralité du `bet` doit matcher immédiatement, sinon l'ordre entier est rejeté et toute exécution partielle est annulée, si bien que vous ne restez jamais partiellement exécuté. Pris en charge sur les endpoints de placement REST et WebSocket. Voir [Types d'ordre](/fr/pages/rest/orders/place-order#order-types).
+
+  ### Corrigé {#fixed}
+  - **Documentation de `fillAndKill` corrigée.** Il était décrit comme « matcher immédiatement à votre prix ou rejeter », ce qui se lisait comme du tout-ou-rien. `fillAndKill` exécute en réalité toute la taille disponible et annule le reste — une exécution **partielle** est un résultat réussi, et l'ordre n'est rejeté que lorsqu'il n'existe aucune liquidité matchable. Le comportement est inchangé ; seule la documentation était fausse. Utilisez le nouveau `fillOrKill` si vous avez besoin d'une véritable exécution tout-ou-rien.
+</Update>
+
+<Update label="2026-07-30" tags={["REST API"]}>
+  ### Ajouté {#added}
+  - **`GET /exchange/getMatchedVolume`.** Nouvel endpoint renvoyant le volume matché total du site pour une plage inclusive de jours calendaires ET. Chaque pari matché compte les mises des deux côtés (risque + gain, avant commission) ; les plages se terminant aujourd'hui incluent un agrégat en direct du jour courant. Voir [Récupérer le volume matché](/fr/pages/rest/markets/get-matched-volume).
+</Update>
+
+<Update label="2026-07-15" tags={["Streaming API", "User Feed"]}>
+  ### Corrigé {#fixed}
+  - **Le replay `GET /v2/user/messages` renvoie désormais des messages.** L'endpoint de replay du flux utilisateur v2 renvoyait auparavant toujours des listes vides, si bien que la récupération des trous après une connexion perdue ne faisait silencieusement rien. Les messages rejoués arrivent exactement dans le format que le WebSocket délivre. Voir [Rejouer les messages manqués](/fr/pages/streaming/user-feed#replaying-missed-messages).
+</Update>
+
+<Update label="2026-04-28" tags={["Streaming API", "Price Feed"]}>
+  ### Ajouté {#added}
+  - **Abonnement par `gameID`, `league` ou `sport` sur le flux des prix.** Les clients connectés à `wss://streaming-api.4casters.io/price-stream` peuvent désormais envoyer des commandes JSON `subscribe`, `unsubscribe` et `subscribeAll` pour restreindre le flux à des matchs, ligues ou sports spécifiques. Voir [Abonnements](/fr/pages/streaming/price-feed#subscriptions) pour le format complet des commandes et la sémantique de routage.
+  - **Propagation `parentGameID`.** Les abonnés à un `gameID` parent reçoivent aussi les mises à jour des matchs enfants dont le `parentGameID` correspond (par ex. les dérivés F5-MLB atteignent les abonnés du match parent).
+
+  ### Modifié {#changed}
+  - **Rétrocompatible.** Les clients qui n'envoient jamais de commande d'abonnement restent en mode diffusion générale et reçoivent chaque mise à jour comme avant — aucun changement d'intégration requis.
+</Update>

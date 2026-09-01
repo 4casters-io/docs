@@ -1,0 +1,76 @@
+---
+title: 'Récupérer le volume matché'
+description: 'Volume matché total du site sur une plage de dates'
+openapi: 'GET /exchange/getMatchedVolume'
+---
+
+Renvoie le volume matché total du site pour une plage inclusive de **jours calendaires US-Eastern (ET)**.
+
+## Comment le volume est calculé {#how-volume-is-calculated}
+
+Chaque pari matché contribue les mises des **deux côtés** du matching :
+
+- la **mise du taker** (le montant matché), plus
+- la **mise du maker**, dérivée des cotes du taker — à cotes taker positives c'est `stake × odds / 100`, à cotes taker négatives c'est `stake × −100 / odds`.
+
+De façon équivalente, du point de vue de l'une ou l'autre partie, chaque pari matché contribue **`risk + win`** — votre mise plus votre profit potentiel, parce que votre profit potentiel est exactement la mise de la contrepartie. Une prise de $100 à +150 compte pour $250 de volume ($100 côté taker + $150 côté maker).
+
+<Note>
+Le volume utilise les mises brutes avant commission. Les champs `risk` / `win` de [Récupérer les paris matchés](/fr/pages/rest/user/get-matched-bets) intègrent la commission, donc leur somme différera légèrement de cet endpoint.
+</Note>
+
+## Fraîcheur {#freshness}
+
+Les jours ET terminés sont lus depuis une archive quotidienne finalisée. Si la plage se termine aujourd'hui (un `endDate` postérieur à aujourd'hui est ramené à aujourd'hui), un agrégat en direct des matchings du jour s'y ajoute, si bien que la portion du jour courant se met à jour en temps réel au fil des paris matchés.
+
+## Requête {#request}
+
+`GET /exchange/getMatchedVolume`
+
+<ParamField query="startDate" type="string" required>
+  Premier jour calendaire ET de la plage, `YYYY-MM-DD` (inclus).
+</ParamField>
+
+<ParamField query="endDate" type="string" required>
+  Dernier jour calendaire ET de la plage, `YYYY-MM-DD` (inclus). Ne doit pas être antérieur à `startDate`. Les dates postérieures à aujourd'hui sont ramenées à aujourd'hui.
+</ParamField>
+
+<CodeGroup>
+```bash curl
+curl "https://api.4casters.io/exchange/getMatchedVolume?startDate=2026-08-10&endDate=2026-08-11" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+</CodeGroup>
+
+## Réponse {#response}
+
+<ResponseField name="data" type="object">
+  <Expandable title="data">
+    <ResponseField name="startDate" type="string">Écho de la date de début demandée.</ResponseField>
+    <ResponseField name="endDate" type="string">Écho de la date de fin demandée (avant écrêtage).</ResponseField>
+    <ResponseField name="matchedVolume" type="number">Volume matché total en USD : la somme des mises des deux côtés (risk + win) de chaque pari matché dans la plage.</ResponseField>
+  </Expandable>
+</ResponseField>
+
+```json Exemple de réponse
+{
+  "data": {
+    "startDate": "2026-08-10",
+    "endDate": "2026-08-11",
+    "matchedVolume": 6447933.012757301
+  }
+}
+```
+
+## Limites de débit {#rate-limits}
+
+Il n'y a pas de limite propre à cet endpoint — seule la [limite globale par IP](/fr/pages/rest/introduction#rate-limiting) (3,000 requêtes par minute glissante) s'applique. Pour des dashboards, interroger toutes les quelques secondes est largement suffisant ; notez que les jours finalisés ne changent jamais, donc seules les plages incluant aujourd'hui bénéficient d'un ré-interrogation.
+
+## Erreurs {#errors}
+
+| Statut | Signification |
+|---|---|
+| `400` | `startDate` / `endDate` manquant ou malformé (doit être `YYYY-MM-DD`), ou `startDate` après `endDate`. |
+| `401` | Token d'authentification manquant ou invalide. |
+| `429` | Limite de débit globale par IP dépassée. Respectez l'en-tête `Retry-After`. |
+| `503` | Le timeout serveur de 15 secondes a été atteint. Peut être retenté sans risque. |

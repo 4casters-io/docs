@@ -1,0 +1,69 @@
+---
+title: 'Introduction'
+description: 'API REST publique de l''exchange de paris peer-to-peer 4casters'
+---
+
+L'API REST 4casters vous permet de vous connecter, d'interroger les matchs et le carnet d'ordres, de placer / modifier / annuler des ordres et de lire votre historique de paris par programmation. C'est la même API qui alimente l'application web 4casters.
+
+## URL de base {#base-url}
+
+Tous les endpoints de cette section sont enracinés à :
+
+```
+https://api.4casters.io
+```
+
+## Conventions {#conventions}
+
+- **Transport** : HTTPS uniquement.
+- **Encodage** : JSON. Envoyez `Content-Type: application/json` sur chaque requête ayant un corps.
+- **Enveloppe de réponse** : à quelques exceptions bien signalées près (`/affiliate/getAffiliateCommission`, `/exchange/getOddsForAveragePrice`), chaque réponse réussie est enveloppée : `{ "data": <payload> }`.
+- **Identifiants** : les ids de match, de participant et d'ordre sont des chaînes `ObjectID` MongoDB (24 caractères hexadécimaux).
+- **Cotes** : toutes les cotes sont au format américain (négatives pour les favoris, positives pour les outsiders) sauf mention contraire.
+- **Temps** : tous les horodatages sont au format ISO 8601 avec `Z` (UTC).
+
+## Authentification {#authentication}
+
+Presque tous les endpoints exigent une authentification. Connectez-vous une fois via [POST `/user/login`](/fr/pages/rest/authentication), puis envoyez le token d'authentification renvoyé sur chaque requête — voir [Authentification](/fr/pages/rest/authentication) pour les détails.
+
+## Erreurs par ordre vs erreurs HTTP {#per-order-errors-vs-http-errors}
+
+Les endpoints « place » et « edit » acceptent des lots et renvoient des résultats par ordre. Une réponse HTTP `200` réussie peut quand même contenir des échecs d'ordres individuels dans `data.createdSessions[i]`. Voir le format d'erreur par ordre sur la page de chaque endpoint.
+
+Les erreurs de niveau HTTP (`4xx`, `5xx`) sont renvoyées sous la forme `{ "error": "<message>" }`.
+
+## Limitation de débit {#rate-limiting}
+
+Trois couches de limitation de débit s'appliquent :
+
+- **Globale, par IP** — chaque requête vers l'API est décomptée d'un budget par IP de **3,000 requêtes par fenêtre glissante de 60 secondes** (environ 50 requêtes/seconde en continu). Un dépassement renvoie `429` avec un en-tête `Retry-After` (en secondes) et le corps `{ "error": "Too many requests. Please try again later." }`.
+- **Routes d'authentification** (`/user/login`, réinitialisation de mot de passe, inscription) : throttling supplémentaire par IP et par compte.
+- **Routes de placement / modification / annulation** : limitées en plus par compte.
+
+Les endpoints de lecture n'ont pas de limite par compte — seul le plafond global par IP s'applique.
+
+## Timeouts {#timeouts}
+
+Les requêtes qui prennent plus de **15 secondes** côté serveur sont interrompues et renvoient `503` avec le corps `{ "error": { "message": "Network Error", "code": 503 } }`.
+
+## Mises à jour en temps réel {#real-time-updates}
+
+L'API REST se combine avec l'[API WebSocket de streaming](/fr/pages/streaming/introduction) pour les ticks du carnet d'ordres en temps réel et les événements d'exécution / de règlement par compte. Le token d'authentification renvoyé par `/user/login` fonctionne pour les deux.
+
+## Index des endpoints {#endpoint-index}
+
+<CardGroup cols={2}>
+  <Card title="Authentification" href="/fr/pages/rest/authentication">Se connecter et obtenir un token d'authentification.</Card>
+  <Card title="Utilisateur"      href="/fr/pages/rest/user/get-me">Informations de compte, solde, paris et ordres.</Card>
+  <Card title="Ordres"           href="/fr/pages/rest/orders/place-order">Placer, modifier, consulter et annuler des ordres.</Card>
+  <Card title="Marchés"          href="/fr/pages/rest/markets/get-orderbook">Explorer les ligues, les matchs, les participants et le carnet d'ordres.</Card>
+  <Card title="Affiliation"      href="/fr/pages/rest/affiliate/get-affiliate-commission">Commission d'affiliation.</Card>
+</CardGroup>
+
+## Collection Postman héritée {#legacy-postman-collection}
+
+La documentation précédente vivait sous forme de collection Postman. Elle est conservée pour référence, mais ces docs Mintlify sont désormais la source de vérité — la collection Postman peut être en retard sur les nouveaux endpoints, paramètres ou formats de réponse.
+
+<Card title="API 4Casters — collection Postman" icon="link" href="https://documenter.getpostman.com/view/6710109/U16gNmHG">
+  Voir la documentation Postman héritée
+</Card>

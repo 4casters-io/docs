@@ -1,0 +1,85 @@
+---
+title: 'Récupérer l''utilisateur courant'
+description: 'Lire le compte authentifié'
+openapi: 'GET /user/getMe'
+---
+
+Renvoie les informations de compte de l'utilisateur actuellement authentifié, y compris le solde, la limite de crédit, la responsabilité (liability) courante, le format de cotes par défaut et les indicateurs d'accès.
+
+## Requête {#request}
+
+`GET /user/getMe`
+
+Cet endpoint ne prend aucun paramètre. L'authentification est requise (voir [Authentification](/fr/pages/rest/authentication)).
+
+<CodeGroup>
+```bash curl
+curl https://api.4casters.io/user/getMe \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+</CodeGroup>
+
+## Réponse {#response}
+
+<ResponseField name="data" type="object">
+  <Expandable title="data">
+    <ResponseField name="user" type="object">
+      <Expandable title="user">
+        <ResponseField name="id" type="string">Id de l'utilisateur.</ResponseField>
+        <ResponseField name="username" type="string">Nom d'utilisateur du compte.</ResponseField>
+        <ResponseField name="type" type="string">Type de compte — `free`, `p2p`, `marketmaker` ou `agent`.</ResponseField>
+        <ResponseField name="oddsFormat" type="string">Format de cotes par défaut. `american` ou `decimal`.</ResponseField>
+        <ResponseField name="displayBalance" type="number">Solde courant (valeur d'affichage).</ResponseField>
+        <ResponseField name="creditLimit" type="number">Limite de crédit (négative pour les comptes à crédit).</ResponseField>
+        <ResponseField name="liability" type="number">Responsabilité ouverte courante sur l'ensemble des matchs.</ResponseField>
+        <ResponseField name="commissionCharged" type="number">Taux de commission facturé à ce compte.</ResponseField>
+        <ResponseField name="maxLiability" type="number">Plafond de responsabilité au niveau du compte.</ResponseField>
+        <ResponseField name="hasMarketMakerAccess" type="boolean">Indique si le compte peut accéder aux fonctionnalités de market-maker.</ResponseField>
+        <ResponseField name="isAdmin" type="boolean" />
+        <ResponseField name="isPro" type="boolean" />
+        <ResponseField name="isDeposit" type="boolean" />
+        <ResponseField name="isAlphaUser" type="boolean" />
+        <ResponseField name="defaultExpiry" type="integer">Expiration d'ordre par défaut, en minutes. `null` pour « pas de valeur par défaut ».</ResponseField>
+        <ResponseField name="defaultOffer" type="number">Taille d'offre par défaut au placement des ordres.</ResponseField>
+        <ResponseField name="sportsbookDefault" type="boolean" />
+        <ResponseField name="sportsbookMinimumDisplay" type="number" />
+        <ResponseField name="defaultRotationNumbers" type="boolean" />
+        <ResponseField name="displayRotationNumbers" type="boolean" />
+        <ResponseField name="viewOddsWithCommission" type="boolean" />
+        <ResponseField name="defaultSendOrderMessage" type="boolean" />
+        <ResponseField name="showChatLastMessage" type="boolean" />
+        <ResponseField name="yesNoSummary" type="boolean" />
+        <ResponseField name="accessCode" type="string">Code d'inscription du compte.</ResponseField>
+        <ResponseField name="p2pCode" type="string">S'il s'agit d'un compte agent P2P, le code que ses filleuls utilisent à l'inscription.</ResponseField>
+        <ResponseField name="createdAt" type="string">Horodatage ISO 8601 de création du compte.</ResponseField>
+        <ResponseField name="emailConfirmation" type="boolean">Indique si l'email du compte est confirmé.</ResponseField>
+      </Expandable>
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+### Exemple {#example}
+
+<CodeGroup>
+```json JSON
+{
+  "data": {
+    "user": {
+      "id": "5fe37acbb5a23600123662c1",
+      "username": "your_username",
+      "type": "p2p",
+      "oddsFormat": "american",
+      "displayBalance": 1250.50,
+      "creditLimit": 500,
+      "liability": -125.00,
+      "commissionCharged": 0.01,
+      "hasMarketMakerAccess": false,
+      "isAdmin": false,
+      "isPro": false,
+      "createdAt": "2020-12-23T17:14:09.000Z",
+      "emailConfirmation": true
+    }
+  }
+}
+```
+</CodeGroup>
