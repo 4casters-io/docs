@@ -19,7 +19,7 @@ if hasattr(sys.stdout, 'reconfigure'):        # Windows consoles default to cp12
     sys.stdout.reconfigure(encoding='utf-8', errors='replace')
 
 # Add new locales here. check-links.py has its own list -- keep them in step.
-LOCALES = ['es', 'zh-Hans', 'zh-Hant']
+LOCALES = ['es', 'zh-Hans', 'zh-Hant', 'ru', 'fr', 'pt-BR', 'pt', 'nl', 'it']
 
 # Inline code that is prose, not an API identifier, and so follows the
 # translated heading it names. Keep this list short and justified.

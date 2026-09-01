@@ -1,0 +1,38 @@
+---
+title: 'Получить ответственность по игре'
+description: 'Худший возможный убыток по одной игре'
+openapi: 'GET /user/getGameLiability'
+---
+
+Вычисляет **худшую возможную финансовую ответственность** вызывающего по одной игре с учётом каждой ставки на каждом рынке этой игры.
+
+Значение всегда `<= 0` — даже полностью захеджированная книга может понести убыток из-за отмен по дождю, приостановок или дисквалификаций.
+
+## Запрос {#request}
+
+`GET /user/getGameLiability`
+
+<ParamField query="gameID" type="string" required>Id игры, для которой вычисляется ответственность.</ParamField>
+
+<CodeGroup>
+```bash curl
+curl "https://api.4casters.io/user/getGameLiability?gameID=657f8ea1ea0ce6f62c1fe37d" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+</CodeGroup>
+
+## Ответ {#response}
+
+<ResponseField name="data.liability" type="number">
+  Худший возможный убыток в валюте аккаунта. Всегда `<= 0`. Возвращает `0`, когда у вызывающего нет ставок на игру.
+</ResponseField>
+
+### Пример {#example}
+
+<CodeGroup>
+```json JSON
+{
+  "data": { "liability": -125.50 }
+}
+```
+</CodeGroup>

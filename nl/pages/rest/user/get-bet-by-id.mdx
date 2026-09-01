@@ -1,0 +1,76 @@
+---
+title: 'Weddenschap op id ophalen'
+description: 'Eén weddenschap opzoeken op id of transactie-id'
+openapi: 'GET /user/getBetByID'
+---
+
+Zoek één weddenschap op (gematcht, afgewikkeld of open offer) die van de aanroeper is. Geef **ofwel** `id` ofwel `txID` mee, niet allebei.
+
+## Verzoek {#request}
+
+`GET /user/getBetByID`
+
+<ParamField query="id" type="string">
+  Weddenschap-`id` uit een lijst-endpoint zoals `/user/getMatchedBets`.
+</ParamField>
+<ParamField query="txID" type="string">
+  Transactie-id, bijv. de `wagerRequestID` of `txID` die `/session/v3/place` teruggeeft.
+</ParamField>
+
+Je moet precies één van `id` of `txID` meegeven.
+
+<CodeGroup>
+```bash curl (op txID)
+curl "https://api.4casters.io/user/getBetByID?txID=64824b329556daa319747e31" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+
+```bash curl (op id)
+curl "https://api.4casters.io/user/getBetByID?id=6494ca85c9346058f35b2b1e" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+</CodeGroup>
+
+## Antwoord {#response}
+
+De vorm van `bet` hangt af van de huidige status van de weddenschap:
+
+- Een **afgewikkelde** weddenschap geeft de [GradedWager](/nl/pages/rest/user/get-graded-wagers#response)-vorm terug, inclusief `risk`, `win`, `fee` en `result`.
+- Een **gematchte** weddenschap geeft de [MatchedBet](/nl/pages/rest/user/get-matched-bets#response)-vorm terug.
+- Een **open offer** geeft de [UnmatchedOrder](/nl/pages/rest/user/get-unmatched-orders#response)-vorm terug.
+
+Merk op dat dit endpoint, anders dan de meeste, de weddenschap op het **hoogste niveau** teruggeeft (niet onder `data`).
+
+### Voorbeeld {#example}
+
+<CodeGroup>
+```json JSON (open offer)
+{
+  "bet": {
+    "id": "667c1e870c0d22ec36ccb438",
+    "txID": "667c1e870c0d22ec36ccb439",
+    "type": "moneyline",
+    "bet": 222,
+    "graded": false,
+    "closed": false,
+    "createdAt": "2024-06-26T13:58:31.224Z",
+    "origin": "offer",
+    "wagerRequestID": "667c1e870c...",
+    "game": {
+      "id": "6679ee8c9f05a804e064b6ed",
+      "league": "FED-EX-500",
+      "sport": "golf",
+      "start": "2024-06-27T10:45:00.000Z",
+      "ended": false,
+      "participants": [/* ... */]
+    }
+  }
+}
+```
+</CodeGroup>
+
+## Fouten {#errors}
+
+| Status | Betekenis |
+| ------ | ------- |
+| `400`  | Zowel `id` als `txID` ontbreekt, of er is geen weddenschap gevonden voor de opgegeven identifier. |

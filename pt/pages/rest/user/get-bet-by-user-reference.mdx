@@ -1,0 +1,49 @@
+---
+title: 'Obter aposta por referência de utilizador'
+description: 'Consultar todas as apostas ligadas a um identificador definido pelo cliente'
+openapi: 'GET /user/getBetByUserReference'
+---
+
+Consulte todas as apostas ligadas a um `userReference`. `userReference` é uma cadeia opcional definida pelo cliente que pode anexar a uma ordem no momento da colocação para a acompanhar do seu lado — este endpoint é a contraparte de leitura.
+
+A resposta separa os resultados em três grupos:
+
+- `unmatched` — ofertas abertas desta referência que ainda estão em espera no livro.
+- `matched`   — apostas correspondidas (não avaliadas) desta referência.
+- `graded`    — apostas avaliadas (liquidadas) desta referência, incluindo `risk`, `win`, `fee` e `result`.
+
+## Pedido {#request}
+
+`GET /user/getBetByUserReference`
+
+<ParamField query="userReference" type="string" required>
+  Referência definida pelo cliente, passada no momento da colocação.
+</ParamField>
+<ParamField query="gameID" type="string" required>
+  Limita a consulta a um único jogo.
+</ParamField>
+
+<CodeGroup>
+```bash curl
+curl "https://api.4casters.io/user/getBetByUserReference?userReference=my-order-1&gameID=67d1c942215edc7ee0c806ef" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+</CodeGroup>
+
+## Resposta {#response}
+
+<ResponseField name="data.unmatched" type="array">
+  Ordens abertas — mesma forma de [Obter ordens não correspondidas](/pt/pages/rest/user/get-unmatched-orders#response).
+</ResponseField>
+<ResponseField name="data.matched" type="array">
+  Apostas correspondidas (não avaliadas) — mesma forma de [Obter apostas correspondidas](/pt/pages/rest/user/get-matched-bets#response).
+</ResponseField>
+<ResponseField name="data.graded" type="array">
+  Apostas avaliadas (liquidadas) — mesma forma de [Obter apostas avaliadas](/pt/pages/rest/user/get-graded-wagers#response).
+</ResponseField>
+
+## Erros {#errors}
+
+| Estado | Significado |
+| ------ | ------- |
+| `408`  | `userReference` ou `gameID` em falta. |

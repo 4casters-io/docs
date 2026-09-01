@@ -1,0 +1,46 @@
+---
+title: 'Alle orders voor een competitie annuleren'
+description: 'Asynchroon elke openstaande order in een competitie annuleren'
+openapi: 'POST /session/cancelAllForLeague'
+---
+
+Plan de annulering van elke openstaande order in een competitie. Dit endpoint **verstuurt asynchroon** — het bevestigt onmiddellijk met `{ ordersReceived: true }` en de annuleringen gebeuren op de achtergrond.
+
+Wil je weten welke orders zijn geannuleerd, vraag dan daarna [Niet-gematchte orders ophalen](/nl/pages/rest/user/get-unmatched-orders) op of abonneer je op de user feed van de [WebSocket Streaming-API](/nl/pages/streaming/user-feed).
+
+## Verzoek {#request}
+
+`POST /session/cancelAllForLeague`
+
+<ParamField body="league" type="string" required>
+  Competitiecode. Haal de lijst op via `GET /exchange/getLeagues`. Hoofdletterongevoelig.
+</ParamField>
+
+<CodeGroup>
+```bash curl
+curl -X POST https://api.4casters.io/session/cancelAllForLeague \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{ "league": "NBA" }'
+```
+</CodeGroup>
+
+## Antwoord {#response}
+
+<ResponseField name="data.ordersReceived" type="boolean">
+  Altijd `true` bij succes. De annuleringen worden asynchroon verwerkt.
+</ResponseField>
+
+### Voorbeeld {#example}
+
+<CodeGroup>
+```json JSON
+{ "data": { "ordersReceived": true } }
+```
+</CodeGroup>
+
+## Fouten {#errors}
+
+| Status | Betekenis |
+| ------ | ------- |
+| `400`  | `league` ontbreekt, is geen string, of is onbekend. |

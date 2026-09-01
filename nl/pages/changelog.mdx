@@ -1,0 +1,42 @@
+---
+title: 'Changelog'
+description: 'Belangrijke, voor clients zichtbare wijzigingen aan de 4casters-API''s.'
+---
+
+Dit changelog registreert wijzigingen aan de publieke API's van 4casters die zichtbaar zijn voor integrators. Interne refactors, performancefixes die het gedrag niet veranderen en infrastructuurwijzigingen worden bewust weggelaten.
+
+Conventies:
+
+- Nieuwste items eerst. Datums zijn ISO `YYYY-MM-DD`.
+- Elk item is getagd met de betrokken API.
+- Wijzigingen worden gegroepeerd onder `Toegevoegd`, `Gewijzigd`, `Opgelost`, `Verouderd` of `Verwijderd` (secties die niet van toepassing zijn, worden weggelaten).
+- Brekende wijzigingen krijgen de tag `Breaking`.
+
+---
+
+<Update label="2026-08-13" tags={["REST-API", "Orders-API"]}>
+  ### Toegevoegd {#added}
+  - **`fillOrKill`-ordertype.** Alles-of-niets-taker-order: de volledige `bet` moet onmiddellijk matchen, anders wordt de hele order geweigerd en worden eventuele gedeeltelijke fills teruggedraaid, zodat je nooit gedeeltelijk gevuld achterblijft. Ondersteund op zowel het REST- als het WebSocket-endpoint voor plaatsen. Zie [Ordertypen](/nl/pages/rest/orders/place-order#order-types).
+
+  ### Opgelost {#fixed}
+  - **Documentatie van `fillAndKill` gecorrigeerd.** Het stond beschreven als "onmiddellijk matchen tegen jouw prijs of weigeren", wat las als alles-of-niets. In werkelijkheid vult `fillAndKill` de omvang die beschikbaar is en annuleert het de rest — een **gedeeltelijke** fill is een geslaagd resultaat, en de order wordt alleen geweigerd wanneer er helemaal geen matchbare liquiditeit is. Het gedrag is ongewijzigd; alleen de documentatie was fout. Gebruik het nieuwe `fillOrKill` als je echte alles-of-niets-uitvoering nodig hebt.
+</Update>
+
+<Update label="2026-07-30" tags={["REST-API"]}>
+  ### Toegevoegd {#added-2}
+  - **`GET /exchange/getMatchedVolume`.** Nieuw endpoint dat het totale sitebrede gematchte volume teruggeeft voor een inclusief bereik van ET-kalenderdagen. Elke gematchte weddenschap telt de inzetten van beide kanten mee (risico + winst, vóór commissie); bereiken die vandaag eindigen bevatten een live aggregaat van de lopende dag. Zie [Gematcht volume ophalen](/nl/pages/rest/markets/get-matched-volume).
+</Update>
+
+<Update label="2026-07-15" tags={["Streaming-API", "User feed"]}>
+  ### Opgelost {#fixed-2}
+  - **Replay van `GET /v2/user/messages` geeft nu berichten terug.** Het v2-replay-endpoint van de user feed gaf voorheen altijd lege lijsten terug, waardoor gap-herstel na een weggevallen verbinding stilletjes niets deed. Gereplayde berichten komen binnen in exact de vorm die de WebSocket levert. Zie [Gemiste berichten opnieuw afspelen](/nl/pages/streaming/user-feed#replaying-missed-messages).
+</Update>
+
+<Update label="2026-04-28" tags={["Streaming-API", "Price feed"]}>
+  ### Toegevoegd {#added-3}
+  - **Abonneren op `gameID`, `league` of `sport` op de price feed.** Clients die verbonden zijn met `wss://streaming-api.4casters.io/price-stream` kunnen nu JSON-commando's `subscribe`, `unsubscribe` en `subscribeAll` sturen om de feed te beperken tot specifieke wedstrijden, competities of sporten. Zie [Abonnementen](/nl/pages/streaming/price-feed#subscriptions) voor de volledige commandovorm en de routeringssemantiek.
+  - **`parentGameID`-fanout.** Abonnees van een parent-`gameID` ontvangen ook updates voor onderliggende wedstrijden waarvan de `parentGameID` overeenkomt (bijv. F5-MLB-derivaten bereiken abonnees van de parent-wedstrijd).
+
+  ### Gewijzigd {#changed}
+  - **Achterwaarts compatibel.** Clients die nooit een subscribe-commando sturen, blijven in broadcast-all-modus en ontvangen elke update zoals voorheen — er zijn geen integratiewijzigingen nodig.
+</Update>

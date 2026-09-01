@@ -1,0 +1,76 @@
+---
+title: 'Obter aposta por ID'
+description: 'Consultar uma única aposta por id ou id de transação'
+openapi: 'GET /user/getBetByID'
+---
+
+Consulte uma única aposta (correspondida, avaliada ou oferta aberta) pertencente ao chamador. Passe **ou** `id` ou `txID`, não ambos.
+
+## Pedido {#request}
+
+`GET /user/getBetByID`
+
+<ParamField query="id" type="string">
+  O `id` da aposta, obtido num endpoint de listagem como `/user/getMatchedBets`.
+</ParamField>
+<ParamField query="txID" type="string">
+  Id de transação, p. ex. o `wagerRequestID` ou o `txID` devolvido por `/session/v3/place`.
+</ParamField>
+
+Tem de passar exatamente um de `id` ou `txID`.
+
+<CodeGroup>
+```bash curl (por txID)
+curl "https://api.4casters.io/user/getBetByID?txID=64824b329556daa319747e31" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+
+```bash curl (por id)
+curl "https://api.4casters.io/user/getBetByID?id=6494ca85c9346058f35b2b1e" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+</CodeGroup>
+
+## Resposta {#response}
+
+A forma de `bet` depende do estado atual da aposta:
+
+- Uma aposta **avaliada** devolve a forma [GradedWager](/pt/pages/rest/user/get-graded-wagers#response), incluindo `risk`, `win`, `fee` e `result`.
+- Uma aposta **correspondida** devolve a forma [MatchedBet](/pt/pages/rest/user/get-matched-bets#response).
+- Uma **oferta aberta** devolve a forma [UnmatchedOrder](/pt/pages/rest/user/get-unmatched-orders#response).
+
+Note que, ao contrário da maioria dos endpoints, este devolve a aposta ao **nível de topo** (não dentro de `data`).
+
+### Exemplo {#example}
+
+<CodeGroup>
+```json JSON (oferta aberta)
+{
+  "bet": {
+    "id": "667c1e870c0d22ec36ccb438",
+    "txID": "667c1e870c0d22ec36ccb439",
+    "type": "moneyline",
+    "bet": 222,
+    "graded": false,
+    "closed": false,
+    "createdAt": "2024-06-26T13:58:31.224Z",
+    "origin": "offer",
+    "wagerRequestID": "667c1e870c...",
+    "game": {
+      "id": "6679ee8c9f05a804e064b6ed",
+      "league": "FED-EX-500",
+      "sport": "golf",
+      "start": "2024-06-27T10:45:00.000Z",
+      "ended": false,
+      "participants": [/* ... */]
+    }
+  }
+}
+```
+</CodeGroup>
+
+## Erros {#errors}
+
+| Estado | Significado |
+| ------ | ------- |
+| `400`  | `id` e `txID` ambos em falta, ou nenhuma aposta encontrada para o identificador fornecido. |

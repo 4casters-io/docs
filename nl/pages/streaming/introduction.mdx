@@ -1,0 +1,37 @@
+---
+title: '4casters Streaming-API'
+---
+
+De 4casters streaming-API levert realtime gebruikers- en marktupdates over een kale WebSocket-verbinding.
+
+## Endpoints {#endpoints}
+- **User feed**: `wss://streaming-api.4casters.io/v2/user`
+- **Price feed**: `wss://streaming-api.4casters.io/price-stream`
+
+De price feed zendt standaard alle marktupdates uit. Clients kunnen de stream optioneel beperken tot specifieke wedstrijden, competities of sporten — zie [Abonnementen](/nl/pages/streaming/price-feed#subscriptions).
+
+## Auth {#auth}
+
+Beide feeds authenticeren met een 4Casters-token. Stuur het token in de
+`Authorization`-header op de WebSocket-handshake. De server leidt de gebruiker
+af uit het token — **geen gebruikersnaam in de URL**.
+
+### Een token ophalen {#get-a-token}
+
+Log in met je 4Casters-gebruikersnaam en -wachtwoord door het endpoint `/user/login`
+van de 4Casters REST-API aan te roepen. Het antwoord bevat een token dat je
+hier kunt gebruiken.
+
+Zie [`POST /user/login` in de 4Casters REST-API-docs](/nl/pages/rest/authentication).
+
+### Verbinden {#connect}
+
+<CodeGroup>
+```javascript JavaScript
+const WebSocket = require('ws');
+const token = process.env.FOURCASTERS_TOKEN;
+const ws = new WebSocket('wss://streaming-api.4casters.io/v2/user', {
+  headers: { Authorization: token },
+});
+```
+</CodeGroup>

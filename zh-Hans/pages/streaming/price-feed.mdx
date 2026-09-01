@@ -135,7 +135,7 @@ connectPriceFeed();
 
 `/price-stream` 上的每条消息都以二元组 `[type, payload]` 到达。会广播三种消息类型。
 
-### `orderUpdate`
+### `orderUpdate` {#orderupdate}
 
 任意市场中的订单发生变化时发出（新建、修改、成交或取消）。载荷仅包含接收用户有权看到的 `sideOrders`（自己的订单以及可成交的对手方）。
 
@@ -266,7 +266,7 @@ connectPriceFeed();
 ```
 </CodeGroup>
 
-### `gameUpdate`
+### `gameUpdate` {#gameupdate}
 
 赛事被创建或其状态发生变化时发出（盘口开盘、收盘、开赛时间更新）。载荷为完整渲染后的赛事对象。
 
@@ -302,7 +302,7 @@ connectPriceFeed();
 
 已知的 `messageType` 值：`marketOpen`、`marketClosed`。将该字段视为可扩展，并忽略未知值。
 
-### `matchedVolumeUpdate`
+### `matchedVolumeUpdate` {#matchedvolumeupdate}
 
 某场赛事的总成交量发生变化时发出。
 

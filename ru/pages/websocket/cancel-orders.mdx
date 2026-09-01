@@ -1,0 +1,289 @@
+---
+title: 'Отмена ордеров'
+---
+
+Поддерживаются четыре варианта отмены. Все они отвечают одним и тем же конвертом: `{ requestID, data: [ ...CancelResponsePayload ] }`.
+
+## Полезная нагрузка ответа на отмену {#cancel-response-payload}
+
+Каждая успешная отмена возвращает одну или несколько записей такого вида. Обратите внимание, что регистр имён полей меняется между запросом (`orderId`/`gameId`, строчная `d`) и ответом (`orderID`/`gameID`, прописные `ID`).
+
+<CodeGroup>
+```json JSON
+{
+  "success": true,
+  "orderID": "67f45377c18c6697c172afa4",
+  "odds": -110,
+  "filled": 0,
+  "offered": 100,
+  "remaining": 100,
+  "side": "5c12bc1ce0daba000f47ba8b",
+  "number": -3.5,
+  "gameID": "688c0516fbc14da0c202d426",
+  "userReference": "client-ref-001",
+  "description": "Dallas Mavericks +3.5"
+}
+```
+</CodeGroup>
+
+<ResponseField name="success" type="boolean">
+  `true`, когда ордер отменён.
+</ResponseField>
+<ResponseField name="orderID" type="string">
+  ID отменённого ордера.
+</ResponseField>
+<ResponseField name="filled" type="number">
+  Сумма, которая уже была исполнена до того, как прошла отмена.
+</ResponseField>
+<ResponseField name="offered" type="number">
+  Всегда `0` после отмены — предлагаемая сторона сводится к нулю.
+</ResponseField>
+<ResponseField name="remaining" type="number">
+  Сумма, которая была несведённой на момент отмены.
+</ResponseField>
+<ResponseField name="odds" type="number">
+  Коэффициенты отменённого ордера в американском формате, с точки зрения maker.
+</ResponseField>
+<ResponseField name="side" type="string">
+  ID участника (moneyline — ставка на победителя, spread — фора) или `over`/`under` (total — тотал).
+</ResponseField>
+<ResponseField name="number" type="number">
+  Число форы или тотала; `null` для moneyline.
+</ResponseField>
+<ResponseField name="gameID" type="string">
+  Игра, на которую был выставлен отменённый ордер.
+</ResponseField>
+<ResponseField name="userReference" type="string">
+  `userReference`, заданный вами при размещении ордера, если он был.
+</ResponseField>
+<ResponseField name="description" type="string">
+  Человекочитаемое описание ставки (например, `"Dallas Mavericks +3.5"`).
+</ResponseField>
+
+## Отмена по ID {#cancel-by-id}
+
+Отмена одного ордера по его ID.
+
+### Запрос {#request}
+
+<CodeGroup>
+```json JSON
+[
+  "cancelById",
+  {
+    "requestID": "YOUR_REQUEST_ID",
+    "orderId": "ORDER_ID_TO_CANCEL"
+  }
+]
+```
+</CodeGroup>
+
+### Ответ {#response}
+
+<CodeGroup>
+```json JSON
+{
+  "requestID": "YOUR_REQUEST_ID",
+  "data": [
+    {
+      "success": true,
+      "orderID": "67f45377c18c6697c172afa4",
+      "odds": -110,
+      "filled": 0,
+      "offered": 0,
+      "remaining": 100,
+      "side": "5c12bc1ce0daba000f47ba8b",
+      "number": -3.5,
+      "gameID": "688c0516fbc14da0c202d426",
+      "userReference": "client-ref-001",
+      "description": "Dallas Mavericks +3.5"
+    }
+  ]
+}
+```
+</CodeGroup>
+
+## Отмена нескольких {#cancel-multiple}
+
+Отмена определённого набора ордеров по ID.
+
+### Запрос {#request-2}
+
+<CodeGroup>
+```json JSON
+[
+  "cancelMultiple",
+  {
+    "requestID": "YOUR_REQUEST_ID",
+    "orderIDs": [
+      "ORDER_ID_1",
+      "ORDER_ID_2",
+      "ORDER_ID_3"
+    ]
+  }
+]
+```
+</CodeGroup>
+
+### Ответ {#response-2}
+
+`data` содержит по одной записи на каждый ID ордера; проверяйте флаг `success` у каждой.
+
+<CodeGroup>
+```json JSON
+{
+  "requestID": "YOUR_REQUEST_ID",
+  "data": [
+    {
+      "success": true,
+      "orderID": "ORDER_ID_1",
+      "odds": -110,
+      "filled": 0,
+      "offered": 0,
+      "remaining": 100,
+      "side": "5c12bc1ce0daba000f47ba8b",
+      "number": -3.5,
+      "gameID": "688c0516fbc14da0c202d426",
+      "userReference": "",
+      "description": "Dallas Mavericks +3.5"
+    },
+    {
+      "success": false,
+      "orderID": "ORDER_ID_2",
+      "description": "order already cancelled"
+    }
+  ]
+}
+```
+</CodeGroup>
+
+## Отмена всех по игре {#cancel-all-by-game}
+
+Отмена всех ваших открытых ордеров на одну игру. При желании сузьте отмену до конкретного рынка, передав `type`, `side` и/или `market`.
+
+### Запрос {#request-3}
+
+<CodeGroup>
+```json JSON
+[
+  "cancelAllByGame",
+  {
+    "requestID": "YOUR_REQUEST_ID",
+    "gameId": "GAME_ID_TO_CANCEL",
+    "type": "spread",
+    "side": "5c12bc1ce0daba000f47ba8b",
+    "market": "main"
+  }
+]
+```
+</CodeGroup>
+
+<ResponseField name="gameId" type="string" required>
+  Игра, ордера по которой нужно отменить.
+</ResponseField>
+<ResponseField name="type" type="string">
+  Необязательный — фильтр по одному типу рынка: `moneyline`, `spread`, `total` или `moneyline1x2`.
+</ResponseField>
+<ResponseField name="side" type="string">
+  Необязательный — ID участника (moneyline/spread) или `over`/`under` (тоталы).
+</ResponseField>
+<ResponseField name="market" type="string">
+  Необязательный — идентификатор рынка (например, `main`).
+</ResponseField>
+
+### Ответ {#response-3}
+
+<CodeGroup>
+```json JSON
+{
+  "requestID": "YOUR_REQUEST_ID",
+  "data": [
+    {
+      "success": true,
+      "orderID": "67f45377c18c6697c172afa4",
+      "odds": -110,
+      "filled": 0,
+      "offered": 0,
+      "remaining": 100,
+      "side": "5c12bc1ce0daba000f47ba8b",
+      "number": -3.5,
+      "gameID": "688c0516fbc14da0c202d426",
+      "userReference": "",
+      "description": "Dallas Mavericks +3.5"
+    }
+  ]
+}
+```
+</CodeGroup>
+
+## Отмена всех {#cancel-all}
+
+Отмена всех открытых ордеров на аккаунте.
+
+### Запрос {#request-4}
+
+<CodeGroup>
+```json JSON
+[
+  "cancelAll",
+  {
+    "requestID": "YOUR_REQUEST_ID"
+  }
+]
+```
+</CodeGroup>
+
+### Ответ {#response-4}
+
+<CodeGroup>
+```json JSON
+{
+  "requestID": "YOUR_REQUEST_ID",
+  "data": [
+    {
+      "success": true,
+      "orderID": "67f45377c18c6697c172afa4",
+      "odds": -110,
+      "filled": 0,
+      "offered": 0,
+      "remaining": 100,
+      "side": "5c12bc1ce0daba000f47ba8b",
+      "number": -3.5,
+      "gameID": "688c0516fbc14da0c202d426",
+      "userReference": "",
+      "description": "Dallas Mavericks +3.5"
+    }
+  ]
+}
+```
+</CodeGroup>
+
+## Ошибки {#errors}
+
+Когда отмена не может быть обработана, сервер отвечает стандартным конвертом ошибки (без поля `data`):
+
+<CodeGroup>
+```json JSON
+{
+  "requestID": "YOUR_REQUEST_ID",
+  "error": "order not found"
+}
+```
+</CodeGroup>
+
+Частые значения `error`:
+
+| Ошибка | Когда |
+| --- | --- |
+| `invalid order ID format` | `orderId` в `cancelById` — не валидный ObjectID. |
+| `order not found` | Ордер с таким ID не существует. |
+| `unauthorized: order does not belong to user` | Вы пытаетесь отменить ордер другого пользователя. |
+| `order already cancelled` | Ордер уже был отменён. |
+| `order is expired` | Срок ордера истёк до того, как прошла отмена. |
+| `order already graded` | Ордер уже рассчитан (graded). |
+| `game not found` | Указанная игра отсутствует в кеше. |
+| `Failed to process cancelMultiple` | Непредвиденная ошибка при обработке пакета `cancelMultiple`. |
+| `Failed to process cancelAll` | Непредвиденная ошибка при обработке `cancelAll`. |
+| `Failed to process cancelAllByGame` | Непредвиденная ошибка при обработке `cancelAllByGame`. |
+
+Для пакетных отмен (`cancelMultiple`, `cancelAllByGame`, `cancelAll`) отказы по отдельным ордерам появляются в `data` с `success: false` и `description` с указанием причины — только `error` на уровне конверта означает, что не удался весь запрос.

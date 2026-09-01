@@ -1,0 +1,80 @@
+---
+title: 'Получить игры'
+description: 'Список активных игр лиги'
+openapi: 'GET /exchange/v2/getGames'
+---
+
+Возвращает все активные игры лиги. Ответ **не** включает книгу ордеров или какие-либо цены — для этого вызовите [Получить книгу ордеров](/ru/pages/rest/markets/get-orderbook).
+
+## Запрос {#request}
+
+`GET /exchange/v2/getGames`
+
+<ParamField query="league" type="string" required>
+  Код лиги из [Получить лиги](/ru/pages/rest/markets/get-leagues). Используйте специальное значение `upcoming`, чтобы получить все предстоящие игры по всем лигам.
+</ParamField>
+<ParamField query="sport" type="string">
+  Необязательный фильтр по виду спорта.
+</ParamField>
+
+<CodeGroup>
+```bash curl
+curl "https://api.4casters.io/exchange/v2/getGames?league=NBA" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+</CodeGroup>
+
+## Ответ {#response}
+
+<ResponseField name="data.games" type="array">
+  <Expandable title="Game">
+    <ResponseField name="id"             type="string">Id игры.</ResponseField>
+    <ResponseField name="parentGameID"   type="string">Id родительской игры, если это дочерний рынок (пропсы, альтернативные периоды).</ResponseField>
+    <ResponseField name="cheapDataUID"   type="string">Стабильный межсистемный идентификатор игры (используется для корреляции линий).</ResponseField>
+    <ResponseField name="league"         type="string" />
+    <ResponseField name="sport"          type="string" />
+    <ResponseField name="start"          type="string">Время начала в ISO 8601.</ResponseField>
+    <ResponseField name="ended"          type="boolean" />
+    <ResponseField name="live"           type="boolean" />
+    <ResponseField name="featured"       type="boolean" />
+    <ResponseField name="eventName"      type="string" />
+    <ResponseField name="tournamentName" type="string" />
+    <ResponseField name="periodName"     type="string">Например, `Full Time`, `1H`, `Set 1`.</ResponseField>
+    <ResponseField name="isSpecials"     type="boolean">`true` для фьючерсов и других специальных рынков.</ResponseField>
+    <ResponseField name="participants"   type="array">Массив из двух элементов `[away, home]`. Каждый участник имеет `id`, `longName`, `shortName`, `homeAway`, `mainPitcher`, `rotationNumber`, `futuresSide`.</ResponseField>
+  </Expandable>
+</ResponseField>
+
+### Пример {#example}
+
+<CodeGroup>
+```json JSON
+{
+  "data": {
+    "games": [
+      {
+        "id": "6266c12172aefcf0033374ce",
+        "parentGameID": null,
+        "cheapDataUID": "32620-79238-2022-04-26",
+        "league": "NHL",
+        "sport": "hockey",
+        "start": "2022-04-26T18:00:00.000Z",
+        "ended": false,
+        "live": false,
+        "featured": false,
+        "participants": [
+          { "id": "60747bc471b5071a80ca0ac8", "longName": "Carolina Hurricanes", "shortName": "CAR", "homeAway": "away", "mainPitcher": null, "rotationNumber": "25", "futuresSide": "" },
+          { "id": "607349daf6d3364eb69604f6", "longName": "New York Rangers",    "shortName": "NEW", "homeAway": "home", "mainPitcher": null, "rotationNumber": "26", "futuresSide": "" }
+        ]
+      }
+    ]
+  }
+}
+```
+</CodeGroup>
+
+## Ошибки {#errors}
+
+| Статус | Значение |
+| ------ | ------- |
+| `400`  | `league` обязательна. |

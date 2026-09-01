@@ -1,0 +1,46 @@
+---
+title: 'Отмена всех ордеров в лиге'
+description: 'Асинхронная отмена каждого открытого ордера в лиге'
+openapi: 'POST /session/cancelAllForLeague'
+---
+
+Планирует отмену каждого открытого ордера в лиге. Этот эндпоинт **отправляет задачу асинхронно** — он немедленно подтверждает получение ответом `{ ordersReceived: true }`, а отмены происходят в фоне.
+
+Если вам нужно знать, какие ордера были отменены, обратитесь затем к [Получить несведённые ордера](/ru/pages/rest/user/get-unmatched-orders) или подпишитесь на фид пользователя в [стриминговом WebSocket API](/ru/pages/streaming/user-feed).
+
+## Запрос {#request}
+
+`POST /session/cancelAllForLeague`
+
+<ParamField body="league" type="string" required>
+  Код лиги. Список можно получить из `GET /exchange/getLeagues`. Нечувствителен к регистру.
+</ParamField>
+
+<CodeGroup>
+```bash curl
+curl -X POST https://api.4casters.io/session/cancelAllForLeague \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{ "league": "NBA" }'
+```
+</CodeGroup>
+
+## Ответ {#response}
+
+<ResponseField name="data.ordersReceived" type="boolean">
+  Всегда `true` при успехе. Отмены обрабатываются асинхронно.
+</ResponseField>
+
+### Пример {#example}
+
+<CodeGroup>
+```json JSON
+{ "data": { "ordersReceived": true } }
+```
+</CodeGroup>
+
+## Ошибки {#errors}
+
+| Статус | Значение |
+| ------ | ------- |
+| `400`  | `league` отсутствует, не строка или неизвестна. |

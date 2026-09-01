@@ -1,0 +1,289 @@
+---
+title: 'Orders annuleren'
+---
+
+Er worden vier annuleervarianten ondersteund. Ze antwoorden allemaal met dezelfde envelop: `{ requestID, data: [ ...CancelResponsePayload ] }`.
+
+## Payload van het annuleerantwoord {#cancel-response-payload}
+
+Elke geslaagde annulering geeft één of meer entries terug met deze vorm. Let op: de schrijfwijze van de veldnamen wisselt tussen verzoek (`orderId`/`gameId`, kleine `d`) en antwoord (`orderID`/`gameID`, hoofdletters `ID`).
+
+<CodeGroup>
+```json JSON
+{
+  "success": true,
+  "orderID": "67f45377c18c6697c172afa4",
+  "odds": -110,
+  "filled": 0,
+  "offered": 100,
+  "remaining": 100,
+  "side": "5c12bc1ce0daba000f47ba8b",
+  "number": -3.5,
+  "gameID": "688c0516fbc14da0c202d426",
+  "userReference": "client-ref-001",
+  "description": "Dallas Mavericks +3.5"
+}
+```
+</CodeGroup>
+
+<ResponseField name="success" type="boolean">
+  `true` wanneer de order is geannuleerd.
+</ResponseField>
+<ResponseField name="orderID" type="string">
+  Id van de geannuleerde order.
+</ResponseField>
+<ResponseField name="filled" type="number">
+  Bedrag dat al gevuld was voordat de annulering aankwam.
+</ResponseField>
+<ResponseField name="offered" type="number">
+  Altijd `0` na een annulering — de aangeboden kant wordt afgebouwd naar nul.
+</ResponseField>
+<ResponseField name="remaining" type="number">
+  Bedrag dat niet-gematcht was op het moment van annuleren.
+</ResponseField>
+<ResponseField name="odds" type="number">
+  Odds van de geannuleerde order in Amerikaans formaat, vanuit het perspectief van de maker.
+</ResponseField>
+<ResponseField name="side" type="string">
+  Deelnemer-id (moneyline/spread) of `over`/`under` (totals).
+</ResponseField>
+<ResponseField name="number" type="number">
+  Spread- of total-getal; `null` voor moneylines.
+</ResponseField>
+<ResponseField name="gameID" type="string">
+  Wedstrijd waarop de geannuleerde order stond.
+</ResponseField>
+<ResponseField name="userReference" type="string">
+  De `userReference` die je bij het plaatsen van de order instelde, indien aanwezig.
+</ResponseField>
+<ResponseField name="description" type="string">
+  Leesbare beschrijving van de weddenschap (bijv. `"Dallas Mavericks +3.5"`).
+</ResponseField>
+
+## Annuleren op id {#cancel-by-id}
+
+Annuleer één order op zijn order-id.
+
+### Verzoek {#request}
+
+<CodeGroup>
+```json JSON
+[
+  "cancelById",
+  {
+    "requestID": "YOUR_REQUEST_ID",
+    "orderId": "ORDER_ID_TO_CANCEL"
+  }
+]
+```
+</CodeGroup>
+
+### Antwoord {#response}
+
+<CodeGroup>
+```json JSON
+{
+  "requestID": "YOUR_REQUEST_ID",
+  "data": [
+    {
+      "success": true,
+      "orderID": "67f45377c18c6697c172afa4",
+      "odds": -110,
+      "filled": 0,
+      "offered": 0,
+      "remaining": 100,
+      "side": "5c12bc1ce0daba000f47ba8b",
+      "number": -3.5,
+      "gameID": "688c0516fbc14da0c202d426",
+      "userReference": "client-ref-001",
+      "description": "Dallas Mavericks +3.5"
+    }
+  ]
+}
+```
+</CodeGroup>
+
+## Meerdere annuleren {#cancel-multiple}
+
+Annuleer een specifieke set orders op id.
+
+### Verzoek {#request-2}
+
+<CodeGroup>
+```json JSON
+[
+  "cancelMultiple",
+  {
+    "requestID": "YOUR_REQUEST_ID",
+    "orderIDs": [
+      "ORDER_ID_1",
+      "ORDER_ID_2",
+      "ORDER_ID_3"
+    ]
+  }
+]
+```
+</CodeGroup>
+
+### Antwoord {#response-2}
+
+`data` bevat één entry per order-id; controleer elke `success`-vlag.
+
+<CodeGroup>
+```json JSON
+{
+  "requestID": "YOUR_REQUEST_ID",
+  "data": [
+    {
+      "success": true,
+      "orderID": "ORDER_ID_1",
+      "odds": -110,
+      "filled": 0,
+      "offered": 0,
+      "remaining": 100,
+      "side": "5c12bc1ce0daba000f47ba8b",
+      "number": -3.5,
+      "gameID": "688c0516fbc14da0c202d426",
+      "userReference": "",
+      "description": "Dallas Mavericks +3.5"
+    },
+    {
+      "success": false,
+      "orderID": "ORDER_ID_2",
+      "description": "order already cancelled"
+    }
+  ]
+}
+```
+</CodeGroup>
+
+## Alles annuleren per wedstrijd {#cancel-all-by-game}
+
+Annuleer elke openstaande order die je op één wedstrijd hebt. Beperk de annulering optioneel tot een specifieke markt door `type`, `side` en/of `market` mee te geven.
+
+### Verzoek {#request-3}
+
+<CodeGroup>
+```json JSON
+[
+  "cancelAllByGame",
+  {
+    "requestID": "YOUR_REQUEST_ID",
+    "gameId": "GAME_ID_TO_CANCEL",
+    "type": "spread",
+    "side": "5c12bc1ce0daba000f47ba8b",
+    "market": "main"
+  }
+]
+```
+</CodeGroup>
+
+<ResponseField name="gameId" type="string" required>
+  Wedstrijd waarvan de orders geannuleerd moeten worden.
+</ResponseField>
+<ResponseField name="type" type="string">
+  Optioneel — filter op één markttype: `moneyline`, `spread`, `total` of `moneyline1x2`.
+</ResponseField>
+<ResponseField name="side" type="string">
+  Optioneel — deelnemer-id (moneyline/spread) of `over`/`under` (totals).
+</ResponseField>
+<ResponseField name="market" type="string">
+  Optioneel — marktidentifier (bijv. `main`).
+</ResponseField>
+
+### Antwoord {#response-3}
+
+<CodeGroup>
+```json JSON
+{
+  "requestID": "YOUR_REQUEST_ID",
+  "data": [
+    {
+      "success": true,
+      "orderID": "67f45377c18c6697c172afa4",
+      "odds": -110,
+      "filled": 0,
+      "offered": 0,
+      "remaining": 100,
+      "side": "5c12bc1ce0daba000f47ba8b",
+      "number": -3.5,
+      "gameID": "688c0516fbc14da0c202d426",
+      "userReference": "",
+      "description": "Dallas Mavericks +3.5"
+    }
+  ]
+}
+```
+</CodeGroup>
+
+## Alles annuleren {#cancel-all}
+
+Annuleer elke openstaande order op het account.
+
+### Verzoek {#request-4}
+
+<CodeGroup>
+```json JSON
+[
+  "cancelAll",
+  {
+    "requestID": "YOUR_REQUEST_ID"
+  }
+]
+```
+</CodeGroup>
+
+### Antwoord {#response-4}
+
+<CodeGroup>
+```json JSON
+{
+  "requestID": "YOUR_REQUEST_ID",
+  "data": [
+    {
+      "success": true,
+      "orderID": "67f45377c18c6697c172afa4",
+      "odds": -110,
+      "filled": 0,
+      "offered": 0,
+      "remaining": 100,
+      "side": "5c12bc1ce0daba000f47ba8b",
+      "number": -3.5,
+      "gameID": "688c0516fbc14da0c202d426",
+      "userReference": "",
+      "description": "Dallas Mavericks +3.5"
+    }
+  ]
+}
+```
+</CodeGroup>
+
+## Fouten {#errors}
+
+Wanneer een annulering niet verwerkt kan worden, antwoordt de server met de standaard foutenvelop (zonder `data`-veld):
+
+<CodeGroup>
+```json JSON
+{
+  "requestID": "YOUR_REQUEST_ID",
+  "error": "order not found"
+}
+```
+</CodeGroup>
+
+Veelvoorkomende `error`-waarden:
+
+| Fout | Wanneer |
+| --- | --- |
+| `invalid order ID format` | De `orderId` van `cancelById` is geen geldig ObjectID. |
+| `order not found` | Het order-id bestaat niet. |
+| `unauthorized: order does not belong to user` | Je probeert de order van een andere gebruiker te annuleren. |
+| `order already cancelled` | De order was al geannuleerd. |
+| `order is expired` | De order was verlopen voordat de annulering aankwam. |
+| `order already graded` | De order is al afgewikkeld (graded/gesettled). |
+| `game not found` | De genoemde wedstrijd zit niet in de cache. |
+| `Failed to process cancelMultiple` | Een onverwachte fout bij het verwerken van een `cancelMultiple`-batch. |
+| `Failed to process cancelAll` | Een onverwachte fout bij het verwerken van `cancelAll`. |
+| `Failed to process cancelAllByGame` | Een onverwachte fout bij het verwerken van `cancelAllByGame`. |
+
+Bij batchannuleringen (`cancelMultiple`, `cancelAllByGame`, `cancelAll`) verschijnen mislukkingen per order in `data` met `success: false` en een `description` met de reden — alleen een `error` op envelopniveau betekent dat het hele verzoek is mislukt.

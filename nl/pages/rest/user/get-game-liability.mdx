@@ -1,0 +1,38 @@
+---
+title: 'Wedstrijd-liability ophalen'
+description: 'Het maximale verlies op één wedstrijd'
+openapi: 'GET /user/getGameLiability'
+---
+
+Bereken de **liability** van de aanroeper — het maximale financiële verlies in het slechtste geval — voor één wedstrijd, rekening houdend met elke weddenschap op elke markt in de wedstrijd.
+
+De waarde is altijd `<= 0` — zelfs een volledig gehedged boek kan verlies lijden door afgelastingen, schorsingen of diskwalificaties.
+
+## Verzoek {#request}
+
+`GET /user/getGameLiability`
+
+<ParamField query="gameID" type="string" required>Het wedstrijd-id waarvoor de liability berekend moet worden.</ParamField>
+
+<CodeGroup>
+```bash curl
+curl "https://api.4casters.io/user/getGameLiability?gameID=657f8ea1ea0ce6f62c1fe37d" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+</CodeGroup>
+
+## Antwoord {#response}
+
+<ResponseField name="data.liability" type="number">
+  Het maximale verlies in de accountvaluta. Altijd `<= 0`. Geeft `0` terug wanneer de aanroeper geen weddenschappen op de wedstrijd heeft.
+</ResponseField>
+
+### Voorbeeld {#example}
+
+<CodeGroup>
+```json JSON
+{
+  "data": { "liability": -125.50 }
+}
+```
+</CodeGroup>

@@ -1,0 +1,387 @@
+---
+title: 'Размещение ордеров'
+description: 'Отправка одного или нескольких ордеров на биржу'
+openapi: 'POST /session/v3/place'
+---
+
+Отправьте один или несколько ордеров. Эндпоинт принимает пакет — результаты по каждому ордеру возвращаются в `data.createdSessions`, **позиционно** относительно вашего входного массива `orders`. Каждая запись — либо успешный результат `{ matched, unmatched }`, либо отказ `{ error, errorType }`.
+
+## Запрос {#request}
+
+`POST /session/v3/place`
+
+<CodeGroup>
+```bash curl
+curl -X POST https://api.4casters.io/session/v3/place \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "orders": [
+      {
+        "gameID": "688c0516fbc14da0c202d426",
+        "type": "moneyline",
+        "side": "5c12bc1ce0daba000f47ba8b",
+        "odds": -175,
+        "bet": 100,
+        "orderType": "post",
+        "userReference": "docs-example"
+      }
+    ]
+  }'
+```
+
+```json Тело JSON
+{
+  "orders": [
+    {
+      "gameID": "4CASTER_GAME_ID",
+      "type": "moneyline | spread | total | moneyline1x2",
+      "side": "PARTICIPANT_ID | over | under | yes | no",
+      "market": "PARTICIPANT_ID | draw",
+      "odds": -110,
+      "bet": 100,
+      "number": 3.5,
+      "orderType": "limit | post | postArb | fillAndKill | fillOrKill",
+      "expirationMinutes": 10,
+      "userReference": "OPTIONAL_CLIENT_SIDE_IDENTIFIER"
+    }
+  ]
+}
+```
+</CodeGroup>
+
+### Поля ордера {#order-fields}
+
+<Snippet file="ru/types/order-fields.mdx" />
+
+## Типы ордеров {#order-types}
+
+### `limit` {#limit}
+
+Тип ордера по умолчанию. Исполняется как taker против любой подходящей ликвидности по вашей цене или лучше (с комиссией taker), а остаток остаётся в книге на стороне maker. Ордер `limit` может завершиться полностью сведённым, полностью ожидающим или частично сведённым с ожидающим остатком.
+
+### `post` {#post}
+
+Создаёт ожидающее предложение. Если при размещении ордер **свёлся бы** с существующей ликвидностью, сервер отклоняет его (`rejected_order_type_rules`, например `"post order cannot have matches"`).
+
+### `postArb` {#postarb}
+
+Ведёт себя как `post`, но вы можете разместить ордер **даже если он свёлся бы**, **но только если** ваши американские коэффициенты находятся в пределах **1%** от коэффициентов ожидающего ордера, с которым произошло бы сведение. Если разница в цене больше 1%, размещение отклоняется.
+
+Примеры:
+
+- Лучшее предложение **+100**, и вы размещаете **+100** — `post` отклоняется (он свёлся бы); `postArb` разрешён.
+- Лучшее предложение **+200** — `postArb` по **+190** отклоняется (слишком далеко от **+200**). Примерно **+198** — на границе 1%-ной полосы относительно **+200**.
+- Лучший ордер **−200** — на отрицательной стороне полоса простирается примерно до **−202** (то же правило 1%).
+- При **+100** в книге **−101** — опорный предел на другой стороне для допуска 1%.
+
+`postArb` позволяет избежать **комиссий taker** по обычной сделке — на этом пути с вас не берут комиссии taker так, как если бы вы забрали ожидающую ликвидность в роли taker.
+
+Ордера, размещённые как `postArb`, помечаются флагом `isPostArb: true` в их обновлениях в [фиде пользователя](/ru/pages/streaming/user-feed) и [фиде цен](/ru/pages/streaming/price-feed); для других типов ордеров поле опускается. В самом ответе на размещение флага нет.
+
+### `fillAndKill` {#fillandkill}
+
+Исполняется немедленно как taker против того объёма, который доступен по вашей цене или лучше, а любой остаток отменяется. `fillAndKill` никогда не остаётся в книге.
+
+**Частичное** исполнение — успешный результат: если вы отправите `bet: 1000`, а сводимой ликвидности существует только на $400, вы получите исполнение на $400, а оставшиеся $600 будут отменены — ответ является успехом, а не ошибкой. Ордер отклоняется (`rejected_order_type_rules`, `"fill and kill has no matches"`) только тогда, когда сводимой ликвидности нет вовсе. См. сценарии Fill And Kill в [примерах](#examples) ниже.
+
+### `fillOrKill` {#fillorkill}
+
+«Всё или ничего». **Весь** ваш `bet` должен свестись немедленно по вашей цене или лучше, иначе весь ордер отклоняется — включая любые исполнения, сделанные по пути, которые откатываются. `fillOrKill` никогда не остаётся в книге, и вы никогда не остаётесь исполненными частично.
+
+Используйте его, когда частичная позиция хуже, чем отсутствие позиции, — например, когда ордер является одной ногой хеджа, который вы можете исполнить только целиком.
+
+Отклонения приходят с `errorType: rejected_order_type_rules` и одним из двух сообщений, отличающих «ничего не было» от «было, но недостаточно»:
+
+- `"fill or kill has no matches"` — по вашей цене нет сводимой ликвидности.
+- `"fill or kill matched but not fully"` — часть ликвидности свелась, но не весь ваш объём. Эти исполнения были отменены (откат).
+
+<Note>
+  Остаток в **$10 или меньше** считается полным исполнением: `fillOrKill` на $1,000, который сводит $992, успешен, потому что $8, которые не удалось исполнить, меньше минимального размера, который вообще может лежать в книге. Остаток больше $10 приводит к отклонению ордера.
+</Note>
+
+## Ответ {#response}
+
+<ResponseField name="data.createdSessions" type="array">
+  Результаты по каждому ордеру, позиционно относительно входного массива `orders`. Каждая запись — либо успешное размещение, либо ошибка.
+  <Expandable title="Успешное размещение">
+    <ResponseField name="matched" type="array">
+      Сведённые исполнения, порождённые этим ордером. Пусто, если ордер не свёлся.
+      <Expandable title="MatchedFill">
+        <ResponseField name="amount"               type="number">Ставка на сведённую часть.</ResponseField>
+        <ResponseField name="odds"                 type="integer">Американские коэффициенты исполнения.</ResponseField>
+        <ResponseField name="number"               type="number">Фора или тотал исполнения (`null` для moneyline).</ResponseField>
+        <ResponseField name="type"                 type="string">Тип рынка.</ResponseField>
+        <ResponseField name="side"                 type="string">Сторона ордера.</ResponseField>
+        <ResponseField name="market"               type="string">Присутствует для `moneyline1x2`.</ResponseField>
+        <ResponseField name="orderID"              type="string">Id ордера сведённого предложения на другой стороне.</ResponseField>
+        <ResponseField name="txID"                 type="string">Id транзакции исполнения.</ResponseField>
+        <ResponseField name="wagerRequestID"       type="string">Сгенерированный сервером id, группирующий все исполнения / предложения, происходящие от этого входного ордера.</ResponseField>
+        <ResponseField name="userReference"        type="string" />
+        <ResponseField name="risk"                 type="number" />
+        <ResponseField name="win"                  type="number">Сумма выигрыша за вычетом комиссии taker.</ResponseField>
+        <ResponseField name="winWithoutCommission" type="number">Сумма выигрыша до комиссии.</ResponseField>
+      </Expandable>
+    </ResponseField>
+    <ResponseField name="unmatched" type="object">
+      Ожидающее предложение, созданное из неисполненного остатка. Может быть пустым (`{}`), если ордер свёлся полностью.
+      <Expandable title="UnmatchedOffer">
+        <ResponseField name="orderID"        type="string">Id нового ожидающего ордера. Используйте его для отмены.</ResponseField>
+        <ResponseField name="wagerRequestID" type="string" />
+        <ResponseField name="offered"        type="number" />
+        <ResponseField name="odds"           type="integer" />
+        <ResponseField name="type"           type="string" />
+        <ResponseField name="side"           type="string" />
+        <ResponseField name="market"         type="string">Присутствует для `moneyline1x2`.</ResponseField>
+        <ResponseField name="number"         type="number" />
+        <ResponseField name="userReference"  type="string" />
+      </Expandable>
+    </ResponseField>
+  </Expandable>
+  <Expandable title="Поштучная ошибка">
+    <ResponseField name="error"     type="string">Человекочитаемое описание отказа.</ResponseField>
+    <ResponseField name="errorType" type="string">`validation_error`, `rejected_liability`, `rejected_order_type_rules` или `system_error`.</ResponseField>
+  </Expandable>
+</ResponseField>
+
+## Примеры {#examples}
+
+### Сценарий 1 — сведение ордеров без остатка ликвидности {#scenario-1-match-orders-with-no-leftover-liquidity}
+
+Три ордера, каждый из которых немедленно сводится с доступной ликвидностью.
+
+<CodeGroup>
+```json Запрос
+{
+  "orders": [
+    { "gameID": "688c0516fbc14da0c202d426", "type": "moneyline", "side": "5c12bc1ce0daba000f47ba8b", "odds": -175, "bet": 100, "orderType": "post" },
+    { "gameID": "688c0516fbc14da0c202d426", "type": "spread",    "side": "5c12bc1ce0daba000f47ba8b", "odds": -110, "bet": 100, "orderType": "post", "number": 3.5 },
+    { "gameID": "688c0516fbc14da0c202d426", "type": "total",     "side": "over",                     "odds": -104, "bet": 100, "orderType": "post", "number": 50 }
+  ]
+}
+```
+
+```json Ответ
+{
+  "data": {
+    "createdSessions": [
+      {
+        "matched": [
+          {
+            "amount": 50, "odds": -175, "type": "moneyline",
+            "side": "5d48bd5198366d41ec7238da",
+            "orderID": "68d42f82cfebf0b249a2c26e",
+            "txID":    "68d42f83cfebf0b249a2c279",
+            "wagerRequestID": "68d42f83cfebf0b249a2c278",
+            "risk": 50.286, "win": 28.286, "winWithoutCommission": 28.571
+          }
+        ],
+        "unmatched": {}
+      },
+      { "matched": [/* spread fill */], "unmatched": {} },
+      { "matched": [/* total fill  */], "unmatched": {} }
+    ]
+  }
+}
+```
+</CodeGroup>
+
+### Сценарий 2 — лимитный ордер с остатком ликвидности {#scenario-2-limit-order-with-leftover-liquidity}
+
+Лимитный ордер на 300, который частично сводится и оставляет остаток в книге.
+
+<CodeGroup>
+```json Ответ
+{
+  "data": {
+    "createdSessions": [
+      {
+        "matched": [
+          {
+            "amount": 185, "odds": -185, "type": "moneyline",
+            "side": "5d48bd5198366d41ec7238da",
+            "orderID": "68d43574cfebf0b249a2c28d",
+            "txID":    "68d43574cfebf0b249a2c290",
+            "wagerRequestID": "68d43574cfebf0b249a2c28f",
+            "risk": 186, "win": 99, "winWithoutCommission": 100
+          }
+        ],
+        "unmatched": {
+          "orderID": "68d43575cfebf0b249a2c292",
+          "wagerRequestID": "68d43574cfebf0b249a2c28f",
+          "offered": 115, "odds": -185, "type": "moneyline",
+          "side": "5d48bd5198366d41ec7238da", "number": null
+        }
+      }
+    ]
+  }
+}
+```
+</CodeGroup>
+
+### Сценарий 3 — Fill and Kill, полное сведение {#scenario-3-fill-and-kill-full-match}
+
+<CodeGroup>
+```json Ответ
+{
+  "data": {
+    "createdSessions": [
+      {
+        "matched": [
+          {
+            "amount": 100, "odds": -186, "type": "moneyline",
+            "side": "5d48bd5198366d41ec7238da",
+            "orderID": "68d4368acfebf0b249a2c298",
+            "txID":    "68d436bacfebf0b249a2c29b",
+            "wagerRequestID": "68d436bacfebf0b249a2c29a",
+            "userReference": "docs-fillandkill-match",
+            "risk": 100.538, "win": 53.226, "winWithoutCommission": 53.763
+          }
+        ],
+        "unmatched": {}
+      }
+    ]
+  }
+}
+```
+</CodeGroup>
+
+### Сценарий 4 — Fill and Kill, без сведения {#scenario-4-fill-and-kill-no-match}
+
+`fillAndKill` без сведения возвращает поштучную ошибку.
+
+<CodeGroup>
+```json Ответ
+{
+  "data": {
+    "createdSessions": [
+      {
+        "error": "fill and kill has no matches",
+        "errorType": "rejected_order_type_rules"
+      }
+    ]
+  }
+}
+```
+</CodeGroup>
+
+### Сценарий 5 — Fill or Kill, недостаточно ликвидности {#scenario-5-fill-or-kill-not-enough-liquidity}
+
+`fillOrKill` — аналог `fillAndKill` по принципу «всё или ничего». Там, где `fillAndKill` на $1,000 против $400 ликвидности исполняет $400 и отменяет остальное, `fillOrKill` отклоняет весь ордер и откатывает эти $400 — вы никогда не остаётесь исполненными частично.
+
+<CodeGroup>
+```json Запрос
+{
+  "orders": [
+    {
+      "gameID": "688c0516fbc14da0c202d426",
+      "type": "moneyline",
+      "side": "5c12bc1ce0daba000f47ba8b",
+      "odds": -110,
+      "bet": 1000,
+      "orderType": "fillOrKill",
+      "userReference": "docs-fillorkill-partial"
+    }
+  ]
+}
+```
+
+```json Ответ
+{
+  "data": {
+    "createdSessions": [
+      {
+        "error": "fill or kill matched but not fully",
+        "errorType": "rejected_order_type_rules"
+      }
+    ]
+  }
+}
+```
+</CodeGroup>
+
+Если сводимой ликвидности нет вовсе, тот же ордер отклоняется с сообщением `"fill or kill has no matches"`.
+
+### Сценарий 6 — `postArb` против `post`, когда книга свела бы ордер {#scenario-6-postarb-vs-post-when-the-book-would-match}
+
+`post` отклоняет ордер, который свёлся бы с ожидающей ликвидностью (например, лучшее предложение **+100**, а вы пытаетесь разместить **+100**). `postArb` допускает такую ситуацию, когда ваши коэффициенты находятся в пределах **1%** от ордера, с которым произошло бы сведение — то есть то же размещение **+100** может пройти как `postArb`, и вы избегаете комиссий taker, которые заплатили бы по обычной сделке. Если ваша цена слишком далека от ожидающей котировки (например, лучшее предложение **+200**, а вы отправляете **+190**), `postArb` отклоняется.
+
+<CodeGroup>
+```json Запрос
+{
+  "orders": [
+    {
+      "gameID": "688c0516fbc14da0c202d426",
+      "type": "moneyline",
+      "side": "5c12bc1ce0daba000f47ba8b",
+      "odds": 100,
+      "bet": 50,
+      "orderType": "postArb",
+      "userReference": "docs-postarb-same-line-as-offer"
+    }
+  ]
+}
+```
+</CodeGroup>
+
+### Сценарий 7 — `moneyline1x2` (футбольный трёхисходный рынок) {#scenario-7-moneyline1x2-soccer-three-way}
+
+`moneyline1x2` — футбольный рынок с тремя исходами — хозяева / гости / ничья — размещаемый как ставка yes/no на исход, названный в `market`. Ниже — **yes на ничью** по +250.
+
+<CodeGroup>
+```json Запрос
+{
+  "orders": [
+    {
+      "gameID": "65f0c3...",
+      "type": "moneyline1x2",
+      "side": "yes",
+      "market": "draw",
+      "odds": 250,
+      "bet": 50,
+      "orderType": "post",
+      "userReference": "docs-ml1x2-yes-draw"
+    }
+  ]
+}
+```
+</CodeGroup>
+
+Чтобы поставить на то, что **хозяева не выиграют**, отправьте `side: "no"` и задайте в `market` id домашнего участника.
+
+## Задержка в лайве {#live-delay}
+
+Ордера, размещаемые на игру, помеченную как лайв, подчиняются следующим правилам:
+
+1. Если ордер не сводится ни с какой существующей ликвидностью, он размещается немедленно.
+2. Если ордер сводится с существующей ликвидностью, перед исполнением действует задержка.
+3. У разных лиг разные периоды задержки в лайве:
+    - **NFL, UFCMMA, NCAAF** — 3 секунды.
+    - **NCAAB, NBA** — 5 секунд.
+    - **ATP, WTA** — 8 секунд.
+    - **По умолчанию** — 10 секунд.
+4. После задержки ордер пытается исполниться:
+    - Если коэффициенты улучшились, он сводится немедленно.
+    - Если коэффициенты ухудшились, он не сводится.
+
+## Поштучные ошибки {#per-order-errors}
+
+<Snippet file="ru/types/order-error.mdx" />
+
+Пример с несколькими размещениями, часть которых завершилась ошибкой:
+
+<CodeGroup>
+```json Ответ
+{
+  "data": {
+    "createdSessions": [
+      { "matched": [/* successful fill */], "unmatched": {} },
+      { "error": "game not found: invalid gameID", "errorType": "validation_error" },
+      { "error": "Insufficient balance.",          "errorType": "rejected_liability" },
+      { "error": "post order cannot have matches", "errorType": "rejected_order_type_rules" },
+      { "error": "failed to interact with database","errorType": "system_error" }
+    ]
+  }
+}
+```
+</CodeGroup>

@@ -1,0 +1,44 @@
+---
+title: 'Ottieni una scommessa per wager request ID'
+description: 'Consulta ogni scommessa derivata da una singola richiesta di piazzamento'
+openapi: 'GET /user/getBetByWagerRequestID'
+---
+
+Consulta ogni scommessa legata a un singolo `wagerRequestID`. Un `wagerRequestID` è generato dal server per **ciascun** ordine in una richiesta di piazzamento — usalo per riunire ogni abbinamento e ogni offerta in attesa risultanti da un singolo ordine inviato.
+
+La risposta separa i risultati in tre gruppi:
+
+- `unmatched` — offerte aperte della richiesta ancora in attesa nel libro. **Sempre vuoto per questo endpoint** — usa invece [Ottieni una scommessa per riferimento utente](/it/pages/rest/user/get-bet-by-user-reference) se ti servono le offerte aperte nella risposta.
+- `matched`   — scommesse abbinate (non refertate) della richiesta.
+- `graded`    — scommesse refertate (liquidate) della richiesta, inclusi `risk`, `win`, `fee` e `result`.
+
+## Richiesta {#request}
+
+`GET /user/getBetByWagerRequestID`
+
+<ParamField query="wagerRequestID" type="string" required>
+  Il `wagerRequestID` restituito da `/session/v3/place` (nel campo `matched[].wagerRequestID` o `unmatched.wagerRequestID`).
+</ParamField>
+
+<CodeGroup>
+```bash curl
+curl "https://api.4casters.io/user/getBetByWagerRequestID?wagerRequestID=65f69afec4c141f5ecc5dc0b" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+</CodeGroup>
+
+## Risposta {#response}
+
+<ResponseField name="data.unmatched" type="array">Array vuoto.</ResponseField>
+<ResponseField name="data.matched" type="array">
+  Scommesse abbinate (non refertate) — stessa forma di [Ottieni le scommesse abbinate](/it/pages/rest/user/get-matched-bets#response).
+</ResponseField>
+<ResponseField name="data.graded" type="array">
+  Scommesse refertate (liquidate) — stessa forma di [Ottieni le giocate refertate](/it/pages/rest/user/get-graded-wagers#response).
+</ResponseField>
+
+## Errori {#errors}
+
+| Stato | Significato |
+| ------ | ------- |
+| `400`  | `wagerRequestID` mancante o sconosciuto. |

@@ -1,0 +1,68 @@
+---
+title: 'Annullare un ordine'
+description: 'Annulla un singolo ordine aperto'
+openapi: 'POST /session/cancel'
+---
+
+Annulla un singolo ordine aperto tramite il suo id. Restituisce gli importi non abbinati e abbinati al momento dell'annullamento.
+
+## Richiesta {#request}
+
+`POST /session/cancel`
+
+<ParamField body="sessionID" type="string" required>
+  Id dell'ordine da annullare.
+</ParamField>
+
+<CodeGroup>
+```bash curl
+curl -X POST https://api.4casters.io/session/cancel \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"sessionID": "65b036dfb31407c2b6bc1cfe"}'
+```
+</CodeGroup>
+
+## Risposta {#response}
+
+<ResponseField name="data" type="object">
+  <Expandable title="CancelResult">
+    <ResponseField name="success"      type="boolean" />
+    <ResponseField name="sessionID"    type="string">Id dell'ordine annullato.</ResponseField>
+    <ResponseField name="description"  type="string">Descrizione leggibile dell'ordine (es. `Lakers -3.5 -110`).</ResponseField>
+    <ResponseField name="odds"         type="integer">Quote americane dell'ordine annullato.</ResponseField>
+    <ResponseField name="filled"       type="number">Rischio già abbinato al momento dell'annullamento.</ResponseField>
+    <ResponseField name="offered"      type="number" />
+    <ResponseField name="remaining"    type="number">Rischio ancora non abbinato e ora rimborsato.</ResponseField>
+    <ResponseField name="gameID"       type="string" />
+    <ResponseField name="userReference" type="string" />
+  </Expandable>
+</ResponseField>
+
+### Esempio {#example}
+
+<CodeGroup>
+```json JSON
+{
+  "data": {
+    "success": true,
+    "sessionID": "65b036dfb31407c2b6bc1cfe",
+    "description": "Lakers ML +125",
+    "odds": 125,
+    "filled": 0,
+    "offered": 0,
+    "remaining": 100,
+    "gameID": "65f0c3c24ef07d0008abc123",
+    "userReference": "my-order-1"
+  }
+}
+```
+</CodeGroup>
+
+## Errori {#errors}
+
+| Stato | Significato |
+| ------ | ------- |
+| `400`  | Id dell'ordine non valido. |
+| `403`  | L'ordine non è tuo. |
+| `409`  | Non è stato possibile annullare l'ordine (es. già completamente abbinato). |

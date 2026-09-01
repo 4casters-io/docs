@@ -1,0 +1,69 @@
+---
+title: 'Introdução'
+description: 'API REST pública da exchange de apostas peer-to-peer 4casters'
+---
+
+A API REST da 4casters permite fazer login, consultar jogos e o livro de ofertas, enviar / editar / cancelar ordens e ler seu histórico de apostas programaticamente. É a mesma API que alimenta o app web da 4casters.
+
+## URL base {#base-url}
+
+Todos os endpoints desta seção têm como raiz:
+
+```
+https://api.4casters.io
+```
+
+## Convenções {#conventions}
+
+- **Transporte**: somente HTTPS.
+- **Codificação**: JSON. Envie `Content-Type: application/json` em toda requisição que tem corpo.
+- **Envelope de resposta**: Com algumas exceções bem sinalizadas (`/affiliate/getAffiliateCommission`, `/exchange/getOddsForAveragePrice`), toda resposta bem-sucedida vem encapsulada: `{ "data": <payload> }`.
+- **Identificadores**: ids de jogo, de participante e de ordem são strings `ObjectID` do MongoDB (hex de 24 caracteres).
+- **Odds**: todas as odds estão em formato americano (negativas para favoritos, positivas para azarões), salvo indicação em contrário.
+- **Tempo**: todos os timestamps são ISO 8601 com `Z` (UTC).
+
+## Autenticação {#authentication}
+
+Quase todos os endpoints exigem autenticação. Faça login uma vez via [POST `/user/login`](/pt-BR/pages/rest/authentication) e então envie o token de autenticação retornado em toda requisição — veja [Autenticação](/pt-BR/pages/rest/authentication) para detalhes.
+
+## Erros por ordem vs erros HTTP {#per-order-errors-vs-http-errors}
+
+Os endpoints de "envio" e "edição" aceitam lotes e retornam resultados por ordem. Uma resposta HTTP `200` bem-sucedida ainda pode conter falhas individuais de ordens dentro de `data.createdSessions[i]`. Veja o formato de erro por ordem na página de cada endpoint.
+
+Erros no nível HTTP (`4xx`, `5xx`) são retornados como `{ "error": "<message>" }`.
+
+## Limitação de taxa {#rate-limiting}
+
+Três camadas de limitação de taxa se aplicam:
+
+- **Global, por IP** — toda requisição à API conta contra um orçamento por IP de **3,000 requisições por janela móvel de 60 segundos** (cerca de ~50 requisições/segundo sustentadas). Exceder retorna `429` com um cabeçalho `Retry-After` (segundos) e corpo `{ "error": "Too many requests. Please try again later." }`.
+- **Rotas de autenticação** (`/user/login`, redefinição de senha, cadastro) têm limitação adicional por IP e por conta.
+- **Rotas de envio / edição / cancelamento** têm limitação adicional por conta.
+
+Endpoints de leitura não têm limite por conta — apenas o teto global por IP se aplica.
+
+## Timeouts {#timeouts}
+
+Requisições que levam mais de **15 segundos** no lado do servidor são abortadas e retornam `503` com corpo `{ "error": { "message": "Network Error", "code": 503 } }`.
+
+## Atualizações em tempo real {#real-time-updates}
+
+A API REST se combina com a [API de streaming WebSocket](/pt-BR/pages/streaming/introduction) para ticks do livro de ofertas e eventos de correspondência / liquidação por conta em tempo real. O token de autenticação retornado por `/user/login` funciona para ambas.
+
+## Índice de endpoints {#endpoint-index}
+
+<CardGroup cols={2}>
+  <Card title="Autenticação" href="/pt-BR/pages/rest/authentication">Faça login e obtenha um token de autenticação.</Card>
+  <Card title="Usuário"       href="/pt-BR/pages/rest/user/get-me">Informações da conta, saldo, apostas e ordens.</Card>
+  <Card title="Ordens"        href="/pt-BR/pages/rest/orders/place-order">Envie, edite, consulte e cancele ordens.</Card>
+  <Card title="Mercados"      href="/pt-BR/pages/rest/markets/get-orderbook">Navegue por ligas, jogos, participantes e o livro de ofertas.</Card>
+  <Card title="Afiliados"     href="/pt-BR/pages/rest/affiliate/get-affiliate-commission">Comissão de afiliado.</Card>
+</CardGroup>
+
+## Coleção legada do Postman {#legacy-postman-collection}
+
+A documentação anterior vivia como uma coleção do Postman. Ela está preservada para referência, mas esta documentação Mintlify agora é a fonte da verdade — a coleção do Postman pode ficar defasada para novos endpoints, parâmetros ou formatos de resposta.
+
+<Card title="API 4Casters — coleção do Postman" icon="link" href="https://documenter.getpostman.com/view/6710109/U16gNmHG">
+  Ver a documentação legada do Postman
+</Card>

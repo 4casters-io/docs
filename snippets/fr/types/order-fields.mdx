@@ -1,0 +1,47 @@
+<ParamField body="gameID" type="string" required>
+  Id de match 4casters. Obtenez-en un via `GET /exchange/v2/getGames` ou `GET /exchange/v2/getOrderbook`.
+</ParamField>
+
+<ParamField body="type" type="string" required>
+  Type de marché. L'un de `moneyline` (vainqueur du match), `spread` (handicap de points), `total` (plus/moins de points), `moneyline1x2`. `moneyline1x2` est réservé au **football (soccer) uniquement** (moneyline à trois issues : domicile / extérieur / nul).
+</ParamField>
+
+<ParamField body="side" type="string" required>
+  Côté de l'ordre. Le sens dépend de `type` :
+  - `moneyline`, `spread` — l'id du participant sur lequel vous pariez.
+  - `total` — `"over"` ou `"under"`.
+  - `moneyline1x2` — `"yes"` ou `"no"` sur l'issue désignée par `market`.
+</ParamField>
+
+<ParamField body="market" type="string">
+  **`moneyline1x2` uniquement.** Soit `"draw"`, soit un id de participant — désigne l'issue sur laquelle vous pariez oui/non. Exemple : `side: "yes"` + `market: "draw"` signifie *le match se termine par un nul* ; `side: "no"` + `market: "<homeTeamId>"` signifie *l'équipe à domicile ne gagne pas*.
+</ParamField>
+
+<ParamField body="odds" type="integer" required>
+  Cote de l'ordre au format **américain** (par ex. `-110`, `+150`).
+</ParamField>
+
+<ParamField body="bet" type="number" required>
+  Montant à risquer sur le pari. Un ordre avec `bet: 100, odds: 120` peut être matché par d'autres utilisateurs pour un total de **120 à -120**.
+</ParamField>
+
+<ParamField body="number" type="number">
+  Nombre de points du spread ou du total. Requis pour `spread` et `total`. Non utilisé pour `moneyline` ni `moneyline1x2`.
+</ParamField>
+
+<ParamField body="orderType" type="string">
+  L'un de `limit`, `post`, `postArb`, `fillAndKill`, `fillOrKill`. Par défaut `limit`.
+  - `limit` — matche toute liquidité à votre prix ou mieux en tant que taker, et laisse le reste en attente en tant que maker.
+  - `post`  — maker garanti. Rejeté si l'ordre matcherait de la liquidité en attente (`rejected_order_type_rules`, par ex. `"post order cannot have matches"`).
+  - `postArb` — comme `post`, mais autorisé à matcher si vos cotes américaines sont à moins de **1%** de l'ordre en attente. Évite les frais taker que vous paieriez autrement sur un trade normal.
+  - `fillAndKill` — taker garanti. Matche toute la taille disponible à votre prix ou mieux et annule le reste ; ne reste jamais en attente. Une exécution **partielle** est un succès. Rejeté uniquement quand il n'existe aucune liquidité matchable.
+  - `fillOrKill` — taker tout-ou-rien. Matche l'**intégralité** de votre `bet` immédiatement, sinon l'ordre entier est rejeté et toute exécution partielle est annulée ; ne reste jamais en attente.
+</ParamField>
+
+<ParamField body="expirationMinutes" type="integer">
+  Annulation automatique N minutes après le placement. Omettez ce champ pour laisser l'ordre en attente jusqu'au début du match (comportement par défaut — tout ordre ouvert est annulé automatiquement au début du match).
+</ParamField>
+
+<ParamField body="userReference" type="string">
+  Identifiant défini par le client, conservé sur chaque exécution et chaque offre en attente issues de cet ordre. Utilisez-le pour retrouver l'ordre plus tard via `GET /user/getBetByUserReference`.
+</ParamField>

@@ -1,0 +1,45 @@
+---
+title: 'Orders-heartbeat'
+description: 'Je orders automatisch annuleren als je client de verbinding verliest'
+openapi: 'POST /user/ordersHeartbeat'
+---
+
+Een veiligheidsmechanisme: stuur een heartbeat met een `timeout` (in seconden). Als de volgende heartbeat niet binnen `timeout` seconden wordt ontvangen, worden **al je openstaande orders geannuleerd**.
+
+Gebruik dit endpoint in elke client die openstaande orders plaatst — crasht je proces of valt de verbinding weg, dan zorgt de heartbeat ervoor dat verouderde orders worden weggehaald in plaats van in het boek te blijven staan.
+
+## Verzoek {#request}
+
+`POST /user/ordersHeartbeat`
+
+<ParamField body="timeout" type="integer" required>
+  Annuleer-na-timeout, in seconden. Moet groter zijn dan `5`.
+</ParamField>
+
+<CodeGroup>
+```bash curl
+curl -X POST https://api.4casters.io/user/ordersHeartbeat \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"timeout": 30}'
+```
+
+```json JSON-body
+{ "timeout": 30 }
+```
+</CodeGroup>
+
+## Antwoord {#response}
+
+Het antwoord wordt doorgestuurd vanaf de orders-service:
+
+```json
+{ "data": { /* heartbeat ack payload */ } }
+```
+
+## Fouten {#errors}
+
+| Status | Betekenis |
+| ------ | ------- |
+| `400`  | `timeout` ontbreekt, is geen getal, of is `<= 5`. |
+| `503`  | Orders-service onbereikbaar. |

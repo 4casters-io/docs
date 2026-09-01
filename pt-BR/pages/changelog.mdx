@@ -1,0 +1,42 @@
+---
+title: 'Changelog'
+description: 'Mudanças relevantes e observáveis pelo cliente nas APIs da 4casters.'
+---
+
+Este changelog registra mudanças nas APIs públicas da 4casters que são visíveis para integradores. Refatorações internas, correções de desempenho que não mudam o comportamento e mudanças de infraestrutura são omitidas intencionalmente.
+
+Convenções:
+
+- Entradas mais recentes primeiro. As datas são ISO `YYYY-MM-DD`.
+- Cada entrada é marcada com a superfície de API afetada.
+- As mudanças são agrupadas sob `Adicionado`, `Alterado`, `Corrigido`, `Descontinuado` ou `Removido` (seções que não se aplicam são omitidas).
+- Mudanças incompatíveis são marcadas como `Breaking`.
+
+---
+
+<Update label="2026-08-13" tags={["API REST", "API de ordens"]}>
+  ### Adicionado {#added}
+  - **Tipo de ordem `fillOrKill`.** Ordem taker de tudo ou nada: todo o `bet` precisa corresponder imediatamente ou a ordem inteira é rejeitada e as correspondências parciais são revertidas, de modo que você nunca fica parcialmente correspondido. Suportado tanto no endpoint de envio REST quanto no WebSocket. Veja [Tipos de ordem](/pt-BR/pages/rest/orders/place-order#order-types).
+
+  ### Corrigido {#fixed}
+  - **Documentação de `fillAndKill` corrigida.** Ela era descrita como "corresponder imediatamente ao seu preço ou rejeitar", o que soava como tudo ou nada. Na verdade, `fillAndKill` corresponde ao tamanho que estiver disponível e cancela o restante — uma correspondência **parcial** é um resultado bem-sucedido, e a ordem só é rejeitada quando não há nenhuma liquidez correspondível. O comportamento não mudou; apenas a documentação estava errada. Use o novo `fillOrKill` se você precisa de execução realmente tudo ou nada.
+</Update>
+
+<Update label="2026-07-30" tags={["API REST"]}>
+  ### Adicionado {#added-2}
+  - **`GET /exchange/getMatchedVolume`.** Novo endpoint que retorna o volume total correspondido em todo o site para um intervalo inclusivo de dias de calendário ET. Cada aposta correspondida conta os valores apostados dos dois lados (risco + ganho, antes da comissão); intervalos que terminam hoje incluem um agregado ao vivo do dia atual. Veja [Obter volume correspondido](/pt-BR/pages/rest/markets/get-matched-volume).
+</Update>
+
+<Update label="2026-07-15" tags={["API de streaming", "Feed do usuário"]}>
+  ### Corrigido {#fixed-2}
+  - **A reprodução de `GET /v2/user/messages` agora retorna mensagens.** O endpoint de reprodução do feed do usuário v2 antes sempre retornava listas vazias, então a recuperação de lacunas após uma conexão cair silenciosamente não fazia nada. As mensagens reproduzidas chegam exatamente no formato que o WebSocket entrega. Veja [Reproduzindo mensagens perdidas](/pt-BR/pages/streaming/user-feed#replaying-missed-messages).
+</Update>
+
+<Update label="2026-04-28" tags={["API de streaming", "Feed de preços"]}>
+  ### Adicionado {#added-3}
+  - **Assinatura por `gameID`, `league` ou `sport` no feed de preços.** Clientes conectados a `wss://streaming-api.4casters.io/price-stream` agora podem enviar comandos JSON `subscribe`, `unsubscribe` e `subscribeAll` para restringir o feed a jogos, ligas ou esportes específicos. Veja [Assinaturas](/pt-BR/pages/streaming/price-feed#subscriptions) para o formato completo dos comandos e a semântica de roteamento.
+  - **Fanout de `parentGameID`.** Assinantes de um `gameID` pai também recebem atualizações dos jogos filhos cujo `parentGameID` corresponde (ex.: derivativos F5-MLB chegam aos assinantes do jogo pai).
+
+  ### Alterado {#changed}
+  - **Retrocompatível.** Clientes que nunca enviam um comando de assinatura permanecem no modo de difusão total e recebem toda atualização como antes — nenhuma mudança de integração é necessária.
+</Update>

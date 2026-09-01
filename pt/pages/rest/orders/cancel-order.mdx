@@ -1,0 +1,68 @@
+---
+title: 'Cancelar uma ordem'
+description: 'Cancelar uma única ordem aberta'
+openapi: 'POST /session/cancel'
+---
+
+Cancele uma única ordem aberta por id. Devolve os montantes não executados e executados no momento do cancelamento.
+
+## Pedido {#request}
+
+`POST /session/cancel`
+
+<ParamField body="sessionID" type="string" required>
+  Id da ordem a cancelar.
+</ParamField>
+
+<CodeGroup>
+```bash curl
+curl -X POST https://api.4casters.io/session/cancel \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"sessionID": "65b036dfb31407c2b6bc1cfe"}'
+```
+</CodeGroup>
+
+## Resposta {#response}
+
+<ResponseField name="data" type="object">
+  <Expandable title="CancelResult">
+    <ResponseField name="success"      type="boolean" />
+    <ResponseField name="sessionID"    type="string">Id da ordem que foi cancelada.</ResponseField>
+    <ResponseField name="description"  type="string">Descrição legível da ordem (p. ex. `Lakers -3.5 -110`).</ResponseField>
+    <ResponseField name="odds"         type="integer">Odds americanas da ordem cancelada.</ResponseField>
+    <ResponseField name="filled"       type="number">Risco que já tinha sido correspondido no momento do cancelamento.</ResponseField>
+    <ResponseField name="offered"      type="number" />
+    <ResponseField name="remaining"    type="number">Risco que ainda estava por corresponder e é agora reembolsado.</ResponseField>
+    <ResponseField name="gameID"       type="string" />
+    <ResponseField name="userReference" type="string" />
+  </Expandable>
+</ResponseField>
+
+### Exemplo {#example}
+
+<CodeGroup>
+```json JSON
+{
+  "data": {
+    "success": true,
+    "sessionID": "65b036dfb31407c2b6bc1cfe",
+    "description": "Lakers ML +125",
+    "odds": 125,
+    "filled": 0,
+    "offered": 0,
+    "remaining": 100,
+    "gameID": "65f0c3c24ef07d0008abc123",
+    "userReference": "my-order-1"
+  }
+}
+```
+</CodeGroup>
+
+## Erros {#errors}
+
+| Estado | Significado |
+| ------ | ------- |
+| `400`  | Id de ordem inválido. |
+| `403`  | A ordem não é sua. |
+| `409`  | Não foi possível cancelar a ordem (p. ex. já totalmente executada). |

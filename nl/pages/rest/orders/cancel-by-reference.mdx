@@ -1,0 +1,42 @@
+---
+title: 'Annuleren op userreferentie'
+description: 'Orders annuleren op hun door de client gedefinieerde referentie'
+openapi: 'POST /session/cancelByReference'
+---
+
+Annuleer elke openstaande order in de opgegeven wedstrijd waarvan de `userReference` overeenkomt met één van de meegegeven referenties. Handig wanneer je orders met je eigen ids hebt getagd en op die ids wilt annuleren in plaats van 4casters-order-ids bij te houden.
+
+## Verzoek {#request}
+
+`POST /session/cancelByReference`
+
+<ParamField body="gameID" type="string" required>
+  Beperk de zoekopdracht tot één wedstrijd.
+</ParamField>
+<ParamField body="userReferences" type="array" required>
+  Array van `userReference`-strings. Elke openstaande order in `gameID` waarvan de `userReference` in deze array staat, wordt geannuleerd.
+</ParamField>
+
+<CodeGroup>
+```bash curl
+curl -X POST https://api.4casters.io/session/cancelByReference \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "gameID": "6924f82640a7e89c3d3acc41",
+    "userReferences": ["my-order-1", "my-order-2"]
+  }'
+```
+</CodeGroup>
+
+## Antwoord {#response}
+
+<ResponseField name="data" type="array">
+  Annuleringsresultaten per order. Zelfde vorm als [Een order annuleren](/nl/pages/rest/orders/cancel-order#response).
+</ResponseField>
+
+## Fouten {#errors}
+
+| Status | Betekenis |
+| ------ | ------- |
+| `400`  | `userReferences` ontbreekt of is geen array. |

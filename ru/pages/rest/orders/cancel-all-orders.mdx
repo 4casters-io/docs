@@ -1,0 +1,57 @@
+---
+title: 'Отмена всех ордеров'
+description: 'Отмена каждого открытого ордера вашего аккаунта'
+openapi: 'POST /session/cancelAllOrders'
+---
+
+Отмена **каждого** открытого ордера вызывающего по всем играм и лигам. Используйте для экстренных остановок — например, как аварийный выключатель из системы мониторинга.
+
+Менее разрушительная альтернатива, позволяющая позже возобновить ордера, — `POST /session/pauseOrders` (родственный эндпоинт, который отменяет и запоминает; используется в паре с `resumeOrders`).
+
+## Запрос {#request}
+
+`POST /session/cancelAllOrders`
+
+Не принимает параметров.
+
+<CodeGroup>
+```bash curl
+curl -X POST https://api.4casters.io/session/cancelAllOrders \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+</CodeGroup>
+
+## Ответ {#response}
+
+<ResponseField name="data" type="array">
+  Результаты отмены по каждому ордеру. Тот же формат, что и в [Отмена ордера](/ru/pages/rest/orders/cancel-order#response).
+</ResponseField>
+
+### Пример {#example}
+
+<CodeGroup>
+```json JSON
+{
+  "data": [
+    {
+      "success": true,
+      "sessionID": "65b036dfb31407c2b6bc1cfe",
+      "odds": -110,
+      "filled": 0,
+      "offered": 0,
+      "remaining": 100,
+      "gameID": "65f0c3c24ef07d0008abc123"
+    },
+    {
+      "success": true,
+      "sessionID": "65b036e0b31407c2b6bc1d08",
+      "odds": 125,
+      "filled": 25,
+      "offered": 0,
+      "remaining": 75,
+      "gameID": "65f0c4ae4ef07d0008abc456"
+    }
+  ]
+}
+```
+</CodeGroup>

@@ -1,0 +1,41 @@
+---
+title: 'Orderboek ophalen (v1, verouderd)'
+description: 'Verouderd endpoint met genest orderboek, behouden voor achterwaartse compatibiliteit'
+openapi: 'POST /exchange/getOrderbook'
+---
+
+<Warning>
+**Verouderd.** Gebruik [`GET /exchange/v2/getOrderbook`](/nl/pages/rest/markets/get-orderbook) voor het eenvoudigere, aanbevolen platte formaat.
+
+Dit endpoint blijft bestaan voor achterwaartse compatibiliteit met oudere clients.
+</Warning>
+
+Geeft het orderboek voor een hele competitie terug in **geneste** vorm, met spread- / total-getal als sleutel. Dezelfde vorm per wedstrijd als [Enkel orderboek ophalen](/nl/pages/rest/markets/get-single-orderbook), maar voor elke wedstrijd in de competitie.
+
+## Verzoek {#request}
+
+`POST /exchange/getOrderbook`
+
+<ParamField body="leagueRequested" type="string" required>
+  Competitiecode (hoofdletterongevoelig).
+</ParamField>
+
+<CodeGroup>
+```bash curl
+curl -X POST https://api.4casters.io/exchange/getOrderbook \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"leagueRequested": "NBA"}'
+```
+</CodeGroup>
+
+## Antwoord {#response}
+
+<ResponseField name="data.market" type="string">Altijd `null` in dit endpoint.</ResponseField>
+<ResponseField name="data.games"  type="array">
+  Array van wedstrijden met genest-orderboekvelden. Zie [Enkel orderboek ophalen](/nl/pages/rest/markets/get-single-orderbook#response) voor de vorm per wedstrijd — `awayMoneylines`- / `homeMoneylines`-arrays plus `awaySpreads`- / `homeSpreads`- / `over`- / `under`-objecten met spread- of total-getal als sleutel.
+</ResponseField>
+
+Elke individuele order in die groepen heeft de standaard ordervorm:
+
+<Snippet file="nl/types/orderbook-order.mdx" />

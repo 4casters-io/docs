@@ -1,0 +1,100 @@
+---
+title: 'Аутентификация'
+description: 'Вход и авторизация запросов'
+openapi: 'POST /user/login'
+---
+
+Для любого аутентифицированного маршрута нужен token. Token выдаётся при входе и действует **30 дней**, после чего требуется новый вход.
+
+## Вход {#log-in}
+
+`POST /user/login`
+
+<CodeGroup>
+```bash curl
+curl -X POST https://api.4casters.io/user/login \
+  -H "Content-Type: application/json" \
+  -d '{"username": "your_username", "password": "your_password"}'
+```
+
+```json Тело JSON
+{
+  "username": "your_username",
+  "password": "your_password"
+}
+```
+</CodeGroup>
+
+### Запрос {#request}
+
+<ParamField body="username" type="string" required>Имя пользователя аккаунта (или email).</ParamField>
+<ParamField body="password" type="string" required>Пароль аккаунта.</ParamField>
+
+### Ответ {#response}
+
+Token возвращается и как `data.user.auth`, **и** как подписанная cookie `auth` (`Set-Cookie`). Для большинства серверных интеграций стоит сохранить `data.user.auth` и отбросить cookie.
+
+```json
+{
+  "data": {
+    "user": {
+      "id": "5fe37acbb5a23600123662c1",
+      "username": "your_username",
+      "auth": "5cd551d6...",
+      "type": "p2p",
+      "oddsFormat": "american",
+      "displayBalance": 1250.50,
+      "creditLimit": 500,
+      "liability": -125.00,
+      "commissionCharged": 0.01,
+      "hasMarketMakerAccess": false,
+      "isPro": false,
+      "createdAt": "2020-12-23T17:14:09.000Z"
+    }
+  }
+}
+```
+
+Полный список полей — в [`User`](/api-reference/openapi.json) в схеме OpenAPI.
+
+### Ответы с ошибками {#error-responses}
+
+| Статус | Значение |
+| ------ | ------- |
+| `400`  | `username` и `password` обязательны. |
+| `401`  | Неверное имя пользователя или пароль. |
+| `403`  | Аккаунт забанен, заблокирован или закрыт. |
+| `429`  | Превышен лимит частоты входов. |
+
+## Авторизация запросов {#authorizing-requests}
+
+Передавайте token из `data.user.auth` в каждом последующем запросе. Принимаются три формата заголовка / полезной нагрузки, в следующем порядке предпочтения:
+
+<Tabs>
+  <Tab title="Заголовок Authorization (рекомендуется)">
+    ```bash
+    curl https://api.4casters.io/user/getMe \
+      -H "Authorization: Bearer 5cd551d6..."
+    ```
+    Префикс `Bearer ` необязателен — передача token без префикса тоже работает.
+  </Tab>
+  <Tab title="Cookie">
+    Подписанная cookie `auth`, установленная `/user/login`, автоматически принимается каждым эндпоинтом при повторном использовании тем же клиентом.
+  </Tab>
+  <Tab title="Поле в теле (только POST)">
+    ```json
+    { "token": "5cd551d6...", "...": "..." }
+    ```
+    Предоставляется как запасной вариант для клиентов, которым сложно задавать собственные заголовки (например, некоторые отправители webhook).
+  </Tab>
+</Tabs>
+
+Если token не передан — или token неизвестен / истёк — сервер отвечает `401 InvalidCredentials`.
+
+## Ротация token {#token-rotation}
+
+Аутентифицированные запросы с token старше 30 дней автоматически получают новый token. Когда это происходит, новый token возвращается в заголовке ответа `X-Auth-Token` (и как обновлённая подписанная cookie `auth`). Долгоживущие интеграции должны отслеживать этот заголовок и сохранять новое значение.
+
+## Выход {#logging-out}
+
+`POST /user/logout` аннулирует текущий token. Последующие запросы с этим token возвращают `401`.

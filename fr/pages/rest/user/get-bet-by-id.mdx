@@ -1,0 +1,76 @@
+---
+title: 'Récupérer un pari par ID'
+description: 'Consulter un seul pari par id ou id de transaction'
+openapi: 'GET /user/getBetByID'
+---
+
+Consultez un seul pari (matché, réglé ou offre ouverte) appartenant à l'appelant. Passez **soit** `id`, soit `txID`, pas les deux.
+
+## Requête {#request}
+
+`GET /user/getBetByID`
+
+<ParamField query="id" type="string">
+  L'`id` du pari issu d'un endpoint de liste comme `/user/getMatchedBets`.
+</ParamField>
+<ParamField query="txID" type="string">
+  Id de transaction, par ex. le `wagerRequestID` ou le `txID` renvoyé par `/session/v3/place`.
+</ParamField>
+
+Vous devez passer exactement l'un de `id` ou `txID`.
+
+<CodeGroup>
+```bash curl (par txID)
+curl "https://api.4casters.io/user/getBetByID?txID=64824b329556daa319747e31" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+
+```bash curl (par id)
+curl "https://api.4casters.io/user/getBetByID?id=6494ca85c9346058f35b2b1e" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+</CodeGroup>
+
+## Réponse {#response}
+
+Le format de `bet` dépend de l'état courant du pari :
+
+- Un pari **réglé** renvoie le format [GradedWager](/fr/pages/rest/user/get-graded-wagers#response), incluant `risk`, `win`, `fee` et `result`.
+- Un pari **matché** renvoie le format [MatchedBet](/fr/pages/rest/user/get-matched-bets#response).
+- Une **offre ouverte** renvoie le format [UnmatchedOrder](/fr/pages/rest/user/get-unmatched-orders#response).
+
+Notez que, contrairement à la plupart des endpoints, celui-ci renvoie le pari au **niveau supérieur** (pas sous `data`).
+
+### Exemple {#example}
+
+<CodeGroup>
+```json JSON (offre ouverte)
+{
+  "bet": {
+    "id": "667c1e870c0d22ec36ccb438",
+    "txID": "667c1e870c0d22ec36ccb439",
+    "type": "moneyline",
+    "bet": 222,
+    "graded": false,
+    "closed": false,
+    "createdAt": "2024-06-26T13:58:31.224Z",
+    "origin": "offer",
+    "wagerRequestID": "667c1e870c...",
+    "game": {
+      "id": "6679ee8c9f05a804e064b6ed",
+      "league": "FED-EX-500",
+      "sport": "golf",
+      "start": "2024-06-27T10:45:00.000Z",
+      "ended": false,
+      "participants": [/* ... */]
+    }
+  }
+}
+```
+</CodeGroup>
+
+## Erreurs {#errors}
+
+| Statut | Signification |
+| ------ | ------- |
+| `400`  | `id` et `txID` tous deux manquants, ou aucun pari trouvé pour l'identifiant fourni. |

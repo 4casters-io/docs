@@ -1,0 +1,47 @@
+<ParamField body="gameID" type="string" required>
+  Id игры 4casters. Получите его из `GET /exchange/v2/getGames` или `GET /exchange/v2/getOrderbook`.
+</ParamField>
+
+<ParamField body="type" type="string" required>
+  Тип рынка. Одно из: `moneyline` (ставка на победителя), `spread` (фора), `total` (тотал), `moneyline1x2`. `moneyline1x2` — **только для футбола** (трёхисходный манилайн: хозяева / гости / ничья).
+</ParamField>
+
+<ParamField body="side" type="string" required>
+  Сторона ордера. Значение зависит от `type`:
+  - `moneyline`, `spread` — id участника, на которого вы ставите.
+  - `total` — `"over"` или `"under"`.
+  - `moneyline1x2` — `"yes"` или `"no"` по исходу, названному в `market`.
+</ParamField>
+
+<ParamField body="market" type="string">
+  **Только для `moneyline1x2`.** Либо `"draw"`, либо id участника — задаёт исход, на который вы ставите yes/no. Пример: `side: "yes"` + `market: "draw"` означает *матч закончится вничью*; `side: "no"` + `market: "<homeTeamId>"` означает *хозяева не выиграют*.
+</ParamField>
+
+<ParamField body="odds" type="integer" required>
+  Коэффициент ордера в **американском** формате (например, `-110`, `+150`).
+</ParamField>
+
+<ParamField body="bet" type="number" required>
+  Сумма, которой вы рискуете в ставке. Ордер с `bet: 100, odds: 120` может быть исполнен другими пользователями на общую сумму **120 по -120**.
+</ParamField>
+
+<ParamField body="number" type="number">
+  Число форы или тотала. Обязательно для `spread` и `total`. Не используется для `moneyline` и `moneyline1x2`.
+</ParamField>
+
+<ParamField body="orderType" type="string">
+  Одно из `limit`, `post`, `postArb`, `fillAndKill`, `fillOrKill`. По умолчанию `limit`.
+  - `limit` — сводится как taker с любой ликвидностью по вашей цене или лучше, а остаток остаётся в книге на стороне maker.
+  - `post`  — гарантированный maker. Отклоняется, если ордер свёлся бы с ожидающей ликвидностью (`rejected_order_type_rules`, например `"post order cannot have matches"`).
+  - `postArb` — как `post`, но сведение разрешено, если ваши американские коэффициенты находятся в пределах **1%** от ожидающего ордера. Позволяет избежать комиссий taker, которые вы иначе заплатили бы при обычной сделке.
+  - `fillAndKill` — гарантированный taker. Сводит весь объём, доступный по вашей цене или лучше, и отменяет остаток; никогда не остаётся в книге. **Частичное** исполнение — это успех. Отклоняется только тогда, когда сводимой ликвидности нет вовсе.
+  - `fillOrKill` — taker по принципу «всё или ничего». Либо весь ваш `bet` сводится немедленно, либо весь ордер отклоняется, а любые частичные исполнения откатываются; никогда не остаётся в книге.
+</ParamField>
+
+<ParamField body="expirationMinutes" type="integer">
+  Автоматическая отмена через N минут после размещения. Опустите, чтобы ордер оставался в книге до начала игры (поведение по умолчанию — каждый открытый ордер автоматически отменяется, когда игра начинается).
+</ParamField>
+
+<ParamField body="userReference" type="string">
+  Определяемый клиентом идентификатор, сохраняемый на каждом исполнении и каждом ожидающем предложении, происходящих от этого ордера. Используйте его, чтобы позже найти ордер через `GET /user/getBetByUserReference`.
+</ParamField>

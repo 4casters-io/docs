@@ -1,0 +1,84 @@
+---
+title: 'Editar uma ordem'
+description: 'Alterar o preço ou o volume de uma ordem em espera'
+openapi: 'POST /session/editOrder'
+---
+
+Altere o preço (`orderOdds`) e/ou o volume (`orderVolume`) de uma ordem **limit** existente.
+
+Para ordens parcialmente executadas, a 4casters cancela a ordem existente e submete uma nova com os valores fornecidos. O novo `orderVolume` **não** tem em conta o volume já executado — se colocou originalmente `bet: 10`, $5 foram executados, e edita para `orderVolume: 10`, a ordem anterior é cancelada (reembolsando $5) e é criada uma nova ordem de $10 (debitando $10), deixando-o com $5 líquidos a menos.
+
+<Note>
+Existe uma variante gRPC mais recente em `POST /session/v4/editOrder`. Aceita o mesmo corpo de pedido e devolve adicionalmente `errorType` em falhas de validação. Prefira-a para novas integrações depois de confirmar que a forma funciona para si.
+</Note>
+
+## Pedido {#request}
+
+`POST /session/editOrder`
+
+<ParamField body="sessionID" type="string" required>
+  Id da ordem a editar. Obtenha-o de `data.unmatched.orderID` de `/session/v3/place` ou de `id` de `/user/getUnmatched`.
+</ParamField>
+<ParamField body="orderOdds" type="integer">
+  Novas odds americanas. Passe `null` para deixar as odds inalteradas.
+</ParamField>
+<ParamField body="orderVolume" type="number">
+  Novo montante de `bet`. Passe `null` para deixar o volume inalterado.
+</ParamField>
+<ParamField body="orderType" type="string">
+  A predefinição é `limit`. Consulte [tipos de ordem](/pt/pages/rest/orders/place-order#order-types).
+</ParamField>
+<ParamField body="userReference" type="string">
+  Opcional. Substitui o `userReference` existente na ordem.
+</ParamField>
+<ParamField body="intendedOrderVolume" type="number">
+  Opcional. O volume que originalmente pretendia colocar; usado pelo servidor ao reconciliar execuções parciais.
+</ParamField>
+<ParamField body="expiryChange" type="string">
+  Opcional. Nova expiração em minutos (cadeia).
+</ParamField>
+<ParamField body="blockIfNoOtherSideOrders" type="boolean">
+  Apenas v4. Rejeita a edição se não houver liquidez em espera do lado oposto.
+</ParamField>
+
+<CodeGroup>
+```bash curl
+curl -X POST https://api.4casters.io/session/editOrder \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "sessionID": "6549b6df6634097d2704716f",
+    "orderOdds": 185,
+    "orderVolume": 100
+  }'
+```
+
+```json Corpo JSON
+{
+  "sessionID": "6549b6df6634097d2704716f",
+  "orderOdds": 185,
+  "orderVolume": 100
+}
+```
+</CodeGroup>
+
+## Resposta {#response}
+
+O resultado espelha a forma da resposta de [colocar ordem](/pt/pages/rest/orders/place-order#response) — um resumo `cancelled` mais o novo resultado `matched` / `unmatched`:
+
+<ResponseField name="data.cancelled" type="object">
+  Resumo da ordem original cancelada e substituída.
+</ResponseField>
+<ResponseField name="data.matched" type="array">
+  Execuções produzidas pela nova submissão ao novo preço/volume. Mesma forma de um `MatchedFill` em [colocar ordem](/pt/pages/rest/orders/place-order#response).
+</ResponseField>
+<ResponseField name="data.unmatched" type="object">
+  Oferta em espera para o restante não executado da nova ordem.
+</ResponseField>
+
+## Erros {#errors}
+
+| Estado | Significado |
+| ------ | ------- |
+| `400`  | Erro de validação (`v4/editOrder` devolve `errorType` para estes). |
+| `503`  | Serviço de ordens inacessível. |

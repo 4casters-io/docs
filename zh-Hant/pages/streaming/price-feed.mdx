@@ -135,7 +135,7 @@ connectPriceFeed();
 
 `/price-stream` 上的每條訊息都以二元組 `[type, payload]` 到達。會廣播三種訊息型別。
 
-### `orderUpdate`
+### `orderUpdate` {#orderupdate}
 
 任意市場中的訂單發生變化時發出（新建、修改、成交或取消）。酬載僅包含接收使用者有權看到的 `sideOrders`（自己的訂單以及可成交的對手方）。
 
@@ -266,7 +266,7 @@ connectPriceFeed();
 ```
 </CodeGroup>
 
-### `gameUpdate`
+### `gameUpdate` {#gameupdate}
 
 賽事被建立或其狀態發生變化時發出（盤口開盤、收盤、開賽時間更新）。酬載為完整渲染後的賽事物件。
 
@@ -302,7 +302,7 @@ connectPriceFeed();
 
 已知的 `messageType` 值：`marketOpen`、`marketClosed`。將該欄位視為可擴充套件，並忽略未知值。
 
-### `matchedVolumeUpdate`
+### `matchedVolumeUpdate` {#matchedvolumeupdate}
 
 某場賽事的總成交量發生變化時發出。
 

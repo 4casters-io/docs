@@ -1,0 +1,94 @@
+---
+title: 'Niet-gematchte orders ophalen'
+description: 'Je openstaande orders op de exchange weergeven'
+openapi: 'GET /user/getUnmatched'
+---
+
+Geeft alle **openstaande orders** van de aanroeper terug die momenteel op de exchange staan en gematcht kunnen worden.
+
+## Verzoek {#request}
+
+`GET /user/getUnmatched`
+
+Heeft geen parameters.
+
+<CodeGroup>
+```bash curl
+curl https://api.4casters.io/user/getUnmatched \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+</CodeGroup>
+
+## Antwoord {#response}
+
+<ResponseField name="data.unmatched" type="array">
+  Array van openstaande orders, oplopend gesorteerd op starttijd van de wedstrijd.
+  <Expandable title="UnmatchedOrder">
+    <ResponseField name="id" type="string">Order-id.</ResponseField>
+    <ResponseField name="txID" type="string">Transactie-id van het aanmaken van de order.</ResponseField>
+    <ResponseField name="type" type="string">`moneyline`, `spread`, `total` of `moneyline1x2`.</ResponseField>
+    <ResponseField name="bet" type="number">Oorspronkelijke `bet` (risico).</ResponseField>
+    <ResponseField name="odds" type="integer">Amerikaanse odds.</ResponseField>
+    <ResponseField name="spread" type="number">Aanwezig voor `spread`.</ResponseField>
+    <ResponseField name="total" type="number">Aanwezig voor `total`.</ResponseField>
+    <ResponseField name="participantID" type="string">Aanwezig voor `moneyline` en `spread` — de deelnemer waarop wordt ingezet.</ResponseField>
+    <ResponseField name="otherParticipantID" type="string">Het id van de tegenoverliggende deelnemer (wiens kant wordt aangeboden).</ResponseField>
+    <ResponseField name="filled" type="number">Risico dat al gematcht is.</ResponseField>
+    <ResponseField name="offered" type="number">Oorspronkelijk aangeboden bedrag (gematcht + resterend).</ResponseField>
+    <ResponseField name="remaining" type="number">Winbedrag dat nog beschikbaar is op deze order (de taker betaalt risico om het te claimen).</ResponseField>
+    <ResponseField name="takenRatio" type="number">Deel van de order dat gematcht is, tussen `0` en `1`.</ResponseField>
+    <ResponseField name="expiry" type="string">Annuleringstijdstip (ISO 8601). `null` als er geen vervaltijd is ingesteld.</ResponseField>
+    <ResponseField name="createdAt" type="string">Tijdstempel in ISO 8601.</ResponseField>
+    <ResponseField name="origin" type="string">`offer` of `wager`.</ResponseField>
+    <ResponseField name="userReference" type="string">Door de client gedefinieerde identifier, bewaard sinds het plaatsen.</ResponseField>
+    <ResponseField name="wagerRequestID" type="string">Door de server gegenereerd id dat elke fill / offer groepeert die uit het oorspronkelijke plaatsingsverzoek voortkomt.</ResponseField>
+    <ResponseField name="graded" type="boolean">Altijd `false`.</ResponseField>
+    <ResponseField name="closed" type="boolean" />
+    <ResponseField name="adminRefund" type="boolean" />
+    <Snippet file="nl/types/game-summary.mdx" />
+  </Expandable>
+</ResponseField>
+
+### Voorbeeld {#example}
+
+<CodeGroup>
+```json JSON
+{
+  "data": {
+    "unmatched": [
+      {
+        "id": "62851e3bd54b74e52c39953c",
+        "txID": "62851e3bd54b74e52c39953b",
+        "type": "moneyline",
+        "bet": 100,
+        "odds": 165,
+        "spread": null,
+        "total": null,
+        "participantID": "6165e6e23c65e61a09bf1f73",
+        "otherParticipantID": "626dca8a83899580a06ba87e",
+        "filled": 0,
+        "offered": 100,
+        "remaining": 100,
+        "takenRatio": 0,
+        "expiry": "2022-05-18T23:08:00.000Z",
+        "createdAt": "2022-05-18T16:26:35.601Z",
+        "origin": "offer",
+        "graded": false,
+        "closed": false,
+        "adminRefund": false,
+        "game": {
+          "id": "62823d9d75d894042dfee218",
+          "league": "NHL",
+          "sport": "hockey",
+          "start": "2022-05-18T23:08:00.000Z",
+          "ended": false,
+          "eventName": "NEW YORK RANGERS VS CAROLINA HURRICANES",
+          "isFutures": false,
+          "participants": [/* ... */]
+        }
+      }
+    ]
+  }
+}
+```
+</CodeGroup>

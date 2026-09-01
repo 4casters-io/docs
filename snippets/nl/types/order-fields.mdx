@@ -1,0 +1,47 @@
+<ParamField body="gameID" type="string" required>
+  4casters-wedstrijd-id. Haal er een op via `GET /exchange/v2/getGames` of `GET /exchange/v2/getOrderbook`.
+</ParamField>
+
+<ParamField body="type" type="string" required>
+  Markttype. Eén van `moneyline` (inzet op de winnaar), `spread` (handicap), `total` (over/onder het totaal), `moneyline1x2`. `moneyline1x2` is **alleen voor voetbal** (driewegs-moneyline: thuis / uit / gelijkspel).
+</ParamField>
+
+<ParamField body="side" type="string" required>
+  Kant van de order. De betekenis hangt af van `type`:
+  - `moneyline`, `spread` — het id van de deelnemer waarop je inzet.
+  - `total` — `"over"` of `"under"`.
+  - `moneyline1x2` — `"yes"` of `"no"` op de uitkomst die `market` benoemt.
+</ParamField>
+
+<ParamField body="market" type="string">
+  **Alleen voor `moneyline1x2`.** Ofwel `"draw"`, ofwel een deelnemer-id — benoemt de uitkomst waarop je yes/no wedt. Voorbeeld: `side: "yes"` + `market: "draw"` betekent *de wedstrijd eindigt in gelijkspel*; `side: "no"` + `market: "<homeTeamId>"` betekent *het thuisteam wint niet*.
+</ParamField>
+
+<ParamField body="odds" type="integer" required>
+  Odds van de order in **Amerikaans** formaat (bijv. `-110`, `+150`).
+</ParamField>
+
+<ParamField body="bet" type="number" required>
+  Bedrag dat je op de weddenschap riskeert. Een order met `bet: 100, odds: 120` kan door andere gebruikers worden gevuld voor in totaal **120 tegen -120**.
+</ParamField>
+
+<ParamField body="number" type="number">
+  Spread- of total-getal. Vereist voor `spread` en `total`. Niet gebruikt voor `moneyline` of `moneyline1x2`.
+</ParamField>
+
+<ParamField body="orderType" type="string">
+  Eén van `limit`, `post`, `postArb`, `fillAndKill`, `fillOrKill`. Standaard `limit`.
+  - `limit` — match als taker tegen alle liquiditeit op jouw prijs of beter, en zet de rest als maker in het orderboek.
+  - `post`  — gegarandeerd maker. Wordt geweigerd als de order tegen openstaande liquiditeit zou matchen (`rejected_order_type_rules`, bijv. `"post order cannot have matches"`).
+  - `postArb` — zoals `post`, maar mag matchen als jouw Amerikaanse odds binnen **1%** van de openstaande order liggen. Vermijdt taker-fees die je anders bij een normale trade zou betalen.
+  - `fillAndKill` — gegarandeerd taker. Matcht de omvang die beschikbaar is op jouw prijs of beter en annuleert de rest; blijft nooit openstaan. Een **gedeeltelijke** fill is een succes. Wordt alleen geweigerd wanneer er helemaal geen matchbare liquiditeit is.
+  - `fillOrKill` — alles-of-niets-taker. Je **volledige** `bet` matcht onmiddellijk, of de hele order wordt geweigerd en eventuele gedeeltelijke fills worden teruggedraaid; blijft nooit openstaan.
+</ParamField>
+
+<ParamField body="expirationMinutes" type="integer">
+  Automatisch annuleren N minuten na plaatsing. Laat dit weg om de order open te laten staan tot de start van de wedstrijd (het standaardgedrag — elke openstaande order wordt automatisch geannuleerd wanneer de wedstrijd begint).
+</ParamField>
+
+<ParamField body="userReference" type="string">
+  Door de client gedefinieerde identifier die bewaard blijft op elke fill en elke openstaande offer die uit deze order voortkomt. Gebruik hem om de order later op te zoeken via `GET /user/getBetByUserReference`.
+</ParamField>

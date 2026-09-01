@@ -1,0 +1,49 @@
+---
+title: 'Получить ставку по пользовательской ссылке'
+description: 'Поиск всех ставок, привязанных к определяемому клиентом идентификатору'
+openapi: 'GET /user/getBetByUserReference'
+---
+
+Поиск всех ставок, привязанных к `userReference`. `userReference` — необязательная определяемая клиентом строка, которую вы можете прикрепить к ордеру при размещении, чтобы отслеживать его на своей стороне; этот эндпоинт — парный к ней инструмент чтения.
+
+Ответ разделяет результаты на три группы:
+
+- `unmatched` — открытые предложения по этой ссылке, всё ещё лежащие в книге.
+- `matched`   — сведённые (нерассчитанные) ставки по этой ссылке.
+- `graded`    — рассчитанные ставки по этой ссылке, включая `risk`, `win`, `fee` и `result`.
+
+## Запрос {#request}
+
+`GET /user/getBetByUserReference`
+
+<ParamField query="userReference" type="string" required>
+  Определяемая клиентом ссылка, переданная при размещении.
+</ParamField>
+<ParamField query="gameID" type="string" required>
+  Ограничивает поиск одной игрой.
+</ParamField>
+
+<CodeGroup>
+```bash curl
+curl "https://api.4casters.io/user/getBetByUserReference?userReference=my-order-1&gameID=67d1c942215edc7ee0c806ef" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+</CodeGroup>
+
+## Ответ {#response}
+
+<ResponseField name="data.unmatched" type="array">
+  Открытые ордера — тот же формат, что и в [Получить несведённые ордера](/ru/pages/rest/user/get-unmatched-orders#response).
+</ResponseField>
+<ResponseField name="data.matched" type="array">
+  Сведённые (нерассчитанные) ставки — тот же формат, что и в [Получить сведённые ставки](/ru/pages/rest/user/get-matched-bets#response).
+</ResponseField>
+<ResponseField name="data.graded" type="array">
+  Рассчитанные ставки — тот же формат, что и в [Получить рассчитанные пари](/ru/pages/rest/user/get-graded-wagers#response).
+</ResponseField>
+
+## Ошибки {#errors}
+
+| Статус | Значение |
+| ------ | ------- |
+| `408`  | Отсутствует `userReference` или `gameID`. |

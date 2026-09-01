@@ -1,0 +1,17 @@
+Quando il server fa fallire un singolo ordine in un batch di piazzamento, modifica o annullamento per-ordine, la voce **per-ordine** viene restituita come:
+
+```json
+{
+  "error": "<human-readable message>",
+  "errorType": "validation_error | rejected_liability | rejected_order_type_rules | system_error"
+}
+```
+
+Gli errori vengono restituiti **posizionalmente** nell'array dei risultati, all'indice corrispondente all'ordine in input. Se ricevi un errore per un ordine, quell'ordine non è stato elaborato e puoi ritentarlo in sicurezza.
+
+- `error` non è standardizzato — è una stringa descrittiva e può cambiare.
+- `errorType` è un enum stabile su cui puoi fare affidamento per la gestione programmatica:
+  - `validation_error` — il payload o lo stato non hanno superato la validazione (campi mancanti, quote/numero errati, side non valido, evento inattivo).
+  - `rejected_liability` — vincoli su utente / account / responsabilità hanno impedito la pubblicazione o l'esecuzione.
+  - `rejected_order_type_rules` — le regole del tipo di ordine hanno vietato l'esecuzione. Esempi: `fillAndKill` non aveva liquidità eseguibile, `fillOrKill` non poteva essere abbinato per intero, `post` avrebbe abbinato ordini in attesa, oppure `postArb` dista più dell'1% dal prezzo abbinabile.
+  - `system_error` — errore interno transitorio; un nuovo tentativo può riuscire.

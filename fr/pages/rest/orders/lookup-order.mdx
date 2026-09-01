@@ -1,0 +1,51 @@
+---
+title: 'Consulter un ordre'
+description: 'Obtenir l''état courant d''un de vos ordres'
+openapi: 'GET /session/lookupOrder'
+---
+
+Obtenez l'état courant d'un des ordres de l'appelant. Renvoie l'ordre avec la comptabilité `matchedRisk` / `unmatchedRisk` et un instantané dénormalisé du match sous-jacent.
+
+## Requête {#request}
+
+`GET /session/lookupOrder`
+
+<ParamField query="orderID" type="string" required>
+  Un id d'ordre 4casters. Obtenez-en un depuis `data.unmatched.orderID` de `/session/v3/place` ou `id` de `/user/getUnmatched`.
+</ParamField>
+
+<CodeGroup>
+```bash curl
+curl "https://api.4casters.io/session/lookupOrder?orderID=ORDER_ID" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+</CodeGroup>
+
+## Réponse {#response}
+
+<ResponseField name="data.order" type="object">
+  <Expandable title="order">
+    <ResponseField name="id" type="string" />
+    <ResponseField name="cancelled" type="boolean" />
+    <ResponseField name="isTheBestOffer" type="boolean">
+      `true` quand aucune offre concurrente de l'autre côté n'a de meilleures cotes que cet ordre.
+    </ResponseField>
+    <ResponseField name="odds" type="integer">Cotes américaines de cet ordre (signe inversé par rapport au stockage interne).</ResponseField>
+    <ResponseField name="type" type="string">`moneyline`, `spread`, `total` ou `moneyline1x2`.</ResponseField>
+    <ResponseField name="OU" type="string">Opposé du côté de l'ordre pour les marchés `total`. `null` pour les non-total.</ResponseField>
+    <ResponseField name="participant" type="string">Id du participant sur lequel vous avez parié. `null` pour `total`.</ResponseField>
+    <ResponseField name="participantLongName" type="string" />
+    <ResponseField name="spread" type="number" />
+    <ResponseField name="total" type="number" />
+    <ResponseField name="matchedRisk" type="string">Risque déjà matché (formaté en chaîne, 2 décimales).</ResponseField>
+    <ResponseField name="unmatchedRisk" type="string">Risque restant encore en attente au carnet.</ResponseField>
+    <Snippet file="fr/types/game-summary.mdx" />
+  </Expandable>
+</ResponseField>
+
+## Erreurs {#errors}
+
+| Statut | Signification |
+| ------ | ------- |
+| `403`  | Cet ordre n'est pas le vôtre. |
+| `404`  | Id d'ordre invalide. |

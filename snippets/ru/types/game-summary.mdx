@@ -1,0 +1,15 @@
+<ResponseField name="game" type="object">
+  Денормализованный снимок игры, к которой относится эта ставка.
+  <Expandable title="game">
+    <ResponseField name="id" type="string">Id игры.</ResponseField>
+    <ResponseField name="league" type="string">Код лиги (например, `NBA`, `PREMIER-LEAGUE`).</ResponseField>
+    <ResponseField name="sport" type="string">Вид спорта (например, `basketball`, `soccer`).</ResponseField>
+    <ResponseField name="start" type="string">Время начала игры в формате ISO 8601.</ResponseField>
+    <ResponseField name="ended" type="boolean">Завершилась ли игра.</ResponseField>
+    <ResponseField name="eventName" type="string">Человекочитаемое название матча (для некоторых лиг может быть `null`).</ResponseField>
+    <ResponseField name="isFutures" type="boolean">`true` для фьючерсов и аналогичных специальных рынков.</ResponseField>
+    <ResponseField name="participants" type="array">
+      Массив из двух элементов: `[away, home]`. Каждый участник содержит `id`, `longName`, `shortName`, `homeAway`, `mainPitcher`, `rotationNumber`, `futuresSide` и (для завершившихся игр) `score`.
+    </ResponseField>
+  </Expandable>
+</ResponseField>

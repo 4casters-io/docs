@@ -1,0 +1,44 @@
+---
+title: 'Weddenschap op wager-request-id ophalen'
+description: 'Elke weddenschap opzoeken die uit één plaatsingsverzoek voortkwam'
+openapi: 'GET /user/getBetByWagerRequestID'
+---
+
+Zoek elke weddenschap op die aan één `wagerRequestID` hangt. Een `wagerRequestID` wordt door de server gegenereerd voor **elke** order in een plaatsingsverzoek — gebruik hem om elke fill en openstaande offer die uit één ingediende order voortkwam aan elkaar te knopen.
+
+Het antwoord verdeelt de resultaten in drie groepen:
+
+- `unmatched` — open offers van het verzoek die nog in het boek staan. **Voor dit endpoint altijd leeg** — gebruik in plaats daarvan [Weddenschap op userreferentie ophalen](/nl/pages/rest/user/get-bet-by-user-reference) als je open offers in het antwoord nodig hebt.
+- `matched`   — gematchte (nog niet afgewikkelde) weddenschappen van het verzoek.
+- `graded`    — afgewikkelde weddenschappen van het verzoek, inclusief `risk`, `win`, `fee` en `result`.
+
+## Verzoek {#request}
+
+`GET /user/getBetByWagerRequestID`
+
+<ParamField query="wagerRequestID" type="string" required>
+  De `wagerRequestID` die `/session/v3/place` teruggeeft (in het veld `matched[].wagerRequestID` of `unmatched.wagerRequestID`).
+</ParamField>
+
+<CodeGroup>
+```bash curl
+curl "https://api.4casters.io/user/getBetByWagerRequestID?wagerRequestID=65f69afec4c141f5ecc5dc0b" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+</CodeGroup>
+
+## Antwoord {#response}
+
+<ResponseField name="data.unmatched" type="array">Lege array.</ResponseField>
+<ResponseField name="data.matched" type="array">
+  Gematchte (nog niet afgewikkelde) weddenschappen — zelfde vorm als [Gematchte weddenschappen ophalen](/nl/pages/rest/user/get-matched-bets#response).
+</ResponseField>
+<ResponseField name="data.graded" type="array">
+  Afgewikkelde weddenschappen — zelfde vorm als [Afgewikkelde wagers ophalen](/nl/pages/rest/user/get-graded-wagers#response).
+</ResponseField>
+
+## Fouten {#errors}
+
+| Status | Betekenis |
+| ------ | ------- |
+| `400`  | `wagerRequestID` ontbreekt of is onbekend. |

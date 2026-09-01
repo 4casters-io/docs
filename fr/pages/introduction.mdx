@@ -1,0 +1,65 @@
+---
+title: 'API 4casters'
+description: 'Accès programmatique à l''exchange de paris peer-to-peer 4casters'
+---
+
+4casters expose trois APIs qui partagent le même token d'authentification et le même moteur sous-jacent de compte / carnet d'ordres / règlement. Choisissez celle qui correspond à ce que vous construisez, ou combinez-les — la plupart des intégrations utilisent REST pour la configuration + l'historique et un WebSocket pour le trading en direct.
+
+## Choisissez votre API {#choose-your-api}
+
+<CardGroup cols={3}>
+  <Card title="API REST" icon="globe" href="/fr/pages/rest/introduction">
+    Requête / réponse via HTTPS. À utiliser pour la connexion, l'état du compte, l'historique, les consultations de marché et le placement / la modification / l'annulation par lots.
+  </Card>
+  <Card title="WebSocket d'ordres" icon="bolt" href="/fr/pages/websocket/introduction">
+    Canal persistant à faible latence pour placer et annuler des ordres. À utiliser quand la latence aller-retour compte pour vous.
+  </Card>
+  <Card title="WebSocket de streaming" icon="signal-stream" href="/fr/pages/streaming/introduction">
+    Flux push pour les ticks du carnet d'ordres et les exécutions / règlements par compte. À utiliser pour garder l'état synchronisé sans polling.
+  </Card>
+</CardGroup>
+
+## Quand utiliser laquelle {#when-to-use-which}
+
+| Canal | Idéal pour | À éviter pour |
+| --- | --- | --- |
+| **REST** (`https://api.4casters.io`) | Connexion, informations de compte, historique des paris, consultations, exploration des marchés, placement / modification / annulation par lots, tout ce que vous lanceriez depuis un script ou un job backend. | Les boucles internes serrées où la latence aller-retour compte. |
+| **WebSocket d'ordres** (`wss://orders-api.4casters.io/orders/ws`) | Trading en direct : placement + annulation à faible latence avec une session persistante et une corrélation par `requestID`. | La lecture d'état — c'est un canal d'écriture/commande, pas une API de consultation. |
+| **WebSocket de streaming** (`wss://streaming-api.4casters.io/...`) | Ticks du carnet d'ordres en temps réel (flux des prix) et événements d'exécution / de règlement par compte (flux utilisateur). | Les lectures ponctuelles — utilisez REST plutôt que d'ouvrir un flux. |
+
+## Authentification {#authentication}
+
+Les trois APIs partagent un seul token.
+
+1. Appelez [`POST /user/login`](/fr/pages/rest/authentication) sur l'API REST avec votre nom d'utilisateur et votre mot de passe.
+2. Envoyez le token renvoyé sur chaque requête suivante :
+   - **REST** : en-tête `Authorization: Bearer <token>`.
+   - **WebSockets** : en-tête `Authorization: <token>` lors du handshake.
+
+Les tokens sont valides 30 jours et peuvent être renouvelés avant expiration. Voir [Authentification](/fr/pages/rest/authentication) pour le renouvellement du token, l'authentification par cookie signé et les détails.
+
+## Conventions {#conventions}
+
+- **Transport** : HTTPS / WSS uniquement.
+- **Encodage** : JSON partout.
+- **Enveloppe de réponse (REST)** : `{ "data": <payload> }` en cas de succès ; `{ "error": "<message>" }` sur les erreurs HTTP.
+- **Identifiants** : les ids de match, de participant et d'ordre sont des chaînes `ObjectID` MongoDB (24 caractères hexadécimaux).
+- **Cotes** : format américain (négatives pour les favoris, positives pour les outsiders) sauf mention contraire.
+- **Temps** : ISO 8601 avec `Z` (UTC).
+
+## Une intégration type {#a-typical-integration}
+
+La plupart des clients non triviaux combinent les trois :
+
+1. **REST** — `POST /user/login` une fois, mettez le token en cache, puis appelez `GET /user/getMe` et `GET /games/v2/leagues` pour initialiser l'état.
+2. **WebSocket de streaming** — ouvrez le flux des prix pour les marchés qui vous intéressent et le flux utilisateur pour réagir à vos propres exécutions / règlements.
+3. **WebSocket d'ordres** — ouvrez une connexion persistante et placez / annulez des ordres à faible latence, en corrélant les réponses par `requestID`.
+4. **REST** — repliez-vous sur `POST /myBets/getMatchedBets`, `/myBets/getOrdersForGame`, etc. pour l'historique et la réconciliation.
+
+## Besoin des anciennes docs ? {#need-the-old-docs}
+
+La documentation précédente vivait sous forme de collection Postman. Elle est conservée pour référence, mais ces docs Mintlify sont désormais la source de vérité — la collection Postman peut être en retard sur les nouveaux endpoints, paramètres ou formats de réponse.
+
+<Card title="API 4Casters — collection Postman" icon="link" href="https://documenter.getpostman.com/view/6710109/U16gNmHG">
+  Voir la documentation Postman héritée
+</Card>

@@ -1,0 +1,68 @@
+---
+title: 'API ордеров 4casters'
+---
+
+API ордеров 4casters поддерживает размещение и отмену ордеров, а также управление сессией в реальном времени по «сырому» WebSocket-соединению.
+
+## Эндпоинты {#endpoints}
+- **API ордеров**: `wss://orders-api.4casters.io/orders/ws`
+
+## Аутентификация {#auth}
+
+Соединение аутентифицируется token 4Casters. Отправьте token в заголовке
+`Authorization` при рукопожатии WebSocket. Сервер определяет пользователя
+по token — **без имени пользователя в URL**.
+
+### Получить token {#get-a-token}
+
+Выполните вход со своими именем пользователя и паролем 4Casters, вызвав эндпоинт `/user/login`
+REST API 4Casters. Ответ содержит token, который можно использовать
+здесь.
+
+См. [`POST /user/login` в документации REST API 4Casters](/ru/pages/rest/authentication).
+
+### Подключение {#connect}
+
+<CodeGroup>
+```javascript JavaScript
+const WebSocket = require('ws');
+const token = process.env.FOURCASTERS_TOKEN;
+const ws = new WebSocket('wss://orders-api.4casters.io/orders/ws', {
+  headers: { Authorization: token },
+});
+```
+</CodeGroup>
+
+## Формат сообщений {#message-format}
+
+Каждый запрос клиента — это 2-кортеж `[messageType, payload]`. Каждая полезная нагрузка должна включать сгенерированный вами `requestID`; сервер возвращает его обратно, чтобы вы могли сопоставлять ответы.
+
+<CodeGroup>
+```json Запрос
+[
+  "messageType",
+  {
+    "requestID": "YOUR_REQUEST_ID",
+    "...": "..."
+  }
+]
+```
+</CodeGroup>
+
+Ответы сервера — JSON-объекты с `requestID` и либо `data` (успех), либо `error` (отказ):
+
+<CodeGroup>
+```json Успех
+{
+  "requestID": "YOUR_REQUEST_ID",
+  "data": { "...": "..." }
+}
+```
+
+```json Ошибка
+{
+  "requestID": "YOUR_REQUEST_ID",
+  "error": "human-readable error"
+}
+```
+</CodeGroup>

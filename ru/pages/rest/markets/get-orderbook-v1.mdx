@@ -1,0 +1,41 @@
+---
+title: 'Получить книгу ордеров (v1, устарел)'
+description: 'Устаревший эндпоинт вложенной книги ордеров, сохранённый для обратной совместимости'
+openapi: 'POST /exchange/getOrderbook'
+---
+
+<Warning>
+**Устарел.** Используйте [`GET /exchange/v2/getOrderbook`](/ru/pages/rest/markets/get-orderbook) — более простой рекомендуемый плоский формат.
+
+Этот эндпоинт сохранён для обратной совместимости со старыми клиентами.
+</Warning>
+
+Возвращает книгу ордеров для целой лиги во **вложенном** виде, с ключами по числу форы / тотала. Тот же формат по каждой игре, что и в [Получить книгу ордеров одной игры](/ru/pages/rest/markets/get-single-orderbook), но для каждой игры лиги.
+
+## Запрос {#request}
+
+`POST /exchange/getOrderbook`
+
+<ParamField body="leagueRequested" type="string" required>
+  Код лиги (нечувствителен к регистру).
+</ParamField>
+
+<CodeGroup>
+```bash curl
+curl -X POST https://api.4casters.io/exchange/getOrderbook \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"leagueRequested": "NBA"}'
+```
+</CodeGroup>
+
+## Ответ {#response}
+
+<ResponseField name="data.market" type="string">В этом эндпоинте всегда `null`.</ResponseField>
+<ResponseField name="data.games"  type="array">
+  Массив игр с полями вложенной книги ордеров. Формат по каждой игре — см. [Получить книгу ордеров одной игры](/ru/pages/rest/markets/get-single-orderbook#response): массивы `awayMoneylines` / `homeMoneylines` плюс объекты `awaySpreads` / `homeSpreads` / `over` / `under` с ключами по числу форы или тотала.
+</ResponseField>
+
+Каждый отдельный ордер в этих группах имеет стандартный формат ордера:
+
+<Snippet file="ru/types/orderbook-order.mdx" />

@@ -48,7 +48,7 @@ The exception list is `INLINE_EXEMPT` in `scripts/check-structure.py`, keyed on 
 3. Add explicit `{#anchor}` IDs to translated headings.
 4. Add the `navigation.languages` block to `docs.json`.
 5. Add the locale to `LOCALES` in **both** `scripts/check-structure.py` and `scripts/check-links.py` — they are separate lists.
-6. Write the glossary section for the language, below, **before** drafting. Not after.
+6. Write the glossary for the language **before** drafting, not after — either a section below or a `{locale}/GLOSSARY-DRAFT.md` in the locale tree (where the six 2026-09 drafts live). It merges into this file when its reviewer signs off.
 7. Add the disclaimer banner for the locale (see below) unless a fluent human has read the pages.
 8. Pass both gates.
 
@@ -65,6 +65,8 @@ Both exit non-zero on failure. Zero failures is the bar.
 `check-structure.py` also reports **informational** findings for translated CodeGroup fence labels. Those are rule 4 being followed, not problems. Only the failure count matters.
 
 ### Gate 2 — a native speaker reads it
+
+Assignments (PM, 2026-09-01): **`es` — David · `it` — in-house Italian speaker · `zh-Hans` + `zh-Hant` — Adam.** `ru`, `fr`, `pt-BR`, `pt`, `nl` unassigned — those trees ship behind their AI-translation banner until someone fluent reads them.
 
 A fluent reader confirms the prose reads naturally and the glossary terms are right.
 
@@ -233,6 +235,111 @@ They differ in vocabulary, and in a grammar pattern that shows up constantly in 
 | we are processing | estamos **a processar** | estamos **processando** |
 
 Each needs its own reviewer. Neither is a derivation of the other.
+
+### Russian (`ru`) — draft, reviewer unassigned
+
+Formal вы. Fuller table + open questions: `ru/GLOSSARY-DRAFT.md`.
+
+| English | Russian |
+|---|---|
+| matched / unmatched | сведённый / несведённый |
+| fill / partial fill | исполнение / частичное исполнение |
+| orderbook | книга ордеров |
+| resting order | ожидающий ордер |
+| stake | ставка |
+| wager (graded) vs bet | пари (рассчитанное) / ставка — mirrors the API split |
+| settle / graded | рассчитать / рассчитанный |
+| liability | ответственность (≠ риск, the `risk` field) |
+| american odds | американские коэффициенты |
+| user feed / price feed | фид пользователя / фид цен |
+| in-play | лайв |
+
+### French (`fr`) — draft, reviewer unassigned
+
+vous. Fuller table + open questions: `fr/GLOSSARY-DRAFT.md`.
+
+| English | French |
+|---|---|
+| matched / unmatched | matché(e) / non matché(e) — Betfair FR |
+| orderbook | carnet d'ordres |
+| resting order | ordre en attente |
+| stake | mise |
+| settle / graded | régler / réglé |
+| graded wager | wager réglé (`wager` kept for the API split) |
+| liability | responsabilité |
+| american odds | cotes américaines |
+| game / league | match / ligue |
+| user feed / price feed | flux utilisateur / flux des prix |
+| in-play | en direct |
+
+### Brazilian Portuguese (`pt-BR`) — draft, reviewer unassigned
+
+você, gerúndio, usuário/tela/cadastro. Fuller table: `pt-BR/GLOSSARY-DRAFT.md`.
+
+| English | pt-BR |
+|---|---|
+| matched / unmatched | correspondida / não correspondida |
+| fill | correspondência |
+| orderbook | livro de ofertas |
+| resting order | ordem em espera |
+| stake | valor apostado |
+| settle / graded | liquidar / liquidada |
+| liability | responsabilidade |
+| american odds | odds americanas (`odds` stays English) |
+| user feed / price feed | feed do usuário / feed de preços |
+| in-play | ao vivo |
+
+### European Portuguese (`pt`) — draft, reviewer unassigned
+
+utilizador, estar a + infinitivo, registo. Fuller table: `pt/GLOSSARY-DRAFT.md`.
+
+| English | pt |
+|---|---|
+| matched / unmatched | correspondida / não correspondida |
+| fill | execução — deliberately distinct from pt-BR's correspondência |
+| orderbook | livro de ordens |
+| resting order | ordem em espera |
+| stake | montante |
+| settle / graded | liquidar / avaliada — note pt-BR uses liquidada for graded |
+| liability | responsabilidade |
+| american odds | odds americanas |
+| user feed / price feed | feed de utilizador / feed de preços |
+| in-play | ao vivo |
+
+### Dutch (`nl`) — draft, reviewer unassigned
+
+je. Fuller table + open questions: `nl/GLOSSARY-DRAFT.md`.
+
+| English | Dutch |
+|---|---|
+| matched / unmatched | gematcht / niet-gematcht |
+| fill | fill (English) |
+| orderbook | orderboek |
+| resting order | openstaande order |
+| stake | inzet |
+| settle / graded | afwikkelen / afgewikkeld |
+| liability | liability (English, glossed "je maximale verlies") — aansprakelijkheid too legal, risico collides with `risk` |
+| american odds | Amerikaanse odds |
+| user feed / price feed | English kept |
+| in-play | live (in-play) |
+
+### Italian (`it`) — draft, in-house reviewer assigned
+
+tu. Fuller table + open questions: `it/GLOSSARY-DRAFT.md`.
+
+| English | Italian |
+|---|---|
+| matched / unmatched | abbinata / non abbinata — Betfair Italia |
+| fill | abbinamento |
+| orderbook | libro degli ordini |
+| resting order | ordine in attesa |
+| stake | puntata |
+| settle | liquidare |
+| graded wager | giocata refertata — giocata vs scommessa mirrors the API split |
+| liability | responsabilità |
+| american odds | quote americane |
+| user feed / price feed | feed utente / feed prezzi |
+| in-play | live |
 
 ### New languages
 

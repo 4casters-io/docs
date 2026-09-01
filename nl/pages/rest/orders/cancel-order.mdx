@@ -1,0 +1,68 @@
+---
+title: 'Een order annuleren'
+description: 'Eén openstaande order annuleren'
+openapi: 'POST /session/cancel'
+---
+
+Annuleer één openstaande order op id. Geeft de ongevulde en gevulde bedragen op het moment van annulering terug.
+
+## Verzoek {#request}
+
+`POST /session/cancel`
+
+<ParamField body="sessionID" type="string" required>
+  Order-id om te annuleren.
+</ParamField>
+
+<CodeGroup>
+```bash curl
+curl -X POST https://api.4casters.io/session/cancel \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"sessionID": "65b036dfb31407c2b6bc1cfe"}'
+```
+</CodeGroup>
+
+## Antwoord {#response}
+
+<ResponseField name="data" type="object">
+  <Expandable title="CancelResult">
+    <ResponseField name="success"      type="boolean" />
+    <ResponseField name="sessionID"    type="string">Order-id dat is geannuleerd.</ResponseField>
+    <ResponseField name="description"  type="string">Leesbare beschrijving van de order (bijv. `Lakers -3.5 -110`).</ResponseField>
+    <ResponseField name="odds"         type="integer">Amerikaanse odds van de geannuleerde order.</ResponseField>
+    <ResponseField name="filled"       type="number">Risico dat op het moment van annuleren al gematcht was.</ResponseField>
+    <ResponseField name="offered"      type="number" />
+    <ResponseField name="remaining"    type="number">Risico dat nog niet-gematcht was en nu wordt terugbetaald.</ResponseField>
+    <ResponseField name="gameID"       type="string" />
+    <ResponseField name="userReference" type="string" />
+  </Expandable>
+</ResponseField>
+
+### Voorbeeld {#example}
+
+<CodeGroup>
+```json JSON
+{
+  "data": {
+    "success": true,
+    "sessionID": "65b036dfb31407c2b6bc1cfe",
+    "description": "Lakers ML +125",
+    "odds": 125,
+    "filled": 0,
+    "offered": 0,
+    "remaining": 100,
+    "gameID": "65f0c3c24ef07d0008abc123",
+    "userReference": "my-order-1"
+  }
+}
+```
+</CodeGroup>
+
+## Fouten {#errors}
+
+| Status | Betekenis |
+| ------ | ------- |
+| `400`  | Ongeldig order-id. |
+| `403`  | Niet jouw order. |
+| `409`  | Order kon niet worden geannuleerd (bijv. al volledig gevuld). |

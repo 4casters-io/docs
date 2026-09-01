@@ -1,0 +1,68 @@
+---
+title: 'Heartbeat'
+---
+
+L'heartbeat mantiene viva la tua sessione. Invia un heartbeat con un `requestTimeout` (in **secondi**) — se il server non riceve un altro heartbeat prima che quel timeout scada, **tutti i tuoi ordini aperti vengono annullati automaticamente**.
+
+Di solito invii heartbeat a intervalli regolari (es. ogni 5s con un timeout di 10s) per tutta la durata della connessione.
+
+## Richiesta {#request}
+
+<CodeGroup>
+```json JSON
+[
+  "heartbeat",
+  {
+    "requestID": "YOUR_REQUEST_ID",
+    "requestTimeout": 10
+  }
+]
+```
+</CodeGroup>
+
+<ResponseField name="requestID" type="string">
+  Identificatore generato dal client; rimandato indietro nella risposta. Se omesso, il server ne genera uno.
+</ResponseField>
+<ResponseField name="requestTimeout" type="number" required>
+  Numero di secondi che il server deve attendere per il prossimo heartbeat prima di annullare tutti i tuoi ordini aperti. Deve essere maggiore di `0`.
+</ResponseField>
+
+## Risposta {#response}
+
+Il server risponde con un `heartbeatAck` contenente l'orologio del server e il timeout attivo.
+
+<CodeGroup>
+```json JSON
+{
+  "requestID": "YOUR_REQUEST_ID",
+  "data": {
+    "type": "heartbeatAck",
+    "serverTime": "2026-04-22T15:30:00.123456789Z",
+    "timeoutSec": 10
+  }
+}
+```
+</CodeGroup>
+
+<ResponseField name="data.type" type="string">
+  Sempre `heartbeatAck`.
+</ResponseField>
+<ResponseField name="data.serverTime" type="string">
+  Ora corrente del server in formato RFC 3339 con precisione al nanosecondo.
+</ResponseField>
+<ResponseField name="data.timeoutSec" type="number">
+  Riflette il `requestTimeout` che hai inviato.
+</ResponseField>
+
+## Errori {#errors}
+
+Se `requestTimeout` manca o è `<= 0`, il server restituisce:
+
+<CodeGroup>
+```json JSON
+{
+  "requestID": "YOUR_REQUEST_ID",
+  "error": "Invalid heartbeat timeout"
+}
+```
+</CodeGroup>

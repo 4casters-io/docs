@@ -1,0 +1,80 @@
+---
+title: 'Obter jogos'
+description: 'Liste os jogos ativos de uma liga'
+openapi: 'GET /exchange/v2/getGames'
+---
+
+Retorna todos os jogos ativos de uma liga. A resposta **não** inclui o livro de ofertas nem nenhum preço — chame [Obter livro de ofertas](/pt-BR/pages/rest/markets/get-orderbook) para isso.
+
+## Solicitação {#request}
+
+`GET /exchange/v2/getGames`
+
+<ParamField query="league" type="string" required>
+  Código da liga de [Obter ligas](/pt-BR/pages/rest/markets/get-leagues). Use o valor especial `upcoming` para obter todos os próximos jogos de todas as ligas.
+</ParamField>
+<ParamField query="sport" type="string">
+  Filtro opcional de esporte.
+</ParamField>
+
+<CodeGroup>
+```bash curl
+curl "https://api.4casters.io/exchange/v2/getGames?league=NBA" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+</CodeGroup>
+
+## Resposta {#response}
+
+<ResponseField name="data.games" type="array">
+  <Expandable title="Game">
+    <ResponseField name="id"             type="string">Id do jogo.</ResponseField>
+    <ResponseField name="parentGameID"   type="string">Id do jogo pai, se este é um mercado filho (props, períodos alternativos).</ResponseField>
+    <ResponseField name="cheapDataUID"   type="string">Identificador estável entre sistemas para o jogo (usado para correlação de linhas).</ResponseField>
+    <ResponseField name="league"         type="string" />
+    <ResponseField name="sport"          type="string" />
+    <ResponseField name="start"          type="string">Horário de início em ISO 8601.</ResponseField>
+    <ResponseField name="ended"          type="boolean" />
+    <ResponseField name="live"           type="boolean" />
+    <ResponseField name="featured"       type="boolean" />
+    <ResponseField name="eventName"      type="string" />
+    <ResponseField name="tournamentName" type="string" />
+    <ResponseField name="periodName"     type="string">ex.: `Full Time`, `1H`, `Set 1`.</ResponseField>
+    <ResponseField name="isSpecials"     type="boolean">`true` para futuros e outros mercados especiais.</ResponseField>
+    <ResponseField name="participants"   type="array">Array de dois elementos `[away, home]`. Cada participante tem `id`, `longName`, `shortName`, `homeAway`, `mainPitcher`, `rotationNumber`, `futuresSide`.</ResponseField>
+  </Expandable>
+</ResponseField>
+
+### Exemplo {#example}
+
+<CodeGroup>
+```json JSON
+{
+  "data": {
+    "games": [
+      {
+        "id": "6266c12172aefcf0033374ce",
+        "parentGameID": null,
+        "cheapDataUID": "32620-79238-2022-04-26",
+        "league": "NHL",
+        "sport": "hockey",
+        "start": "2022-04-26T18:00:00.000Z",
+        "ended": false,
+        "live": false,
+        "featured": false,
+        "participants": [
+          { "id": "60747bc471b5071a80ca0ac8", "longName": "Carolina Hurricanes", "shortName": "CAR", "homeAway": "away", "mainPitcher": null, "rotationNumber": "25", "futuresSide": "" },
+          { "id": "607349daf6d3364eb69604f6", "longName": "New York Rangers",    "shortName": "NEW", "homeAway": "home", "mainPitcher": null, "rotationNumber": "26", "futuresSide": "" }
+        ]
+      }
+    ]
+  }
+}
+```
+</CodeGroup>
+
+## Erros {#errors}
+
+| Status | Significado |
+| ------ | ------- |
+| `400`  | `league` é obrigatório. |

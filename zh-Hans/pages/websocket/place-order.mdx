@@ -63,15 +63,15 @@ title: '下单'
 
 ## 订单类型 {#order-types}
 
-### `limit`
+### `limit` {#limit}
 
 默认订单类型。作为 taker（收取 taker 佣金）按你的价格或更优价格吃掉任何可匹配流动性，未成交部分作为 maker 留在订单簿上。`limit` 订单最终可以是全部成交、全部挂单，或部分成交、剩余挂单。
 
-### `post`
+### `post` {#post}
 
 创建一笔挂单。如果下单时该订单**会与**已有流动性成交，服务器会拒绝它（通常为 `rejected_order_type_rules`，例如 `"post order cannot have matches"`）。
 
-### `postArb`
+### `postArb` {#postarb}
 
 行为类似 `post`，但**即使订单会成交也可以挂单**，**前提是**你的**美式赔率**与将被成交的挂单赔率相差不超过 **1%**。若价差**超过 1%**，下单会被拒绝。
 
@@ -86,13 +86,13 @@ title: '下单'
 
 以 `postArb` 下的订单，会在其[用户推送](/zh-Hans/pages/streaming/user-feed)和[行情推送](/zh-Hans/pages/streaming/price-feed)更新中带有 `isPostArb: true`；其他订单类型会省略该字段。下单响应本身不包含该标志。
 
-### `fillAndKill`
+### `fillAndKill` {#fillandkill}
 
 立即作为 taker 按你的价格或更优价格吃掉当前可成交数量，并取消剩余部分。`fillAndKill` 永远不会留在订单簿上。
 
 **部分成交**也是成功结果：向 $400 可匹配流动性发送 `bet: 1000`，将成交 $400，剩余 $600 被取消——这是成功，而非错误。仅当完全没有可匹配流动性时，订单才会被拒绝（`"fill and kill has no matches"`）。参见下方[示例](#examples)中的 Fill And Kill 场景。
 
-### `fillOrKill`
+### `fillOrKill` {#fillorkill}
 
 全成或全撤。你的**整笔** `bet` 必须立即按你的价格或更优价格成交，否则整笔订单被拒绝——包括途中已发生的成交，都会回滚。`fillOrKill` 永远不会留在订单簿上，也不会留下部分仓位。
 

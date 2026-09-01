@@ -1,0 +1,66 @@
+---
+title: 'Ottieni il libro degli ordini singolo'
+description: 'Leggi il libro degli ordini annidato di un evento, più i mercati figli'
+openapi: 'GET /exchange/getSingleOrderbook'
+---
+
+Restituisce il libro degli ordini **annidato** di un singolo evento — spread e total sono oggetti indicizzati per numero di spread / total invece di array appiattiti. Restituisce anche gli eventi figli (prop, periodi alternativi) e un `orderSummary` degli ordini in attesa del chiamante per la lega.
+
+Per la forma piatta, più semplice, preferisci [Ottieni il libro degli ordini](/it/pages/rest/markets/get-orderbook).
+
+## Richiesta {#request}
+
+`GET /exchange/getSingleOrderbook`
+
+<ParamField query="gameID" type="string" required>
+  Id dell'evento.
+</ParamField>
+
+<CodeGroup>
+```bash curl
+curl "https://api.4casters.io/exchange/getSingleOrderbook?gameID=65b67450503180295ade9216" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+</CodeGroup>
+
+## Risposta {#response}
+
+<ResponseField name="data.game" type="object">
+  Oggetto evento con i campi del libro degli ordini annidato. Si applicano i campi standard di `Game` (vedi [Ottieni gli eventi](/it/pages/rest/markets/get-games#response)), più:
+
+  <Expandable title="Campi del libro degli ordini per evento">
+    <ResponseField name="awayMoneylines" type="array">Ordini moneyline (quota sul vincente) in attesa lato trasferta. Ordinati a partire dal prezzo migliore.</ResponseField>
+    <ResponseField name="homeMoneylines" type="array">Ordini moneyline in attesa lato casa.</ResponseField>
+    <ResponseField name="awaySpreads"    type="object">Oggetto indicizzato per numero di spread (handicap di punti, es. `"-3.5"`). Ogni valore è un array di ordini.</ResponseField>
+    <ResponseField name="homeSpreads"    type="object">Oggetto indicizzato per numero di spread.</ResponseField>
+    <ResponseField name="over"           type="object">Oggetto indicizzato per numero di total (totale punti, es. `"220.5"`). Ogni valore è un array di ordini.</ResponseField>
+    <ResponseField name="under"          type="object" />
+    <ResponseField name="homeMoneylines1x2" type="object">**Solo calcio.** Oggetto con array `homeYes` / `homeNo`.</ResponseField>
+    <ResponseField name="awayMoneylines1x2" type="object">**Solo calcio.** Oggetto con array `awayYes` / `awayNo`.</ResponseField>
+    <ResponseField name="draw1x2"           type="object">**Solo calcio.** Oggetto con array `drawYes` / `drawNo`.</ResponseField>
+    <ResponseField name="mainHomeSpread"  type="string">Lo spread principale lato casa attualmente visualizzato (la linea di consenso).</ResponseField>
+    <ResponseField name="mainAwaySpread"  type="number" />
+    <ResponseField name="mainTotal"       type="string" />
+    <ResponseField name="openInterest"    type="number" />
+    <ResponseField name="matchedVolume"   type="number" />
+  </Expandable>
+</ResponseField>
+<ResponseField name="data.orderSummary" type="array">
+  Gli ordini in attesa del chiamante sull'intera lega (non solo su questo evento). Utile per mostrare badge "le tue offerte" in una UI.
+</ResponseField>
+<ResponseField name="data.childGames" type="array">
+  Eventi figli (periodi alternativi, ecc.) dell'evento richiesto. Stessa forma di `data.game`.
+</ResponseField>
+<ResponseField name="data.propGames" type="array">
+  Eventi prop legati all'evento richiesto.
+</ResponseField>
+
+Ogni singolo ordine ha la forma standard dell'ordine:
+
+<Snippet file="it/types/orderbook-order.mdx" />
+
+## Errori {#errors}
+
+| Stato | Significato |
+| ------ | ------- |
+| `400`  | `gameID` mancante. |

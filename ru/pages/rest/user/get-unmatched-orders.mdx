@@ -1,0 +1,94 @@
+---
+title: 'Получить несведённые ордера'
+description: 'Список ваших открытых ордеров, ожидающих на бирже'
+openapi: 'GET /user/getUnmatched'
+---
+
+Возвращает все **открытые ордера** вызывающего, которые сейчас лежат на бирже и доступны для сведения.
+
+## Запрос {#request}
+
+`GET /user/getUnmatched`
+
+Не принимает параметров.
+
+<CodeGroup>
+```bash curl
+curl https://api.4casters.io/user/getUnmatched \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+</CodeGroup>
+
+## Ответ {#response}
+
+<ResponseField name="data.unmatched" type="array">
+  Массив открытых ордеров, отсортированный по возрастанию времени начала игры.
+  <Expandable title="UnmatchedOrder">
+    <ResponseField name="id" type="string">Id ордера.</ResponseField>
+    <ResponseField name="txID" type="string">Id транзакции создания ордера.</ResponseField>
+    <ResponseField name="type" type="string">`moneyline` (ставка на победителя), `spread` (фора), `total` (тотал) или `moneyline1x2`.</ResponseField>
+    <ResponseField name="bet" type="number">Исходный `bet` (риск).</ResponseField>
+    <ResponseField name="odds" type="integer">Американские коэффициенты.</ResponseField>
+    <ResponseField name="spread" type="number">Присутствует для `spread`.</ResponseField>
+    <ResponseField name="total" type="number">Присутствует для `total`.</ResponseField>
+    <ResponseField name="participantID" type="string">Присутствует для `moneyline` и `spread` — участник, на которого сделана ставка.</ResponseField>
+    <ResponseField name="otherParticipantID" type="string">Id противоположного участника (чья сторона предлагается).</ResponseField>
+    <ResponseField name="filled" type="number">Риск, который уже сведён.</ResponseField>
+    <ResponseField name="offered" type="number">Исходная сумма предложения (сведённое + остаток).</ResponseField>
+    <ResponseField name="remaining" type="number">Сумма выигрыша, всё ещё доступная по этому ордеру (taker платит риск, чтобы её забрать).</ResponseField>
+    <ResponseField name="takenRatio" type="number">Доля ордера, которая была сведена, от `0` до `1`.</ResponseField>
+    <ResponseField name="expiry" type="string">Время автоматической отмены (ISO 8601). `null`, если срок действия не задан.</ResponseField>
+    <ResponseField name="createdAt" type="string">Временная метка ISO 8601.</ResponseField>
+    <ResponseField name="origin" type="string">`offer` или `wager`.</ResponseField>
+    <ResponseField name="userReference" type="string">Определяемый клиентом идентификатор, сохранённый с момента размещения.</ResponseField>
+    <ResponseField name="wagerRequestID" type="string">Сгенерированный сервером id, группирующий все исполнения / предложения, происходящие от исходного запроса на размещение.</ResponseField>
+    <ResponseField name="graded" type="boolean">Всегда `false`.</ResponseField>
+    <ResponseField name="closed" type="boolean" />
+    <ResponseField name="adminRefund" type="boolean" />
+    <Snippet file="ru/types/game-summary.mdx" />
+  </Expandable>
+</ResponseField>
+
+### Пример {#example}
+
+<CodeGroup>
+```json JSON
+{
+  "data": {
+    "unmatched": [
+      {
+        "id": "62851e3bd54b74e52c39953c",
+        "txID": "62851e3bd54b74e52c39953b",
+        "type": "moneyline",
+        "bet": 100,
+        "odds": 165,
+        "spread": null,
+        "total": null,
+        "participantID": "6165e6e23c65e61a09bf1f73",
+        "otherParticipantID": "626dca8a83899580a06ba87e",
+        "filled": 0,
+        "offered": 100,
+        "remaining": 100,
+        "takenRatio": 0,
+        "expiry": "2022-05-18T23:08:00.000Z",
+        "createdAt": "2022-05-18T16:26:35.601Z",
+        "origin": "offer",
+        "graded": false,
+        "closed": false,
+        "adminRefund": false,
+        "game": {
+          "id": "62823d9d75d894042dfee218",
+          "league": "NHL",
+          "sport": "hockey",
+          "start": "2022-05-18T23:08:00.000Z",
+          "ended": false,
+          "eventName": "NEW YORK RANGERS VS CAROLINA HURRICANES",
+          "isFutures": false,
+          "participants": [/* ... */]
+        }
+      }
+    ]
+  }
+}
+```
+</CodeGroup>

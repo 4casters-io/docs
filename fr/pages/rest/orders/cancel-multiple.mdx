@@ -1,0 +1,62 @@
+---
+title: 'Annuler plusieurs ordres'
+description: 'Annuler un lot d''ordres par id'
+openapi: 'POST /session/cancelMultiple'
+---
+
+Annulez un lot d'ordres par id. Le résultat est positionnel par rapport au tableau `sessionIDs` d'entrée et peut contenir un mélange d'annulations réussies et d'échecs par ordre.
+
+## Requête {#request}
+
+`POST /session/cancelMultiple`
+
+<ParamField body="sessionIDs" type="array" required>
+  Tableau des ids d'ordres à annuler. Chaque id doit être un `ObjectID` valide — si l'un d'eux est malformé, la requête entière échoue avec `400`.
+</ParamField>
+
+<CodeGroup>
+```bash curl
+curl -X POST https://api.4casters.io/session/cancelMultiple \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "sessionIDs": [
+      "65b036dfb31407c2b6bc1cfe",
+      "65b036e0b31407c2b6bc1d08"
+    ]
+  }'
+```
+</CodeGroup>
+
+## Réponse {#response}
+
+<ResponseField name="data" type="array">
+  Résultats d'annulation par ordre. Même format que [Annuler un ordre](/fr/pages/rest/orders/cancel-order#response). En cas d'échec, les entrées incluent `{ success: false, reason: "..." }` (pas de champ `sessionID` pour les rejets id-invalide / introuvable / pas-le-vôtre).
+</ResponseField>
+
+### Exemple {#example}
+
+<CodeGroup>
+```json JSON
+{
+  "data": [
+    {
+      "success": true,
+      "sessionID": "65b036dfb31407c2b6bc1cfe",
+      "odds": 125,
+      "filled": 0,
+      "offered": 0,
+      "remaining": 100,
+      "gameID": "65f0c3c24ef07d0008abc123"
+    },
+    { "success": false, "reason": "Not your order" }
+  ]
+}
+```
+</CodeGroup>
+
+## Erreurs {#errors}
+
+| Statut | Signification |
+| ------ | ------- |
+| `400`  | `sessionIDs` manquant ou pas un tableau, ou un id malformé. |

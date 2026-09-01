@@ -1,0 +1,546 @@
+Фид пользователя передаёт обновления в рамках вашего аккаунта (ордера, исполнения, отмены).
+
+<CodeGroup>
+```javascript JavaScript
+// user_feed_quickstart.js 
+const WebSocket = require('ws'); 
+const token = process.env.FOURCASTERS_TOKEN; 
+function connectUserFeed() { 
+  const ws = new WebSocket('wss://streaming-api.4casters.io/v2/user', { 
+    headers: { Authorization: token }, 
+  });
+  let pingTimer; let lastPong = Date.now(); 
+  ws.on('open', () => { 
+    console.log('user feed connected'); 
+    pingTimer = setInterval(() => { 
+      if (ws.readyState === WebSocket.OPEN) { 
+        ws.ping(); 
+      } 
+      if (Date.now() - lastPong > 30000) { 
+        console.warn('user feed: missed pong >30s, closing'); 
+        ws.terminate(); 
+      } 
+    }, 10000); 
+  }); 
+ 
+  ws.on('pong', () => { lastPong = Date.now(); }); 
+ 
+  ws.on('message', (buf) => { 
+    try { 
+      const msg = JSON.parse(buf.toString()); 
+      console.log('user update:', JSON.stringify(msg, null, 2)); 
+    } catch { console.log('user update (raw):', buf.toString()); } 
+  }); 
+ 
+  ws.on('error', (e) => console.error('⚠️ user feed error:', e.message));
+ 
+  ws.on('close', (code, reason) => { 
+    console.log(`user feed closed: ${code} ${reason}`); 
+    clearInterval(pingTimer); 
+    // basic backoff reconnect 
+    setTimeout(connectUserFeed, 1000); 
+  }); 
+} 
+ 
+connectUserFeed(); 
+```
+</CodeGroup>
+
+## Сообщения {#messages}
+
+Фид пользователя отправляет каждое обновление как **обычный JSON-объект** (без кортежа-конверта). У всех обновлений один конверт; действие определяется тем, какие из блоков `unmatched` / `matched` заполнены, и значением `origin`.
+
+### Общий конверт {#common-envelope}
+
+<CodeGroup>
+```typescript Схема
+{
+  matched:    null | MatchedBlock,
+  unmatched:  null | UnmatchedBlock,
+  origin:     "offer" | "wager",
+
+  gameID:             string,
+  parentGameID:       string | null,
+  eventName:          string,
+  league:             string,
+  sport:              string,
+  live:               boolean,
+  start:              string,   // RFC3339
+  awayRotationNumber: string,
+
+  platform:           string,   // e.g. "api"
+  createdAt:          string,   // RFC3339
+  messageID:          string,   // Redis stream entry id, e.g. "1715361234567-0"
+}
+```
+</CodeGroup>
+
+`messageID` — идентификатор записи потока, добавляемый streaming-api перед отправкой. Сохраняйте последний обработанный вами — это ваш курсор повтора. См. [Повтор пропущенных сообщений](#replaying-missed-messages) ниже.
+
+### Блок `matched` {#the-matched-block}
+
+Присутствует всякий раз, когда обновление представляет исполнение (`matched != null`). Каждое поле ниже отправляется при
+каждом исполнении, если не помечено как условное. Все значения — с **вашей** точки зрения: в роли taker вы видите
+взятую вами сторону, в роли maker — вашу размещённую сторону.
+
+| Поле | Тип | Отправляется | Значение |
+|---|---|---|---|
+| `txID` | string | всегда | Id ставки. Дедуплицируйте исполнения по нему — это тот же `txID`, который возвращает [получение сведённых ставок](/ru/pages/rest/user/get-matched-bets). |
+| `orderID` | string | всегда | Id ордера, с которого пришло это исполнение. В роли maker — ваш ожидающий ордер; в роли taker — ордер, который вы взяли. |
+| `wagerRequestID` | string | всегда | Id запроса на размещение, стоящего за исполнением. В роли taker — ваш собственный запрос; в роли maker — запрос, который изначально разместил ваш ордер. |
+| `amount` | number | всегда | Ставка **без** комиссии. Равен `risk` при исполнении maker, но **не** при исполнении taker — см. ниже. |
+| `risk` | number | всегда | Сколько вы можете потерять на этом исполнении. В роли taker — с учётом комиссии, взимаемой при проигрыше; в роли maker комиссия не применяется. |
+| `win` | number | всегда | Сколько вы можете выиграть на этом исполнении. В роли taker — за вычетом комиссии, взимаемой при выигрыше; в роли maker комиссия не применяется. |
+| `odds` | integer | всегда | Американские коэффициенты вашей стороны исполнения. |
+| `type` | string | всегда | `moneyline` (ставка на победителя), `spread` (фора), `total` (тотал) или `moneyline1x2`. |
+| `side` | string | всегда | См. [семантику side и market](#side-and-market-semantics-by-bet-type). |
+| `number` | number | условно | Линия форы или тотала. Полностью опускается для `moneyline` и `moneyline1x2`. |
+| `market` | string | условно | Только для `moneyline1x2`. |
+| `userReference` | string \| null | всегда | Возвращает `userReference`, отправленный вами с ордером. `null`, если вы его не отправляли. |
+| `isPostArb` | boolean | условно | `true` на исполнениях ордеров `postArb`; в остальных случаях опускается. |
+
+<Warning>
+  **Не вычисляйте `win` из `risk`.** `risk` и `win` округляются до 2 знаков независимо друг от друга
+  от неокруглённой ставки, поэтому `risk x odds` может расходиться с `win` на цент. Учитывайте `win` в том виде,
+  в каком он отправлен; если он отсутствует, считайте сообщение некорректным, а не восстанавливайте значение.
+
+  **Не считайте `amount` синонимом `risk`.** На исполнении taker `amount` не включает
+  комиссию, взимаемую при проигрыше, а `risk` включает её. Если учитывать `amount` как свой риск, вы будете
+  занижать комиссию на каждом взятии.
+</Warning>
+
+<Note>
+  Те же величины по REST ([получение сведённых ставок](/ru/pages/rest/user/get-matched-bets))
+  форматируются как строки с 2 знаками, а не числа, и вычисляются с немного другим порядком
+  комиссии и округления. Сверяйте с допуском в цент, а не через точное равенство.
+</Note>
+
+### Блок `unmatched` {#the-unmatched-block}
+
+Присутствует всякий раз, когда обновление касается ордера, лежащего в книге (или покидающего её) — размещения,
+отмены и сторона maker при исполнении. Коэффициенты и стороны — с точки зрения **maker**,
+то есть то, что разместили вы, а не то, что книга предлагает другим.
+
+| Поле | Тип | Отправляется | Значение |
+|---|---|---|---|
+| `orderID` | string | всегда | Id ордера. |
+| `wagerRequestID` | string | всегда | Id запроса на размещение, создавшего ордер. |
+| `filled` | number | всегда | **При исполнении: риск, сведённый только этим событием**, а не накопленный итог. `0` при размещении. При отмене — наоборот, суммарный риск, сведённый до того, как прошла отмена. |
+| `offered` | number | всегда | Общий риск, предложенный ордером. `0` означает отмену. |
+| `remaining` | number | всегда | Риск, всё ещё лежащий в книге. `0` — ордер полностью сведён. |
+| `odds` | integer | всегда | Американские коэффициенты вашей стороны ордера. |
+| `type` | string | всегда | `moneyline`, `spread`, `total` или `moneyline1x2`. |
+| `side` | string | всегда | См. [семантику side и market](#side-and-market-semantics-by-bet-type). |
+| `number` | number | условно | Линия форы или тотала. Полностью опускается для `moneyline` и `moneyline1x2`. |
+| `market` | string | условно | Только для `moneyline1x2`. |
+| `userReference` | string | условно | Возвращает отправленный вами `userReference`; опускается, если ордер его не имел. |
+| `isPostArb` | boolean | условно | `true` для ордеров `postArb`; в остальных случаях опускается. |
+
+<Warning>
+  `filled` и `remaining` — числа разного рода. `remaining` — это текущее состояние: сколько
+  осталось в книге прямо сейчас; но при исполнении `filled` описывает только это событие. На нескольких
+  частичных исполнениях они не складываются: `filled + remaining` равно `offered` на первом исполнении и
+  расходится после него.
+
+  Чтобы отслеживать, какая часть ожидающего ордера сведена, используйте `offered - remaining` или накапливайте
+  `filled` самостоятельно. Не смешивайте эти два подхода.
+</Warning>
+
+### Как определить действие {#how-to-identify-the-action}
+
+- `unmatched.filled === 0 && unmatched.offered > 0` -> ордер размещён
+- `unmatched.offered === 0` -> ордер отменён
+- `matched != null && unmatched == null` -> сведён в роли taker
+- `matched != null && unmatched != null` -> сведён в роли maker (частичное исполнение, если `unmatched.remaining > 0`)
+
+Обновления для ордеров, размещённых с `orderType: "postArb"`, также несут `isPostArb: true` внутри `matched` / `unmatched` (в обновлениях о размещении, исполнении и отмене); в остальных случаях поле опускается.
+
+### Семантика side и market по типам ставок {#side-and-market-semantics-by-bet-type}
+
+Значение `side` (и то, какие дополнительные поля появляются) внутри `matched` / `unmatched` зависит от `type`:
+
+| `type` | `side` | `number` | `market` |
+|---|---|---|---|
+| `moneyline` | шестнадцатеричный ObjectID участника | — | — |
+| `spread` | шестнадцатеричный ObjectID участника | линия форы (например, `6.5`) | — |
+| `total` | `"over"` / `"under"` | линия тотала (например, `209.5`) | — |
+| `moneyline1x2` | `"yes"` / `"no"` | — | шестнадцатеричный ObjectID участника (хозяева или гости) или `"draw"` |
+
+`market` присутствует только в обновлениях `moneyline1x2`: он называет исход трёхисходного рынка (домашняя команда, гостевая команда или ничья), а `side` говорит, является ли ставка «yes» или «no» по этому исходу. Все поля — с **вашей** точки зрения: в роли maker вы видите вашу размещённую сторону; в роли taker — взятую вами сторону.
+
+### Действие: ордер размещён {#action-order-placed}
+
+Новое предложение помещено в книгу. `unmatched.filled` равен `0`, `unmatched.offered > 0`, а `matched` равен `null`.
+
+<CodeGroup>
+```json JSON
+{
+  "unmatched": {
+    "filled": 0,
+    "offered": 999,
+    "remaining": 999,
+    "orderID": "62619e6b40e36d0494600f67",
+    "wagerRequestID": "62619e6b40e36d0494600f70",
+    "type": "moneyline",
+    "side": "607349dc22a237cf46b021fb",
+    "odds": -105
+  },
+  "matched": null,
+  "origin": "offer",
+  "gameID": "603eb5d05eca45001243aedc",
+  "parentGameID": null,
+  "eventName": "PHILADELPHIA-76ERS-VS-MIAMI-HEAT",
+  "league": "NBA",
+  "sport": "basketball",
+  "live": false,
+  "start": "2026-04-22T01:00:00.000Z",
+  "awayRotationNumber": "571",
+  "platform": "api",
+  "createdAt": "2026-04-21T18:11:54.614Z",
+  "messageID": "1715361234567-0"
+}
+```
+</CodeGroup>
+
+### Действие: ордер отменён {#action-order-cancelled}
+
+Пользователь (или система от его имени) отменил предложение. Отличительное поле — **`unmatched.offered === 0`**.
+
+<CodeGroup>
+```json JSON
+{
+  "unmatched": {
+    "filled": 0,
+    "offered": 0,
+    "remaining": 0,
+    "orderID": "62619e6b40e36d0494600f67",
+    "wagerRequestID": "62619e6b40e36d0494600f70",
+    "type": "spread",
+    "side": "607349dc22a237cf46b021fb",
+    "number": 6.5,
+    "odds": -110
+  },
+  "matched": null,
+  "origin": "offer",
+  "gameID": "603eb5d05eca45001243aedc",
+  "parentGameID": null,
+  "eventName": "PHILADELPHIA-76ERS-VS-MIAMI-HEAT",
+  "league": "NBA",
+  "sport": "basketball",
+  "live": false,
+  "start": "2026-04-22T01:00:00.000Z",
+  "awayRotationNumber": "571",
+  "platform": "api",
+  "createdAt": "2026-04-21T18:12:30.000Z",
+  "messageID": "1715361234890-0"
+}
+```
+</CodeGroup>
+
+### Действие: ордер сведён (taker) {#action-order-matched-taker}
+
+Пользователь взял чужое предложение. `unmatched` равен `null`, `matched` несёт исполнение, а `origin` — `"wager"`.
+
+<CodeGroup>
+```json JSON
+{
+  "unmatched": null,
+  "matched": {
+    "txID": "62619e6b40e36d0494600f99",
+    "amount": 100.0,
+    "risk": 100.0,
+    "win": 95.24,
+    "odds": -105,
+    "orderID": "62619e6b40e36d0494600f67",
+    "wagerRequestID": "62619e6b40e36d0494600f70",
+    "type": "moneyline",
+    "side": "607349dc22a237cf46b021fb"
+  },
+  "origin": "wager",
+  "gameID": "603eb5d05eca45001243aedc",
+  "parentGameID": null,
+  "eventName": "PHILADELPHIA-76ERS-VS-MIAMI-HEAT",
+  "league": "NBA",
+  "sport": "basketball",
+  "live": false,
+  "start": "2026-04-22T01:00:00.000Z",
+  "awayRotationNumber": "571",
+  "platform": "api",
+  "createdAt": "2026-04-21T18:13:00.000Z",
+  "messageID": "1715361240000-0"
+}
+```
+</CodeGroup>
+
+### Действие: ордер сведён (maker, частичное исполнение) {#action-order-matched-maker-partial-fill}
+
+Кто-то взял размещённое пользователем предложение. Заполнены и `matched`, и `unmatched`; `unmatched.remaining` показывает, что всё ещё лежит в книге. Поскольку `unmatched` задан, `origin` — `"offer"`.
+
+<CodeGroup>
+```json JSON
+{
+  "unmatched": {
+    "filled": 100,
+    "offered": 500,
+    "remaining": 400,
+    "orderID": "62619e6b40e36d0494600f67",
+    "wagerRequestID": "62619e6b40e36d0494600f70",
+    "type": "spread",
+    "side": "607349dc22a237cf46b021fb",
+    "number": 6.5,
+    "odds": 110
+  },
+  "matched": {
+    "txID": "62619e6b40e36d0494600fa0",
+    "amount": 100,
+    "risk": 100,
+    "win": 110,
+    "odds": 110,
+    "orderID": "62619e6b40e36d0494600f67",
+    "wagerRequestID": "62619e6b40e36d0494600f70",
+    "type": "spread",
+    "side": "607349dc22a237cf46b021fb",
+    "number": 6.5
+  },
+  "origin": "offer",
+  "gameID": "603eb5d05eca45001243aedc",
+  "parentGameID": null,
+  "eventName": "PHILADELPHIA-76ERS-VS-MIAMI-HEAT",
+  "league": "NBA",
+  "sport": "basketball",
+  "live": false,
+  "start": "2026-04-22T01:00:00.000Z",
+  "awayRotationNumber": "571",
+  "platform": "api",
+  "createdAt": "2026-04-21T18:14:00.000Z",
+  "messageID": "1715361250000-0"
+}
+```
+</CodeGroup>
+
+### Действие: ордер сведён (moneyline1x2) {#action-order-matched-moneyline1x2}
+
+Исполнения на трёхисходных футбольных рынках несут описанную выше **пару `market` + `side`** вместо `side` с шестнадцатеричным id участника. Здесь пользователь взял «yes» на домашнюю команду по +120 (ставка на то, что «Арсенал» выиграет):
+
+<CodeGroup>
+```json JSON (taker)
+{
+  "unmatched": null,
+  "matched": {
+    "txID": "685e321440e36d0494601b07",
+    "amount": 100.0,
+    "risk": 100.0,
+    "win": 120.0,
+    "odds": 120,
+    "orderID": "685e2f1c40e36d0494601a22",
+    "wagerRequestID": "685e321440e36d0494601b00",
+    "type": "moneyline1x2",
+    "side": "yes",
+    "market": "607349dc22a237cf46b021fb"
+  },
+  "origin": "wager",
+  "gameID": "685e21aa0be1b7d5a3f9c4d2",
+  "parentGameID": null,
+  "eventName": "ARSENAL-VS-CHELSEA",
+  "league": "EPL",
+  "sport": "soccer",
+  "live": false,
+  "start": "2026-07-04T19:00:00.000Z",
+  "awayRotationNumber": "3012",
+  "platform": "api",
+  "createdAt": "2026-07-03T14:25:02.114Z",
+  "messageID": "1751552702114-0"
+}
+```
+```json JSON (maker, частичное исполнение)
+{
+  "unmatched": {
+    "filled": 100,
+    "offered": 500,
+    "remaining": 400,
+    "orderID": "685e2f1c40e36d0494601a22",
+    "wagerRequestID": "685e2f1c40e36d0494601a19",
+    "type": "moneyline1x2",
+    "side": "no",
+    "market": "607349dc22a237cf46b021fb",
+    "odds": -120
+  },
+  "matched": {
+    "txID": "685e321440e36d0494601b07",
+    "amount": 120.0,
+    "risk": 120.0,
+    "win": 100.0,
+    "odds": -120,
+    "orderID": "685e2f1c40e36d0494601a22",
+    "wagerRequestID": "685e2f1c40e36d0494601a19",
+    "type": "moneyline1x2",
+    "side": "no",
+    "market": "607349dc22a237cf46b021fb"
+  },
+  "origin": "offer",
+  "gameID": "685e21aa0be1b7d5a3f9c4d2",
+  "parentGameID": null,
+  "eventName": "ARSENAL-VS-CHELSEA",
+  "league": "EPL",
+  "sport": "soccer",
+  "live": false,
+  "start": "2026-07-04T19:00:00.000Z",
+  "awayRotationNumber": "3012",
+  "platform": "api",
+  "createdAt": "2026-07-03T14:25:02.114Z",
+  "messageID": "1751552702114-1"
+}
+```
+</CodeGroup>
+
+Обратите внимание на две точки зрения на одно и то же исполнение: taker видит `side: "yes"` по `+120`, maker видит `side: "no"` по `-120` на том же `market`.
+
+## Повтор пропущенных сообщений {#replaying-missed-messages}
+
+Фид пользователя v2 поддерживает **восстановление пропусков после разрыва соединения**. Каждое сообщение несёт `messageID` (монотонно возрастающий идентификатор записи потока, например `"1751552702114-0"`). Если соединение оборвалось, вы можете получить ровно те сообщения, которые пропустили.
+
+### Эндпоинт {#endpoint}
+
+```
+GET https://streaming-api.4casters.io/v2/user/messages?afterID=<messageID>&beforeID=<messageID>
+```
+
+Аутентификация та же, что и у WebSocket: token в заголовке `Authorization`, заголовке `Auth` или параметре запроса `token`. Возвращаются только сообщения, принадлежащие аутентифицированному пользователю.
+
+| Параметр | Обязателен | Значение |
+|---|---|---|
+| `afterID` | да | `messageID` **последнего сообщения, обработанного вами** до разрыва. Результаты начинаются строго после него. |
+| `beforeID` | нет | Исключающая верхняя граница. Опустите, чтобы прочитать до конца хранимой истории. |
+
+### Ответ: `success` {#response-success}
+
+Ваш `afterID` всё ещё присутствовал в хранимой истории, поэтому возвращённый список — **полное** заполнение пропуска: между `afterID` и `beforeID` ничего не потеряно:
+
+```json
+{
+  "status": "success",
+  "messages": [
+    { "...": "feed messages in order, each with its messageID" }
+  ]
+}
+```
+
+Примените сообщения по порядку и возобновите обработку живых сообщений.
+
+### Ответ: `cache_expired` {#response-cache-expired}
+
+Ваш `afterID` устарел и выпал из хранимой истории, поэтому сервер **не может доказать полноту повтора**:
+
+```json
+{
+  "status": "cache_expired",
+  "availableMessages": [
+    { "...": "whatever is still retained, oldest first" }
+  ]
+}
+```
+
+`availableMessages` — всё, что ещё хранится, начиная с самого старого. Сообщения старше окна хранения через повтор не восстанавливаются — переподключайтесь оперативно, а не полагайтесь на долгий взгляд назад.
+
+### Пример: переподключающийся клиент с повтором {#example-reconnecting-client-with-replay}
+
+Полный клиент на Node.js (keepalive ping/pong опущен для краткости — см. быстрый старт в начале этой страницы). Корректность держится на двух вещах: каждое сообщение — живое, буферизованное или повторённое — проходит через одну проверку курсора, движущегося только вперёд, а неудачный повтор ведёт к переподключению, а не к работе вживую поверх пропуска.
+
+<CodeGroup>
+```javascript JavaScript
+// user_feed_replay_client.js
+const WebSocket = require('ws');
+const token = process.env.FOURCASTERS_TOKEN;
+const HOST = 'streaming-api.4casters.io';
+
+// Your replay cursor: the messageID of the last message you processed.
+// Persist it durably (disk/db) so replay also works across process restarts.
+let cursor = null;
+
+// messageIDs are "<unix-ms>-<seq>"; compare numerically part by part.
+function isAfterCursor(messageID) {
+  if (!cursor) return true;
+  const [ms, seq] = messageID.split('-').map(Number);
+  const [cMs, cSeq] = cursor.split('-').map(Number);
+  return ms > cMs || (ms === cMs && seq > cSeq);
+}
+
+function processMessage(msg) {
+  // Replay can overlap live delivery, so every message — live, buffered,
+  // or replayed — passes through this check. The cursor only moves forward.
+  if (!isAfterCursor(msg.messageID)) return;
+  cursor = msg.messageID;
+  // Business logic goes here. `msg` is the same envelope everywhere.
+  console.log('user update:', msg.origin, msg.messageID);
+}
+
+async function replayGap() {
+  const params = new URLSearchParams({ afterID: cursor });
+  const res = await fetch(`https://${HOST}/v2/user/messages?${params}`, {
+    headers: { Authorization: token },
+  });
+  if (!res.ok) throw new Error(`replay request failed: ${res.status}`);
+  const body = await res.json();
+
+  if (body.status === 'success') {
+    // Complete gap-fill: nothing between the cursor and now was lost.
+    body.messages.forEach(processMessage);
+  } else if (body.status === 'cache_expired') {
+    // Apply what is still retained; anything older is not recoverable.
+    console.warn('replay window expired - messages may have been lost');
+    body.availableMessages.forEach(processMessage);
+  } else {
+    throw new Error(`unexpected replay status: ${body.status}`);
+  }
+}
+
+function connect() {
+  const ws = new WebSocket(`wss://${HOST}/v2/user`, {
+    headers: { Authorization: token },
+  });
+
+  let live = false; // false while replay is in flight
+  const buffer = [];
+  // Settles when the open handler is done, so a reconnect never starts a
+  // second replay while this one is in flight.
+  let openTask = Promise.resolve();
+
+  ws.on('open', () => {
+    openTask = (async () => {
+      console.log('user feed connected');
+      if (cursor !== null) {
+        try {
+          await replayGap();
+        } catch (e) {
+          // Going live now would advance the cursor over the unfilled gap
+          // and lose it — reconnect and retry from the same cursor.
+          console.error('replay failed, reconnecting:', e.message);
+          ws.terminate();
+          return;
+        }
+      }
+      // Drain messages buffered during replay; processMessage skips
+      // anything the replay already covered.
+      buffer.splice(0).forEach(processMessage);
+      live = true;
+    })();
+  });
+
+  ws.on('message', (buf) => {
+    const msg = JSON.parse(buf.toString());
+    if (live) processMessage(msg);
+    else buffer.push(msg);
+  });
+
+  ws.on('close', async (code, reason) => {
+    console.log(`user feed closed: ${code} ${reason} - reconnecting`);
+    await openTask.catch(() => {});
+    setTimeout(connect, 1000);
+  });
+
+  ws.on('error', (e) => console.error('user feed error:', e.message));
+}
+
+connect();
+```
+</CodeGroup>

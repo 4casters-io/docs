@@ -1,0 +1,18 @@
+<ResponseField name="id" type="string">Id de l'ordre.</ResponseField>
+<ResponseField name="type" type="string">`moneyline`, `spread`, `total` ou `moneyline1x2`.</ResponseField>
+<ResponseField name="createdBy" type="string">Présent **uniquement** quand l'ordre appartient à l'appelant. Utile pour filtrer vos propres ordres en attente hors du carnet d'ordres.</ResponseField>
+<ResponseField name="sumUntaken" type="number">Montant de gain encore disponible sur cet ordre — un taker paie le risque pour le prendre à la cote `odds` affichée.</ResponseField>
+<ResponseField name="bet" type="number">Le `bet` (risque) d'origine posté par le maker.</ResponseField>
+<ResponseField name="odds" type="integer">Cotes américaines (négatives pour les favoris, positives pour les outsiders).</ResponseField>
+<ResponseField name="gameID" type="string">Id du match auquel cet ordre appartient.</ResponseField>
+<ResponseField name="takenRatio" type="number">Fraction de l'ordre déjà matchée, entre `0` et `1`.</ResponseField>
+<ResponseField name="expiry" type="string">Horodatage d'annulation programmée (ISO 8601). `null` si aucune expiration n'a été définie.</ResponseField>
+<ResponseField name="createdAt" type="string">Horodatage du placement de l'ordre.</ResponseField>
+<ResponseField name="gameStartExpiry" type="boolean">Quand `true`, l'ordre sera annulé automatiquement au début du match.</ResponseField>
+<ResponseField name="isPostArb" type="boolean">Présent uniquement quand l'ordre a été placé avec `orderType: postArb`.</ResponseField>
+<ResponseField name="participantID" type="string">Présent pour `moneyline` et `spread` — le participant sur lequel porte le pari.</ResponseField>
+<ResponseField name="spread" type="number">Présent pour `spread`.</ResponseField>
+<ResponseField name="total" type="number">Présent pour `total`.</ResponseField>
+<ResponseField name="OU" type="string">`over` ou `under`. Présent pour `total`.</ResponseField>
+<ResponseField name="market" type="string">Présent pour `moneyline1x2` — nom de l'issue (`"draw"` ou un id de participant).</ResponseField>
+<ResponseField name="side" type="string">Pour `moneyline1x2` — `yes` ou `no`.</ResponseField>

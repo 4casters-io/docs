@@ -1,0 +1,321 @@
+O feed de preços transmite atualizações de mercado/livro de ofertas como mensagens JSON por uma conexão WebSocket pura.
+
+<CodeGroup>
+```javascript JavaScript
+// price_feed_quickstart.js 
+const WebSocket = require('ws'); 
+const token = process.env.FOURCASTERS_TOKEN; 
+ 
+function connectPriceFeed() { 
+  const ws = new 
+  WebSocket('wss://streaming-api.4casters.io/price-stream', { 
+    headers: { Authorization: token }, 
+  }); 
+ 
+  let pingTimer; let lastPong = Date.now(); 
+ 
+  ws.on('open', () => { 
+    console.log('price stream connected'); 
+
+    // Optional: narrow the feed to specific games / leagues / sports.
+    // Omit this block to receive all market updates (default). 
+    ws.send(JSON.stringify({ 
+      type: 'subscribe', 
+      gameIDs: [], 
+      leagueIDs: ['NBA'], 
+      sportIDs: [], 
+      replace: true, 
+    })); 
+
+    pingTimer = setInterval(() => { 
+      if (ws.readyState === WebSocket.OPEN) ws.ping(); 
+      if (Date.now() - lastPong > 30000) { 
+        console.warn('price stream: missed pong >30s, closing'); 
+        ws.terminate(); 
+      } 
+    }, 10000); 
+  }); 
+ 
+  ws.on('pong', () => { lastPong = Date.now(); }); 
+ 
+  ws.on('message', (buf) => { 
+    try { 
+      const msg = JSON.parse(buf.toString()); 
+      console.log('price update:', JSON.stringify(msg, null, 2)); 
+    } catch { console.log('price update (raw):', buf.toString()); } 
+  }); 
+ 
+  ws.on('error', (e) => console.error('price stream error:', e.message)); 
+ 
+  ws.on('close', (code, reason) => { 
+    console.log(`price stream closed: ${code} ${reason}`); 
+    clearInterval(pingTimer); 
+    setTimeout(connectPriceFeed, 1000); 
+  }); 
+} 
+connectPriceFeed();
+```
+</CodeGroup>
+
+## Ping/Pong {#pingpong}
+Ambos os feeds suportam o `ping/pong` padrão do WebSocket. Você pode fazer `ping()` proativamente em um intervalo e acompanhar o `pong` para verificar se a conexão está viva.
+
+## Assinaturas {#subscriptions}
+
+Por padrão, um cliente conectado recebe toda atualização de mercado de todos os esportes e ligas. Para restringir esse volume, envie um dos comandos a seguir como um frame de texto JSON depois que o socket estiver `open`. Os comandos valem pela vida útil da conexão.
+
+Um cliente que nunca envia um comando de assinatura permanece no modo de difusão total, então as integrações existentes continuam funcionando sem mudanças.
+
+### Assinar por gameID, liga ou esporte {#subscribe-by-gameid-league-or-sport}
+
+Instale um filtro. `gameIDs` são strings hex de ObjectID do Mongo com 24 caracteres; `leagueIDs` são códigos curtos como `NBA` / `MLB` / `EPL`; `sportIDs` são tokens em minúsculas como `basketball` / `baseball` / `soccer`.
+
+<CodeGroup>
+```json Substituir (recomendado)
+{
+  "type": "subscribe",
+  "gameIDs": ["62619dce25e2fb049a71cc2e"],
+  "leagueIDs": ["NBA"],
+  "sportIDs": [],
+  "replace": true
+}
+```
+```json Aditivo
+{
+  "type": "subscribe",
+  "gameIDs": [],
+  "leagueIDs": ["MLB"],
+  "sportIDs": [],
+  "replace": false
+}
+```
+</CodeGroup>
+
+- `replace: true` limpa quaisquer assinaturas existentes nesta conexão e instala as novas listas. Muda a conexão para o modo filtrado.
+- `replace: false` adiciona as novas chaves ao que a conexão já assina.
+
+Você receberá uma atualização se o `gameID`, `parentGameID`, `league` ou `sport` dela corresponder a qualquer uma das suas assinaturas.
+
+### Cancelar assinatura {#unsubscribe}
+
+Remova chaves específicas. A conexão permanece no seu modo atual (filtrado ou assinar-tudo).
+
+<CodeGroup>
+```json JSON
+{
+  "type": "unsubscribe",
+  "gameIDs": [],
+  "leagueIDs": ["MLB"],
+  "sportIDs": []
+}
+```
+</CodeGroup>
+
+### Assinar tudo {#subscribe-to-everything}
+
+Um "pega-tudo" explícito. Útil se você restringiu antes via `subscribe` e quer voltar a ampliar sem reconectar. Limpa quaisquer assinaturas por chave na conexão.
+
+<CodeGroup>
+```json JSON
+{ "type": "subscribeAll" }
+```
+</CodeGroup>
+
+### Semântica de roteamento {#routing-semantics}
+
+- Uma assinatura de `gameID` também recebe atualizações de jogos filhos cujo `parentGameID` corresponde (ex.: derivativos F5-MLB chegam aos assinantes do jogo pai).
+- IDs de liga não diferenciam maiúsculas de minúsculas — `mlb` e `MLB` são equivalentes.
+- IDs de esporte não diferenciam maiúsculas de minúsculas — `baseball` e `Baseball` são equivalentes.
+- Strings vazias dentro dos arrays são ignoradas.
+- `subscribe` com `replace: false` **e** todos os arrays vazios é um no-op (um cliente com bug não consegue se silenciar acidentalmente enviando um subscribe aditivo vazio).
+- `subscribe` com `replace: true` **e** todos os arrays vazios é o caminho legítimo de "limpar todas as minhas assinaturas" — a conexão entra no modo filtrado com zero assinaturas e não recebe nada até você assinar de novo ou enviar `subscribeAll`.
+
+## Mensagens {#messages}
+
+Toda mensagem em `/price-stream` chega como uma 2-tupla `[type, payload]`. Três tipos de mensagem são transmitidos.
+
+### `orderUpdate` {#orderupdate}
+
+Emitida sempre que uma ordem em qualquer mercado muda (nova, editada, correspondida ou cancelada). O payload inclui apenas os `sideOrders` que o usuário receptor tem permissão de ver (as próprias ordens mais as contrapartes correspondíveis).
+
+Entradas de `sideOrders` de ordens enviadas com `orderType: "postArb"` incluem `isPostArb: true`; o campo é omitido nos demais casos.
+
+<CodeGroup>
+```json JSON
+[
+  "orderUpdate",
+  {
+    "epoch": 1234567,
+    "gameID": "62619dce25e2fb049a71cc2e",
+    "parentGameID": null,
+    "sport": "basketball",
+    "league": "NBA",
+    "live": false,
+    "type": "total",
+    "participantID": null,
+    "market": "main",
+    "side": "under",
+    "OU": "under",
+    "total": 8.5,
+    "spread": null,
+    "mainHomeSpread": -6.5,
+    "mainAwaySpread": 6.5,
+    "mainTotal": 209.5,
+    "sideOrders": [
+      {
+        "id": "62619e6a40e36d0494600f48",
+        "type": "total",
+        "sumUntaken": 255,
+        "odds": 104,
+        "bet": 265.2,
+        "gameID": "62619dce25e2fb049a71cc2e",
+        "takenRatio": 0,
+        "participantID": null,
+        "market": "main",
+        "side": "under",
+        "OU": "under",
+        "total": 8.5,
+        "spread": null,
+        "gameStartExpiry": false,
+        "expiry": "2022-04-21T23:40:12.000Z",
+        "createdAt": "2022-04-21T18:11:54.614Z"
+      }
+    ]
+  }
+]
+```
+</CodeGroup>
+
+#### `orderUpdate` para mercados moneyline1x2 {#orderupdate-for-moneyline1x2-markets}
+
+Para `moneyline1x2` (3 vias no futebol: casa / empate / visitante), o resultado é identificado pelo **par `market` + `side`** em vez de `participantID` / `OU`:
+
+- `market` — o resultado ao qual o mercado se refere: um hex de ObjectID de participante (time da casa ou visitante) ou a string literal `"draw"`.
+- `side` — `"yes"` ou `"no"` sobre esse resultado.
+- `OU`, `total` e `spread` estão ausentes, e `participantID` está vazio — use `market` + `side`.
+
+Ambos os campos aparecem no nível da atualização (identificando qual lado do livro de ofertas mudou) e em cada entrada de `sideOrders`.
+
+<CodeGroup>
+```json JSON
+[
+  "orderUpdate",
+  {
+    "epoch": 1234567,
+    "gameID": "685e21aa0be1b7d5a3f9c4d2",
+    "sport": "soccer",
+    "league": "EPL",
+    "live": false,
+    "type": "moneyline1x2",
+    "participantID": "",
+    "market": "607349dc22a237cf46b021fb",
+    "side": "yes",
+    "sideOrders": [
+      {
+        "id": "685e2f1c40e36d0494601a22",
+        "type": "moneyline1x2",
+        "sumUntaken": 500,
+        "odds": 120,
+        "bet": 600,
+        "gameID": "685e21aa0be1b7d5a3f9c4d2",
+        "takenRatio": 0,
+        "participantID": "",
+        "market": "607349dc22a237cf46b021fb",
+        "side": "yes",
+        "gameStartExpiry": true,
+        "expiry": "2026-07-04T18:55:00.000Z",
+        "createdAt": "2026-07-03T14:20:11.204Z"
+      }
+    ]
+  }
+]
+```
+```json JSON (mercado de empate)
+[
+  "orderUpdate",
+  {
+    "epoch": 1234567,
+    "gameID": "685e21aa0be1b7d5a3f9c4d2",
+    "sport": "soccer",
+    "league": "EPL",
+    "live": false,
+    "type": "moneyline1x2",
+    "participantID": "",
+    "market": "draw",
+    "side": "no",
+    "sideOrders": [
+      {
+        "id": "685e301b40e36d0494601a9f",
+        "type": "moneyline1x2",
+        "sumUntaken": 250,
+        "odds": -145,
+        "bet": 250,
+        "gameID": "685e21aa0be1b7d5a3f9c4d2",
+        "takenRatio": 0,
+        "participantID": "",
+        "market": "draw",
+        "side": "no",
+        "gameStartExpiry": true,
+        "expiry": "2026-07-04T18:55:00.000Z",
+        "createdAt": "2026-07-03T14:22:47.910Z"
+      }
+    ]
+  }
+]
+```
+</CodeGroup>
+
+### `gameUpdate` {#gameupdate}
+
+Emitida quando um jogo é criado ou seu estado muda (mercados abrindo, fechando, atualizações do horário de início). O payload é o jogo completo renderizado.
+
+<CodeGroup>
+```json JSON
+[
+  "gameUpdate",
+  {
+    "id": "625ecb5f269b7ff13619ca7c",
+    "parentGameID": null,
+    "league": "NBA",
+    "sport": "basketball",
+    "start": "2022-04-22T01:00:00.000Z",
+    "ended": false,
+    "messageType": "marketOpen",
+    "participants": [
+      { "id": "607349dc22a237cf46b021fb", "longName": "Dallas Mavericks", "shortName": "DAL", "homeAway": "away", "rotationNumber": "571" },
+      { "id": "60747bcde3b0844e56d2e7e8", "longName": "Utah Jazz",        "shortName": "UTA", "homeAway": "home", "rotationNumber": "572" }
+    ],
+    "awayMoneylines": [],
+    "homeMoneylines": [],
+    "awaySpreads": {},
+    "homeSpreads": {},
+    "over": {},
+    "under": {},
+    "mainHomeSpread": -6.5,
+    "mainAwaySpread": 6.5,
+    "mainTotal": 209.5
+  }
+]
+```
+</CodeGroup>
+
+Valores conhecidos de `messageType`: `marketOpen`, `marketClosed`. Trate o campo como extensível e ignore valores desconhecidos.
+
+### `matchedVolumeUpdate` {#matchedvolumeupdate}
+
+Emitida quando o volume total correspondido em um jogo muda.
+
+<CodeGroup>
+```json JSON
+[
+  "matchedVolumeUpdate",
+  {
+    "gameID": "625ecb5f269b7ff13619ca7c",
+    "parentGameID": null,
+    "league": "NBA",
+    "sport": "basketball",
+    "matchedVolume": 12450.75
+  }
+]
+```
+</CodeGroup>

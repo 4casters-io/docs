@@ -1,0 +1,15 @@
+<ResponseField name="game" type="object">
+  Gedenormaliseerde momentopname van de wedstrijd waar deze weddenschap bij hoort.
+  <Expandable title="game">
+    <ResponseField name="id" type="string">Wedstrijd-id.</ResponseField>
+    <ResponseField name="league" type="string">Competitiecode (bijv. `NBA`, `PREMIER-LEAGUE`).</ResponseField>
+    <ResponseField name="sport" type="string">Sport (bijv. `basketball`, `soccer`).</ResponseField>
+    <ResponseField name="start" type="string">Starttijd van de wedstrijd in ISO 8601.</ResponseField>
+    <ResponseField name="ended" type="boolean">Of de wedstrijd is afgelopen.</ResponseField>
+    <ResponseField name="eventName" type="string">Leesbare naam van de ontmoeting (kan `null` zijn voor sommige competities).</ResponseField>
+    <ResponseField name="isFutures" type="boolean">`true` voor futures en vergelijkbare specials-markten.</ResponseField>
+    <ResponseField name="participants" type="array">
+      Array met twee elementen: `[away, home]`. Elke deelnemer bevat `id`, `longName`, `shortName`, `homeAway`, `mainPitcher`, `rotationNumber`, `futuresSide` en (voor afgelopen wedstrijden) `score`.
+    </ResponseField>
+  </Expandable>
+</ResponseField>

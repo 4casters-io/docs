@@ -1,0 +1,18 @@
+<ResponseField name="id" type="string">Order-id.</ResponseField>
+<ResponseField name="type" type="string">`moneyline`, `spread`, `total` of `moneyline1x2`.</ResponseField>
+<ResponseField name="createdBy" type="string">Alleen aanwezig wanneer de order van de aanroeper zelf is. Handig om je eigen openstaande orders uit het orderboek te filteren.</ResponseField>
+<ResponseField name="sumUntaken" type="number">Winbedrag dat nog beschikbaar is op deze order — een taker betaalt risico om het tegen de vermelde `odds` te claimen.</ResponseField>
+<ResponseField name="bet" type="number">De oorspronkelijke `bet` (het risico) die de maker plaatste.</ResponseField>
+<ResponseField name="odds" type="integer">Amerikaanse odds (negatief voor favorieten, positief voor underdogs).</ResponseField>
+<ResponseField name="gameID" type="string">Id van de wedstrijd waar deze order bij hoort.</ResponseField>
+<ResponseField name="takenRatio" type="number">Deel van de order dat al is gematcht, tussen `0` en `1`.</ResponseField>
+<ResponseField name="expiry" type="string">Annuleringstijdstip (ISO 8601). `null` als er geen vervaltijd is ingesteld.</ResponseField>
+<ResponseField name="createdAt" type="string">Tijdstip waarop de order is geplaatst.</ResponseField>
+<ResponseField name="gameStartExpiry" type="boolean">Bij `true` wordt de order automatisch geannuleerd bij de start van de wedstrijd.</ResponseField>
+<ResponseField name="isPostArb" type="boolean">Alleen aanwezig wanneer de order is geplaatst met `orderType: postArb`.</ResponseField>
+<ResponseField name="participantID" type="string">Aanwezig voor `moneyline` en `spread` — de deelnemer waarop wordt ingezet.</ResponseField>
+<ResponseField name="spread" type="number">Aanwezig voor `spread`.</ResponseField>
+<ResponseField name="total" type="number">Aanwezig voor `total`.</ResponseField>
+<ResponseField name="OU" type="string">`over` of `under`. Aanwezig voor `total`.</ResponseField>
+<ResponseField name="market" type="string">Aanwezig voor `moneyline1x2` — naam van de uitkomst (`"draw"` of een deelnemer-id).</ResponseField>
+<ResponseField name="side" type="string">Voor `moneyline1x2` — `yes` of `no`.</ResponseField>

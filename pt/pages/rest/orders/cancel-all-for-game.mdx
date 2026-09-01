@@ -1,0 +1,49 @@
+---
+title: 'Cancelar todas as ordens de um jogo'
+description: 'Cancelar todas as ordens abertas num único jogo'
+openapi: 'POST /session/cancelAllOrdersForGame'
+---
+
+Cancele todas as ordens abertas num único jogo. Opcionalmente, restrinja a um único `type` de mercado para deixar os outros mercados no lugar.
+
+## Pedido {#request}
+
+`POST /session/cancelAllOrdersForGame`
+
+<ParamField body="gameID" type="string" required>
+  O jogo cujas ordens devem ser canceladas.
+</ParamField>
+<ParamField body="type" type="string">
+  Opcional. Cancela apenas as ordens deste tipo de mercado — um de `moneyline`, `spread`, `total`. Quando omitido, todos os tipos de mercado são cancelados.
+</ParamField>
+
+<CodeGroup>
+```bash curl (um mercado)
+curl -X POST https://api.4casters.io/session/cancelAllOrdersForGame \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "gameID": "688c0516fbc14da0c202d426",
+    "type": "spread"
+  }'
+```
+
+```bash curl (todos os mercados)
+curl -X POST https://api.4casters.io/session/cancelAllOrdersForGame \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{ "gameID": "688c0516fbc14da0c202d426" }'
+```
+</CodeGroup>
+
+## Resposta {#response}
+
+<ResponseField name="data" type="array">
+  Resultados de cancelamento por ordem. Mesma forma de [Cancelar uma ordem](/pt/pages/rest/orders/cancel-order#response).
+</ResponseField>
+
+## Erros {#errors}
+
+| Estado | Significado |
+| ------ | ------- |
+| `400`  | `gameID` em falta / inválido, ou `type` não é um dos valores permitidos. |

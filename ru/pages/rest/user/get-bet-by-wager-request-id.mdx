@@ -1,0 +1,44 @@
+---
+title: 'Получить ставку по ID запроса пари'
+description: 'Поиск всех ставок, происходящих от одного запроса на размещение'
+openapi: 'GET /user/getBetByWagerRequestID'
+---
+
+Поиск всех ставок, привязанных к одному `wagerRequestID`. `wagerRequestID` генерируется сервером для **каждого** ордера в запросе на размещение — используйте его, чтобы связать вместе все исполнения и ожидающие предложения, порождённые одним отправленным ордером.
+
+Ответ разделяет результаты на три группы:
+
+- `unmatched` — открытые предложения из запроса, всё ещё лежащие в книге. **Для этого эндпоинта всегда пусто** — используйте [Получить ставку по пользовательской ссылке](/ru/pages/rest/user/get-bet-by-user-reference), если вам нужны открытые предложения в ответе.
+- `matched`   — сведённые (нерассчитанные) ставки из запроса.
+- `graded`    — рассчитанные ставки из запроса, включая `risk`, `win`, `fee` и `result`.
+
+## Запрос {#request}
+
+`GET /user/getBetByWagerRequestID`
+
+<ParamField query="wagerRequestID" type="string" required>
+  `wagerRequestID`, возвращённый `/session/v3/place` (в поле `matched[].wagerRequestID` или `unmatched.wagerRequestID`).
+</ParamField>
+
+<CodeGroup>
+```bash curl
+curl "https://api.4casters.io/user/getBetByWagerRequestID?wagerRequestID=65f69afec4c141f5ecc5dc0b" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+</CodeGroup>
+
+## Ответ {#response}
+
+<ResponseField name="data.unmatched" type="array">Пустой массив.</ResponseField>
+<ResponseField name="data.matched" type="array">
+  Сведённые (нерассчитанные) ставки — тот же формат, что и в [Получить сведённые ставки](/ru/pages/rest/user/get-matched-bets#response).
+</ResponseField>
+<ResponseField name="data.graded" type="array">
+  Рассчитанные ставки — тот же формат, что и в [Получить рассчитанные пари](/ru/pages/rest/user/get-graded-wagers#response).
+</ResponseField>
+
+## Ошибки {#errors}
+
+| Статус | Значение |
+| ------ | ------- |
+| `400`  | `wagerRequestID` отсутствует или неизвестен. |

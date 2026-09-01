@@ -1,0 +1,89 @@
+---
+title: 'Obter apostas correspondidas'
+description: 'Liste as apostas que estão correspondidas mas ainda não liquidadas'
+openapi: 'GET /user/getMatchedBets'
+---
+
+Retorna todas as apostas de quem chama que foram **correspondidas mas ainda não liquidadas** — ou seja, posições em aberto em jogos ainda não encerrados.
+
+## Solicitação {#request}
+
+`GET /user/getMatchedBets`
+
+Não recebe parâmetros.
+
+<CodeGroup>
+```bash curl
+curl https://api.4casters.io/user/getMatchedBets \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+</CodeGroup>
+
+## Resposta {#response}
+
+<ResponseField name="data.matchedBets" type="array">
+  Array de apostas correspondidas, ordenado de forma crescente pelo horário de início do jogo.
+  <Expandable title="MatchedBet">
+    <ResponseField name="id" type="string">Id da aposta.</ResponseField>
+    <ResponseField name="txID" type="string">Id de transação da correspondência.</ResponseField>
+    <ResponseField name="type" type="string">`moneyline`, `spread`, `total` ou `moneyline1x2`.</ResponseField>
+    <ResponseField name="bet" type="number">Tamanho original da aposta.</ResponseField>
+    <ResponseField name="odds" type="integer">Odds americanas no momento da correspondência.</ResponseField>
+    <ResponseField name="spread" type="number">Presente para `spread`.</ResponseField>
+    <ResponseField name="total" type="number">Presente para `total`.</ResponseField>
+    <ResponseField name="OU" type="string">`over` ou `under`. Presente para `total`.</ResponseField>
+    <ResponseField name="participantID" type="string">Presente para `moneyline` e `spread`.</ResponseField>
+    <ResponseField name="market" type="string">Presente para `moneyline1x2`.</ResponseField>
+    <ResponseField name="side" type="string">Para `moneyline1x2` — `yes` ou `no`.</ResponseField>
+    <ResponseField name="userReference" type="string">Identificador opcional definido pelo cliente, passado no momento do envio.</ResponseField>
+    <ResponseField name="createdAt" type="string">Timestamp ISO 8601.</ResponseField>
+    <ResponseField name="matchedTime" type="string">Timestamp ISO 8601 em que a correspondência ocorreu.</ResponseField>
+    <ResponseField name="origin" type="string">`offer` (você postou, um taker tomou sua oferta) ou `wager` (você tomou liquidez em espera).</ResponseField>
+    <ResponseField name="risk" type="string">Risco na parte correspondida (formatado como string, 2 decimais). Inclui a comissão que você pagaria em caso de perda.</ResponseField>
+    <ResponseField name="win" type="string">Valor de ganho líquido da comissão que você pagaria em caso de ganho. Não há um campo `fee` separado em apostas correspondidas — a comissão é cobrada na liquidação e só aparece nas apostas liquidadas; até lá ela está refletida em `risk`/`win`.</ResponseField>
+    <ResponseField name="graded" type="boolean">Sempre `false` aqui.</ResponseField>
+    <ResponseField name="closed" type="boolean">Se a aposta foi fechada por uma ação administrativa.</ResponseField>
+    <ResponseField name="adminRefund" type="boolean">Se a aposta foi reembolsada por um administrador.</ResponseField>
+    <Snippet file="pt-BR/types/game-summary.mdx" />
+  </Expandable>
+</ResponseField>
+
+### Exemplo {#example}
+
+<CodeGroup>
+```json JSON
+{
+  "data": {
+    "matchedBets": [
+      {
+        "id": "67f45377c18c6697c172afa4",
+        "txID": "67f45377c18c6697c172afa3",
+        "type": "moneyline",
+        "bet": 50,
+        "odds": -185,
+        "participantID": "5d48bd5198366d41ec7238da",
+        "userReference": "my-ref-123",
+        "createdAt": "2025-09-24T19:30:59.482Z",
+        "matchedTime": "2025-09-24T19:30:59.482Z",
+        "origin": "wager",
+        "risk": "50.27",
+        "win": "27.16",
+        "graded": false,
+        "closed": false,
+        "adminRefund": false,
+        "game": {
+          "id": "688c0516fbc14da0c202d426",
+          "league": "NBA",
+          "sport": "basketball",
+          "start": "2025-09-25T00:10:00.000Z",
+          "ended": false,
+          "eventName": "TORONTO RAPTORS VS PHILADELPHIA 76ERS",
+          "isFutures": false,
+          "participants": [/* ... */]
+        }
+      }
+    ]
+  }
+}
+```
+</CodeGroup>

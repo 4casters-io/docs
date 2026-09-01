@@ -1,0 +1,322 @@
+De price feed streamt markt-/orderboekupdates als JSON-berichten over een kale WebSocket-verbinding.
+
+<CodeGroup>
+```javascript JavaScript
+// price_feed_quickstart.js 
+const WebSocket = require('ws'); 
+const token = process.env.FOURCASTERS_TOKEN; 
+ 
+function connectPriceFeed() { 
+  const ws = new 
+  WebSocket('wss://streaming-api.4casters.io/price-stream', { 
+    headers: { Authorization: token }, 
+  }); 
+ 
+  let pingTimer; let lastPong = Date.now(); 
+ 
+  ws.on('open', () => { 
+    console.log('price stream connected'); 
+
+    // Optional: narrow the feed to specific games / leagues / sports.
+    // Omit this block to receive all market updates (default). 
+    ws.send(JSON.stringify({ 
+      type: 'subscribe', 
+      gameIDs: [], 
+      leagueIDs: ['NBA'], 
+      sportIDs: [], 
+      replace: true, 
+    })); 
+
+    pingTimer = setInterval(() => { 
+      if (ws.readyState === WebSocket.OPEN) ws.ping(); 
+      if (Date.now() - lastPong > 30000) { 
+        console.warn('price stream: missed pong >30s, closing'); 
+        ws.terminate(); 
+      } 
+    }, 10000); 
+  }); 
+ 
+  ws.on('pong', () => { lastPong = Date.now(); }); 
+ 
+  ws.on('message', (buf) => { 
+    try { 
+      const msg = JSON.parse(buf.toString()); 
+      console.log('price update:', JSON.stringify(msg, null, 2)); 
+    } catch { console.log('price update (raw):', buf.toString()); } 
+  }); 
+ 
+  ws.on('error', (e) => console.error('price stream error:', e.message)); 
+ 
+  ws.on('close', (code, reason) => { 
+    console.log(`price stream closed: ${code} ${reason}`); 
+    clearInterval(pingTimer); 
+    setTimeout(connectPriceFeed, 1000); 
+  }); 
+} 
+connectPriceFeed();
+```
+</CodeGroup>
+
+## Ping/Pong {#pingpong}
+
+Beide feeds ondersteunen standaard WebSocket-`ping/pong`. Je kunt proactief met een interval `ping()` sturen en `pong` bijhouden om de verbinding op leven te controleren.
+
+## Abonnementen {#subscriptions}
+
+Standaard ontvangt een verbonden client elke marktupdate over alle sporten en competities. Om de stortvloed in te perken stuur je één van de volgende commando's als JSON-tekstframe nadat de socket `open` is. Commando's gelden voor de levensduur van de verbinding.
+
+Een client die nooit een subscribe-commando stuurt, blijft in broadcast-all-modus, zodat bestaande integraties zonder wijzigingen blijven werken.
+
+### Abonneren op gameID, competitie of sport {#subscribe-by-gameid-league-or-sport}
+
+Installeer een filter. `gameIDs` zijn Mongo-ObjectID-hexstrings van 24 tekens; `leagueIDs` zijn korte codes zoals `NBA` / `MLB` / `EPL`; `sportIDs` zijn tokens in kleine letters zoals `basketball` / `baseball` / `soccer`.
+
+<CodeGroup>
+```json Replace (aanbevolen)
+{
+  "type": "subscribe",
+  "gameIDs": ["62619dce25e2fb049a71cc2e"],
+  "leagueIDs": ["NBA"],
+  "sportIDs": [],
+  "replace": true
+}
+```
+```json Additief
+{
+  "type": "subscribe",
+  "gameIDs": [],
+  "leagueIDs": ["MLB"],
+  "sportIDs": [],
+  "replace": false
+}
+```
+</CodeGroup>
+
+- `replace: true` wist alle bestaande abonnementen op deze verbinding en installeert de nieuwe lijsten. Zet de verbinding in gefilterde modus.
+- `replace: false` voegt de nieuwe sleutels toe aan waar de verbinding al op geabonneerd is.
+
+Je ontvangt een update als zijn `gameID`, `parentGameID`, `league` of `sport` overeenkomt met één van je abonnementen.
+
+### Afmelden {#unsubscribe}
+
+Verwijder specifieke sleutels. De verbinding blijft in haar huidige modus (gefilterd of subscribe-all).
+
+<CodeGroup>
+```json JSON
+{
+  "type": "unsubscribe",
+  "gameIDs": [],
+  "leagueIDs": ["MLB"],
+  "sportIDs": []
+}
+```
+</CodeGroup>
+
+### Op alles abonneren {#subscribe-to-everything}
+
+Expliciete catch-all. Handig als je eerder via `subscribe` hebt gefilterd en de feed weer wilt verbreden zonder opnieuw te verbinden. Wist alle abonnementen per sleutel op de verbinding.
+
+<CodeGroup>
+```json JSON
+{ "type": "subscribeAll" }
+```
+</CodeGroup>
+
+### Routeringssemantiek {#routing-semantics}
+
+- Een `gameID`-abonnement ontvangt ook updates voor onderliggende wedstrijden waarvan de `parentGameID` overeenkomt (bijv. F5-MLB-derivaten bereiken abonnees van de parent-wedstrijd).
+- Competitie-ids zijn hoofdletterongevoelig — `mlb` en `MLB` zijn gelijkwaardig.
+- Sport-ids zijn hoofdletterongevoelig — `baseball` en `Baseball` zijn gelijkwaardig.
+- Lege strings in de arrays worden genegeerd.
+- `subscribe` met `replace: false` **en** allemaal lege arrays is een no-op (een client met een bug kan zichzelf niet per ongeluk afsluiten van alles door een lege additieve subscribe te sturen).
+- `subscribe` met `replace: true` **en** allemaal lege arrays is de legitieme route om "al mijn abonnementen te wissen" — de verbinding komt in gefilterde modus met nul abonnementen en ontvangt niets totdat je je opnieuw abonneert of `subscribeAll` stuurt.
+
+## Berichten {#messages}
+
+Elk bericht op `/price-stream` komt binnen als een 2-tuple `[type, payload]`. Er worden drie berichttypen uitgezonden.
+
+### `orderUpdate` {#orderupdate}
+
+Wordt uitgezonden wanneer een order in welke markt dan ook verandert (nieuw, bewerkt, gevuld of geannuleerd). De payload bevat alleen `sideOrders` die de ontvangende gebruiker mag zien (eigen orders plus matchbare tegenpartijen).
+
+`sideOrders`-entries voor orders geplaatst met `orderType: "postArb"` bevatten `isPostArb: true`; anders wordt het veld weggelaten.
+
+<CodeGroup>
+```json JSON
+[
+  "orderUpdate",
+  {
+    "epoch": 1234567,
+    "gameID": "62619dce25e2fb049a71cc2e",
+    "parentGameID": null,
+    "sport": "basketball",
+    "league": "NBA",
+    "live": false,
+    "type": "total",
+    "participantID": null,
+    "market": "main",
+    "side": "under",
+    "OU": "under",
+    "total": 8.5,
+    "spread": null,
+    "mainHomeSpread": -6.5,
+    "mainAwaySpread": 6.5,
+    "mainTotal": 209.5,
+    "sideOrders": [
+      {
+        "id": "62619e6a40e36d0494600f48",
+        "type": "total",
+        "sumUntaken": 255,
+        "odds": 104,
+        "bet": 265.2,
+        "gameID": "62619dce25e2fb049a71cc2e",
+        "takenRatio": 0,
+        "participantID": null,
+        "market": "main",
+        "side": "under",
+        "OU": "under",
+        "total": 8.5,
+        "spread": null,
+        "gameStartExpiry": false,
+        "expiry": "2022-04-21T23:40:12.000Z",
+        "createdAt": "2022-04-21T18:11:54.614Z"
+      }
+    ]
+  }
+]
+```
+</CodeGroup>
+
+#### `orderUpdate` voor moneyline1x2-markten {#orderupdate-for-moneyline1x2-markets}
+
+Voor `moneyline1x2` (driewegsmarkt voor voetbal: thuis / gelijkspel / uit) wordt de uitkomst geïdentificeerd door het **paar `market` + `side`** in plaats van `participantID` / `OU`:
+
+- `market` — de uitkomst waar de markt over gaat: een deelnemer-ObjectID-hex (thuis- of uitteam) of de letterlijke string `"draw"`.
+- `side` — `"yes"` of `"no"` op die uitkomst.
+- `OU`, `total` en `spread` ontbreken, en `participantID` is leeg — gebruik `market` + `side`.
+
+Beide velden verschijnen op updateniveau (om aan te geven welke kant van het orderboek veranderde) en op elke entry in `sideOrders`.
+
+<CodeGroup>
+```json JSON
+[
+  "orderUpdate",
+  {
+    "epoch": 1234567,
+    "gameID": "685e21aa0be1b7d5a3f9c4d2",
+    "sport": "soccer",
+    "league": "EPL",
+    "live": false,
+    "type": "moneyline1x2",
+    "participantID": "",
+    "market": "607349dc22a237cf46b021fb",
+    "side": "yes",
+    "sideOrders": [
+      {
+        "id": "685e2f1c40e36d0494601a22",
+        "type": "moneyline1x2",
+        "sumUntaken": 500,
+        "odds": 120,
+        "bet": 600,
+        "gameID": "685e21aa0be1b7d5a3f9c4d2",
+        "takenRatio": 0,
+        "participantID": "",
+        "market": "607349dc22a237cf46b021fb",
+        "side": "yes",
+        "gameStartExpiry": true,
+        "expiry": "2026-07-04T18:55:00.000Z",
+        "createdAt": "2026-07-03T14:20:11.204Z"
+      }
+    ]
+  }
+]
+```
+```json JSON (draw-markt)
+[
+  "orderUpdate",
+  {
+    "epoch": 1234567,
+    "gameID": "685e21aa0be1b7d5a3f9c4d2",
+    "sport": "soccer",
+    "league": "EPL",
+    "live": false,
+    "type": "moneyline1x2",
+    "participantID": "",
+    "market": "draw",
+    "side": "no",
+    "sideOrders": [
+      {
+        "id": "685e301b40e36d0494601a9f",
+        "type": "moneyline1x2",
+        "sumUntaken": 250,
+        "odds": -145,
+        "bet": 250,
+        "gameID": "685e21aa0be1b7d5a3f9c4d2",
+        "takenRatio": 0,
+        "participantID": "",
+        "market": "draw",
+        "side": "no",
+        "gameStartExpiry": true,
+        "expiry": "2026-07-04T18:55:00.000Z",
+        "createdAt": "2026-07-03T14:22:47.910Z"
+      }
+    ]
+  }
+]
+```
+</CodeGroup>
+
+### `gameUpdate` {#gameupdate}
+
+Wordt uitgezonden wanneer een wedstrijd wordt aangemaakt of zijn status verandert (markten die openen of sluiten, updates van de starttijd). De payload is de volledig gerenderde wedstrijd.
+
+<CodeGroup>
+```json JSON
+[
+  "gameUpdate",
+  {
+    "id": "625ecb5f269b7ff13619ca7c",
+    "parentGameID": null,
+    "league": "NBA",
+    "sport": "basketball",
+    "start": "2022-04-22T01:00:00.000Z",
+    "ended": false,
+    "messageType": "marketOpen",
+    "participants": [
+      { "id": "607349dc22a237cf46b021fb", "longName": "Dallas Mavericks", "shortName": "DAL", "homeAway": "away", "rotationNumber": "571" },
+      { "id": "60747bcde3b0844e56d2e7e8", "longName": "Utah Jazz",        "shortName": "UTA", "homeAway": "home", "rotationNumber": "572" }
+    ],
+    "awayMoneylines": [],
+    "homeMoneylines": [],
+    "awaySpreads": {},
+    "homeSpreads": {},
+    "over": {},
+    "under": {},
+    "mainHomeSpread": -6.5,
+    "mainAwaySpread": 6.5,
+    "mainTotal": 209.5
+  }
+]
+```
+</CodeGroup>
+
+Bekende `messageType`-waarden: `marketOpen`, `marketClosed`. Beschouw het veld als uitbreidbaar en negeer onbekende waarden.
+
+### `matchedVolumeUpdate` {#matchedvolumeupdate}
+
+Wordt uitgezonden wanneer het totale gematchte volume op een wedstrijd verandert.
+
+<CodeGroup>
+```json JSON
+[
+  "matchedVolumeUpdate",
+  {
+    "gameID": "625ecb5f269b7ff13619ca7c",
+    "parentGameID": null,
+    "league": "NBA",
+    "sport": "basketball",
+    "matchedVolume": 12450.75
+  }
+]
+```
+</CodeGroup>

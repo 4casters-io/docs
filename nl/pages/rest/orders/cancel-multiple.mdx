@@ -1,0 +1,62 @@
+---
+title: 'Meerdere orders annuleren'
+description: 'Een batch orders op id annuleren'
+openapi: 'POST /session/cancelMultiple'
+---
+
+Annuleer een batch orders op id. Het resultaat is positioneel ten opzichte van de invoerarray `sessionIDs` en kan een mix bevatten van geslaagde annuleringen en mislukkingen per order.
+
+## Verzoek {#request}
+
+`POST /session/cancelMultiple`
+
+<ParamField body="sessionIDs" type="array" required>
+  Array van order-ids om te annuleren. Elk id moet een geldig `ObjectID` zijn — is er ook maar één misvormd, dan mislukt het hele verzoek met `400`.
+</ParamField>
+
+<CodeGroup>
+```bash curl
+curl -X POST https://api.4casters.io/session/cancelMultiple \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "sessionIDs": [
+      "65b036dfb31407c2b6bc1cfe",
+      "65b036e0b31407c2b6bc1d08"
+    ]
+  }'
+```
+</CodeGroup>
+
+## Antwoord {#response}
+
+<ResponseField name="data" type="array">
+  Annuleringsresultaten per order. Zelfde vorm als [Een order annuleren](/nl/pages/rest/orders/cancel-order#response). Bij mislukking bevatten entries `{ success: false, reason: "..." }` (geen `sessionID`-veld bij weigeringen wegens ongeldig id / niet gevonden / niet van jou).
+</ResponseField>
+
+### Voorbeeld {#example}
+
+<CodeGroup>
+```json JSON
+{
+  "data": [
+    {
+      "success": true,
+      "sessionID": "65b036dfb31407c2b6bc1cfe",
+      "odds": 125,
+      "filled": 0,
+      "offered": 0,
+      "remaining": 100,
+      "gameID": "65f0c3c24ef07d0008abc123"
+    },
+    { "success": false, "reason": "Not your order" }
+  ]
+}
+```
+</CodeGroup>
+
+## Fouten {#errors}
+
+| Status | Betekenis |
+| ------ | ------- |
+| `400`  | `sessionIDs` ontbreekt of is geen array, of een van de ids is misvormd. |

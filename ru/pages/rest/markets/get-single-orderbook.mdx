@@ -1,0 +1,66 @@
+---
+title: 'Получить книгу ордеров одной игры'
+description: 'Чтение вложенной книги ордеров одной игры, включая дочерние рынки'
+openapi: 'GET /exchange/getSingleOrderbook'
+---
+
+Возвращает **вложенную** книгу ордеров для одной игры — форы и тоталы представлены объектами с ключами по числу форы / тотала, а не плоскими массивами. Также возвращает дочерние игры (пропсы, альтернативные периоды) и `orderSummary` — собственные ожидающие ордера вызывающего по лиге.
+
+Для более простого плоского формата предпочитайте [Получить книгу ордеров](/ru/pages/rest/markets/get-orderbook).
+
+## Запрос {#request}
+
+`GET /exchange/getSingleOrderbook`
+
+<ParamField query="gameID" type="string" required>
+  Id игры.
+</ParamField>
+
+<CodeGroup>
+```bash curl
+curl "https://api.4casters.io/exchange/getSingleOrderbook?gameID=65b67450503180295ade9216" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+</CodeGroup>
+
+## Ответ {#response}
+
+<ResponseField name="data.game" type="object">
+  Объект игры с полями вложенной книги ордеров. Применимы стандартные поля `Game` (см. [Получить игры](/ru/pages/rest/markets/get-games#response)), плюс:
+
+  <Expandable title="Поля книги ордеров по игре">
+    <ResponseField name="awayMoneylines" type="array">Ожидающие ордера moneyline (манилайн — ставка на победителя) на гостевую сторону. Отсортированы от лучшей цены.</ResponseField>
+    <ResponseField name="homeMoneylines" type="array">Ожидающие ордера moneyline на домашнюю сторону.</ResponseField>
+    <ResponseField name="awaySpreads"    type="object">Объект с ключами по числу форы (например, `"-3.5"`). Каждое значение — массив ордеров.</ResponseField>
+    <ResponseField name="homeSpreads"    type="object">Объект с ключами по числу форы.</ResponseField>
+    <ResponseField name="over"           type="object">Объект с ключами по числу тотала (например, `"220.5"`). Каждое значение — массив ордеров.</ResponseField>
+    <ResponseField name="under"          type="object" />
+    <ResponseField name="homeMoneylines1x2" type="object">**Только футбол.** Объект с массивами `homeYes` / `homeNo`.</ResponseField>
+    <ResponseField name="awayMoneylines1x2" type="object">**Только футбол.** Объект с массивами `awayYes` / `awayNo`.</ResponseField>
+    <ResponseField name="draw1x2"           type="object">**Только футбол.** Объект с массивами `drawYes` / `drawNo`.</ResponseField>
+    <ResponseField name="mainHomeSpread"  type="string">Отображаемая в данный момент основная домашняя фора (консенсусная линия).</ResponseField>
+    <ResponseField name="mainAwaySpread"  type="number" />
+    <ResponseField name="mainTotal"       type="string" />
+    <ResponseField name="openInterest"    type="number" />
+    <ResponseField name="matchedVolume"   type="number" />
+  </Expandable>
+</ResponseField>
+<ResponseField name="data.orderSummary" type="array">
+  Собственные ожидающие ордера вызывающего по всей лиге (не только по этой игре). Удобно для отображения бейджей «ваши предложения» в UI.
+</ResponseField>
+<ResponseField name="data.childGames" type="array">
+  Дочерние игры (альтернативные периоды и т. п.) запрошенной игры. Тот же формат, что и `data.game`.
+</ResponseField>
+<ResponseField name="data.propGames" type="array">
+  Проп-игры, привязанные к запрошенной игре.
+</ResponseField>
+
+Каждый отдельный ордер имеет стандартный формат ордера:
+
+<Snippet file="ru/types/orderbook-order.mdx" />
+
+## Ошибки {#errors}
+
+| Статус | Значение |
+| ------ | ------- |
+| `400`  | `gameID` отсутствует. |

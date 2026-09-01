@@ -1,0 +1,76 @@
+---
+title: 'Gematcht volume ophalen'
+description: 'Totaal sitebreed gematcht volume over een datumbereik'
+openapi: 'GET /exchange/getMatchedVolume'
+---
+
+Geeft het totale sitebrede gematchte volume terug voor een inclusief bereik van **US-Eastern (ET) kalenderdagen**.
+
+## Hoe het volume wordt berekend {#how-volume-is-calculated}
+
+Elke gematchte weddenschap draagt de inzetten van **beide kanten** van de match bij:
+
+- de **inzet van de taker** (het gematchte bedrag), plus
+- de **inzet van de maker**, afgeleid van de taker-odds — bij positieve taker-odds is dat `stake × odds / 100`, bij negatieve taker-odds `stake × −100 / odds`.
+
+Gelijkwaardig geformuleerd: vanuit het perspectief van elk van beide partijen draagt elke gematchte weddenschap **`risk + win`** bij — jouw inzet plus je potentiële winst, omdat je potentiële winst precies de inzet van de tegenpartij is. Een take van $100 tegen +150 telt als $250 volume ($100 taker-kant + $150 maker-kant).
+
+<Note>
+Het volume gebruikt de ruwe inzetten vóór commissie. De velden `risk` / `win` op [Gematchte weddenschappen ophalen](/nl/pages/rest/user/get-matched-bets) hebben de commissie al verwerkt, dus die optellen zal licht afwijken van dit endpoint.
+</Note>
+
+## Actualiteit {#freshness}
+
+Afgesloten ET-dagen worden gelezen uit een definitief dagarchief. Als het bereik vandaag eindigt (een `endDate` na vandaag wordt afgekapt op vandaag), wordt daarbovenop een live aggregaat van de matches van vandaag opgeteld, zodat het deel van de lopende dag in realtime bijwerkt naarmate weddenschappen matchen.
+
+## Verzoek {#request}
+
+`GET /exchange/getMatchedVolume`
+
+<ParamField query="startDate" type="string" required>
+  Eerste ET-kalenderdag van het bereik, `YYYY-MM-DD` (inclusief).
+</ParamField>
+
+<ParamField query="endDate" type="string" required>
+  Laatste ET-kalenderdag van het bereik, `YYYY-MM-DD` (inclusief). Mag niet vóór `startDate` liggen. Datums na vandaag worden afgekapt op vandaag.
+</ParamField>
+
+<CodeGroup>
+```bash curl
+curl "https://api.4casters.io/exchange/getMatchedVolume?startDate=2026-08-10&endDate=2026-08-11" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+</CodeGroup>
+
+## Antwoord {#response}
+
+<ResponseField name="data" type="object">
+  <Expandable title="data">
+    <ResponseField name="startDate" type="string">Echo van de opgevraagde startdatum.</ResponseField>
+    <ResponseField name="endDate" type="string">Echo van de opgevraagde einddatum (vóór het afkappen).</ResponseField>
+    <ResponseField name="matchedVolume" type="number">Totaal gematcht volume in USD: de som van de inzetten van beide kanten (risico + winst) van elke weddenschap die in het bereik is gematcht.</ResponseField>
+  </Expandable>
+</ResponseField>
+
+```json Voorbeeldantwoord
+{
+  "data": {
+    "startDate": "2026-08-10",
+    "endDate": "2026-08-11",
+    "matchedVolume": 6447933.012757301
+  }
+}
+```
+
+## Rate-limits {#rate-limits}
+
+Er is geen endpoint-specifieke limiet — alleen de [globale limiet per IP](/nl/pages/rest/introduction#rate-limiting) (3,000 verzoeken per rollende minuut) geldt. Voor dashboards is eens per paar seconden pollen ruim voldoende; merk op dat afgesloten dagen nooit veranderen, dus alleen bereiken die vandaag bevatten hebben überhaupt baat bij opnieuw pollen.
+
+## Fouten {#errors}
+
+| Status | Betekenis |
+|---|---|
+| `400` | Ontbrekende of misvormde `startDate` / `endDate` (moet `YYYY-MM-DD` zijn), of `startDate` na `endDate`. |
+| `401` | Ontbrekend of ongeldig auth-token. |
+| `429` | Globale rate-limit per IP overschreden. Respecteer de `Retry-After`-header. |
+| `503` | De serverzijdige timeout van 15 seconden is geraakt. Veilig om opnieuw te proberen. |

@@ -1,0 +1,54 @@
+---
+title: 'Competities ophalen'
+description: 'Competities met actieve markten weergeven'
+openapi: 'GET /exchange/getLeagues'
+---
+
+Geeft elke competitie terug met actieve markten op de exchange. Gebruik competitiecodes van dit endpoint om wedstrijden (`/exchange/v2/getGames`) en orderboeken (`/exchange/v2/getOrderbook`) op te halen.
+
+Als het antwoord een competitienaam met `LIVE` erin bevat (anders dan de live-competities per sport `NFL-LIVE`, `NBA-LIVE`, `NCAAF-LIVE`, `NCAAB-LIVE`), wordt de waarde `"LIVE"` toegevoegd als alias voor "alle live wedstrijden (in-play)".
+
+## Verzoek {#request}
+
+`GET /exchange/getLeagues`
+
+<ParamField query="sport" type="string">
+  Optioneel sportfilter (`basketball`, `baseball`, `hockey`, `football`, `soccer`, `golf`, `tennis`, `mma`, enz.). Bij `sport=soccer` of `sport=golf` wordt de waarde `"all"` aan de lijst toegevoegd.
+</ParamField>
+
+<CodeGroup>
+```bash curl
+curl https://api.4casters.io/exchange/getLeagues \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+</CodeGroup>
+
+## Antwoord {#response}
+
+<ResponseField name="data.availableLeagues" type="array">
+  Array van competitiecodes.
+</ResponseField>
+
+### Voorbeeld {#example}
+
+<CodeGroup>
+```json JSON
+{
+  "data": {
+    "availableLeagues": [
+      "CHAMPIONS-LEAGUE",
+      "NBA",
+      "NHL",
+      "BUNDESLIGA",
+      "PREMIER-LEAGUE",
+      "PGA",
+      "LA-LIGA",
+      "NON-UFC",
+      "SERIE-A",
+      "MLS",
+      "UFCMMA"
+    ]
+  }
+}
+```
+</CodeGroup>

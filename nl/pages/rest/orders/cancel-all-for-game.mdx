@@ -1,0 +1,49 @@
+---
+title: 'Alle orders voor een wedstrijd annuleren'
+description: 'Elke openstaande order op één wedstrijd annuleren'
+openapi: 'POST /session/cancelAllOrdersForGame'
+---
+
+Annuleer elke openstaande order op één wedstrijd. Beperk optioneel tot één markt-`type` om andere markten intact te laten.
+
+## Verzoek {#request}
+
+`POST /session/cancelAllOrdersForGame`
+
+<ParamField body="gameID" type="string" required>
+  De wedstrijd waarvan de orders geannuleerd moeten worden.
+</ParamField>
+<ParamField body="type" type="string">
+  Optioneel. Annuleer alleen orders van dit markttype — één van `moneyline`, `spread`, `total`. Bij weglaten worden alle markttypen geannuleerd.
+</ParamField>
+
+<CodeGroup>
+```bash curl (één markt)
+curl -X POST https://api.4casters.io/session/cancelAllOrdersForGame \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "gameID": "688c0516fbc14da0c202d426",
+    "type": "spread"
+  }'
+```
+
+```bash curl (alle markten)
+curl -X POST https://api.4casters.io/session/cancelAllOrdersForGame \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{ "gameID": "688c0516fbc14da0c202d426" }'
+```
+</CodeGroup>
+
+## Antwoord {#response}
+
+<ResponseField name="data" type="array">
+  Annuleringsresultaten per order. Zelfde vorm als [Een order annuleren](/nl/pages/rest/orders/cancel-order#response).
+</ResponseField>
+
+## Fouten {#errors}
+
+| Status | Betekenis |
+| ------ | ------- |
+| `400`  | `gameID` ontbreekt / ongeldig, of `type` is niet één van de toegestane waarden. |
