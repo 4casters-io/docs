@@ -23,17 +23,17 @@ Convenzioni:
 </Update>
 
 <Update label="2026-07-30" tags={["API REST"]}>
-  ### Aggiunto {#added}
+  ### Aggiunto {#added-2}
   - **`GET /exchange/getMatchedVolume`.** Nuovo endpoint che restituisce il volume totale abbinato su tutto il sito per un intervallo inclusivo di giorni di calendario ET. Ogni scommessa abbinata conta le puntate di entrambi i lati (rischio + vincita, al lordo delle commissioni); gli intervalli che terminano oggi includono un aggregato live del giorno corrente. Vedi [Ottieni il volume abbinato](/it/pages/rest/markets/get-matched-volume).
 </Update>
 
 <Update label="2026-07-15" tags={["API streaming", "Feed utente"]}>
-  ### Corretto {#fixed}
+  ### Corretto {#fixed-2}
   - **Il replay di `GET /v2/user/messages` ora restituisce i messaggi.** L'endpoint di replay del feed utente v2 in precedenza restituiva sempre liste vuote, quindi il recupero dei messaggi persi dopo una disconnessione non faceva silenziosamente nulla. I messaggi rigiocati arrivano esattamente nella forma in cui li consegna il WebSocket. Vedi [Recuperare i messaggi persi](/it/pages/streaming/user-feed#replaying-missed-messages).
 </Update>
 
 <Update label="2026-04-28" tags={["API streaming", "Feed prezzi"]}>
-  ### Aggiunto {#added}
+  ### Aggiunto {#added-3}
   - **Sottoscrizione per `gameID`, `league` o `sport` sul feed prezzi.** I client connessi a `wss://streaming-api.4casters.io/price-stream` ora possono inviare comandi JSON `subscribe`, `unsubscribe` e `subscribeAll` per restringere il feed a eventi, leghe o sport specifici. Vedi [Sottoscrizioni](/it/pages/streaming/price-feed#subscriptions) per la forma completa dei comandi e la semantica di instradamento.
   - **Fanout di `parentGameID`.** Chi è sottoscritto a un `gameID` padre riceve anche gli aggiornamenti degli eventi figli il cui `parentGameID` corrisponde (es. i derivati F5-MLB raggiungono i sottoscrittori dell'evento padre).
 
