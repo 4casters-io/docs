@@ -100,7 +100,8 @@ Address the user as `tú`, never `usted`. Neutral between Spain and Latin Americ
 | resting order | orden en espera |
 | stake | importe |
 | settle | liquidar |
-| liability | riesgo |
+| liability | exposición |
+| risk (the stake side of a bet) | riesgo |
 | american odds | cuotas americanas |
 | game | evento |
 | league | liga |
@@ -109,7 +110,7 @@ Address the user as `tú`, never `usted`. Neutral between Spain and Latin Americ
 
 `matched` and `unmatched` as **API field names** stay in English everywhere — they are keys in the payload (rule 2). The Spanish words above are for the concept in prose.
 
-**One open question for the Spanish reviewer:** "liability" is rendered as `riesgo` in 16 places and `exposición` in 6. Both read fine; the frontend needs one of them so the app and the docs agree. Ask before changing anything — it may be a deliberate distinction.
+`exposición` and `riesgo` are **not interchangeable**: `exposición` renders *liability* (worst-case exposure across a game), `riesgo` renders *risk* (the stake side of a bet, the `risk`/`bet` field). The frontend must keep them apart the same way.
 
 ### Simplified Chinese (`zh-Hans`)
 
