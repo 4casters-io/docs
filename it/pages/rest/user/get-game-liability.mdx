@@ -1,0 +1,38 @@
+---
+title: 'Ottieni la responsabilità su un evento'
+description: 'Perdita massima possibile su un singolo evento'
+openapi: 'GET /user/getGameLiability'
+---
+
+Calcola la **responsabilità finanziaria nel caso peggiore** del chiamante per un singolo evento, tenendo conto di ogni scommessa su ogni mercato dell'evento.
+
+Il valore è sempre `<= 0` — anche un libro completamente coperto può subire perdite per rinvii per pioggia, sospensioni o squalifiche.
+
+## Richiesta {#request}
+
+`GET /user/getGameLiability`
+
+<ParamField query="gameID" type="string" required>L'id dell'evento per cui calcolare la responsabilità.</ParamField>
+
+<CodeGroup>
+```bash curl
+curl "https://api.4casters.io/user/getGameLiability?gameID=657f8ea1ea0ce6f62c1fe37d" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+</CodeGroup>
+
+## Risposta {#response}
+
+<ResponseField name="data.liability" type="number">
+  La perdita nel caso peggiore nella valuta dell'account. Sempre `<= 0`. Restituisce `0` quando il chiamante non ha scommesse sull'evento.
+</ResponseField>
+
+### Esempio {#example}
+
+<CodeGroup>
+```json JSON
+{
+  "data": { "liability": -125.50 }
+}
+```
+</CodeGroup>

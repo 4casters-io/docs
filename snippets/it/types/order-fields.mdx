@@ -1,0 +1,47 @@
+<ParamField body="gameID" type="string" required>
+  Id dell'evento 4casters. Puoi ottenerne uno da `GET /exchange/v2/getGames` o `GET /exchange/v2/getOrderbook`.
+</ParamField>
+
+<ParamField body="type" type="string" required>
+  Tipo di mercato. Uno tra `moneyline`, `spread`, `total`, `moneyline1x2`. `moneyline1x2` è **solo per il calcio** (moneyline a tre esiti: casa / trasferta / pareggio).
+</ParamField>
+
+<ParamField body="side" type="string" required>
+  Lato dell'ordine. Il significato dipende da `type`:
+  - `moneyline`, `spread` — l'id del partecipante su cui punti.
+  - `total` — `"over"` o `"under"`.
+  - `moneyline1x2` — `"yes"` o `"no"` sull'esito indicato da `market`.
+</ParamField>
+
+<ParamField body="market" type="string">
+  **Solo `moneyline1x2`.** `"draw"` oppure l'id di un partecipante — indica l'esito su cui scommetti sì/no. Esempio: `side: "yes"` + `market: "draw"` significa *la partita finisce in pareggio*; `side: "no"` + `market: "<homeTeamId>"` significa *la squadra di casa non vince*.
+</ParamField>
+
+<ParamField body="odds" type="integer" required>
+  Quote dell'ordine in formato **americano** (es. `-110`, `+150`).
+</ParamField>
+
+<ParamField body="bet" type="number" required>
+  Importo da rischiare sulla scommessa. Un ordine con `bet: 100, odds: 120` può essere abbinato da altri utenti per un totale di **120 a -120**.
+</ParamField>
+
+<ParamField body="number" type="number">
+  Numero dello spread o del total. Obbligatorio per `spread` e `total`. Non usato per `moneyline` o `moneyline1x2`.
+</ParamField>
+
+<ParamField body="orderType" type="string">
+  Uno tra `limit`, `post`, `postArb`, `fillAndKill`, `fillOrKill`. Il valore predefinito è `limit`.
+  - `limit` — abbina come taker qualunque liquidità al tuo prezzo o a un prezzo migliore, e lascia il resto in attesa come maker.
+  - `post`  — maker garantito. Rifiutato se l'ordine abbinerebbe liquidità in attesa (`rejected_order_type_rules`, es. `"post order cannot have matches"`).
+  - `postArb` — come `post`, ma può abbinare se le tue quote americane sono entro l'**1%** dall'ordine in attesa. Evita le commissioni taker che pagheresti su uno scambio normale.
+  - `fillAndKill` — taker garantito. Abbina tutta la quantità disponibile al tuo prezzo o a un prezzo migliore e annulla il resto; non resta mai in attesa. Un abbinamento **parziale** è un successo. Rifiutato solo quando non c'è alcuna liquidità abbinabile.
+  - `fillOrKill` — taker tutto-o-niente. Abbina **l'intero** `bet` immediatamente, altrimenti l'intero ordine viene rifiutato e gli eventuali abbinamenti parziali annullati; non resta mai in attesa.
+</ParamField>
+
+<ParamField body="expirationMinutes" type="integer">
+  Annullamento automatico dopo N minuti dal piazzamento. Ometti per lasciare l'ordine in attesa fino all'inizio dell'evento (il comportamento predefinito — ogni ordine aperto viene annullato automaticamente quando l'evento inizia).
+</ParamField>
+
+<ParamField body="userReference" type="string">
+  Identificatore definito dal client, conservato su ogni abbinamento e su ogni offerta in attesa derivati da questo ordine. Usalo per recuperare l'ordine in seguito tramite `GET /user/getBetByUserReference`.
+</ParamField>

@@ -1,0 +1,49 @@
+---
+title: 'Ottieni una scommessa per riferimento utente'
+description: 'Consulta ogni scommessa legata a un identificatore definito dal client'
+openapi: 'GET /user/getBetByUserReference'
+---
+
+Consulta ogni scommessa legata a un `userReference`. `userReference` è una stringa facoltativa definita dal client che puoi allegare a un ordine al momento del piazzamento per tracciarlo dal tuo lato — questo endpoint è la controparte in lettura.
+
+La risposta separa i risultati in tre gruppi:
+
+- `unmatched` — offerte aperte di questo riferimento ancora in attesa nel libro.
+- `matched`   — scommesse abbinate (non refertate) di questo riferimento.
+- `graded`    — scommesse refertate (liquidate) di questo riferimento, inclusi `risk`, `win`, `fee` e `result`.
+
+## Richiesta {#request}
+
+`GET /user/getBetByUserReference`
+
+<ParamField query="userReference" type="string" required>
+  Riferimento definito dal client passato al momento del piazzamento.
+</ParamField>
+<ParamField query="gameID" type="string" required>
+  Limita la ricerca a un singolo evento.
+</ParamField>
+
+<CodeGroup>
+```bash curl
+curl "https://api.4casters.io/user/getBetByUserReference?userReference=my-order-1&gameID=67d1c942215edc7ee0c806ef" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+</CodeGroup>
+
+## Risposta {#response}
+
+<ResponseField name="data.unmatched" type="array">
+  Ordini aperti — stessa forma di [Ottieni gli ordini non abbinati](/it/pages/rest/user/get-unmatched-orders#response).
+</ResponseField>
+<ResponseField name="data.matched" type="array">
+  Scommesse abbinate (non refertate) — stessa forma di [Ottieni le scommesse abbinate](/it/pages/rest/user/get-matched-bets#response).
+</ResponseField>
+<ResponseField name="data.graded" type="array">
+  Scommesse refertate (liquidate) — stessa forma di [Ottieni le giocate refertate](/it/pages/rest/user/get-graded-wagers#response).
+</ResponseField>
+
+## Errori {#errors}
+
+| Stato | Significato |
+| ------ | ------- |
+| `408`  | `userReference` o `gameID` mancante. |

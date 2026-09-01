@@ -1,0 +1,76 @@
+---
+title: 'Ottieni il volume abbinato'
+description: 'Volume totale abbinato su tutto il sito in un intervallo di date'
+openapi: 'GET /exchange/getMatchedVolume'
+---
+
+Restituisce il volume totale abbinato su tutto il sito per un intervallo inclusivo di **giorni di calendario US-Eastern (ET)**.
+
+## Come viene calcolato il volume {#how-volume-is-calculated}
+
+Ogni scommessa abbinata contribuisce con le puntate di **entrambi i lati** dell'abbinamento:
+
+- la **puntata del taker** (l'importo abbinato), più
+- la **puntata del maker**, derivata dalle quote del taker — a quote taker positive è `stake × odds / 100`, a quote taker negative è `stake × −100 / odds`.
+
+In modo equivalente, dalla prospettiva di ciascuna delle due parti ogni scommessa abbinata contribuisce con **`risk + win`** — la tua puntata più il tuo potenziale profitto, perché il tuo potenziale profitto è esattamente la puntata della controparte. Una presa da $100 a +150 conta come $250 di volume ($100 lato taker + $150 lato maker).
+
+<Note>
+Il volume usa le puntate grezze al lordo delle commissioni. I campi `risk` / `win` di [Ottieni le scommesse abbinate](/it/pages/rest/user/get-matched-bets) hanno la commissione incorporata, quindi sommarli darà un risultato leggermente diverso da questo endpoint.
+</Note>
+
+## Freschezza dei dati {#freshness}
+
+I giorni ET conclusi vengono letti da un archivio giornaliero finalizzato. Se l'intervallo termina oggi (un `endDate` oltre oggi viene riportato a oggi), viene aggiunto in cima un aggregato live degli abbinamenti odierni, così la porzione del giorno corrente si aggiorna in tempo reale man mano che le scommesse si abbinano.
+
+## Richiesta {#request}
+
+`GET /exchange/getMatchedVolume`
+
+<ParamField query="startDate" type="string" required>
+  Primo giorno di calendario ET dell'intervallo, `YYYY-MM-DD` (inclusivo).
+</ParamField>
+
+<ParamField query="endDate" type="string" required>
+  Ultimo giorno di calendario ET dell'intervallo, `YYYY-MM-DD` (inclusivo). Non deve essere precedente a `startDate`. Le date successive a oggi vengono riportate a oggi.
+</ParamField>
+
+<CodeGroup>
+```bash curl
+curl "https://api.4casters.io/exchange/getMatchedVolume?startDate=2026-08-10&endDate=2026-08-11" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+</CodeGroup>
+
+## Risposta {#response}
+
+<ResponseField name="data" type="object">
+  <Expandable title="data">
+    <ResponseField name="startDate" type="string">Eco della data di inizio richiesta.</ResponseField>
+    <ResponseField name="endDate" type="string">Eco della data di fine richiesta (prima del riporto a oggi).</ResponseField>
+    <ResponseField name="matchedVolume" type="number">Volume totale abbinato in USD: la somma delle puntate di entrambi i lati (risk + win) di ogni scommessa abbinata nell'intervallo.</ResponseField>
+  </Expandable>
+</ResponseField>
+
+```json Esempio di risposta
+{
+  "data": {
+    "startDate": "2026-08-10",
+    "endDate": "2026-08-11",
+    "matchedVolume": 6447933.012757301
+  }
+}
+```
+
+## Limiti di frequenza {#rate-limits}
+
+Non esiste un limite specifico per questo endpoint — si applica solo il [limite globale per IP](/it/pages/rest/introduction#rate-limiting) (3,000 richieste per minuto mobile). Per le dashboard, un polling ogni pochi secondi va più che bene; nota che i giorni finalizzati non cambiano mai, quindi solo gli intervalli che includono oggi traggono beneficio dal ri-polling.
+
+## Errori {#errors}
+
+| Stato | Significato |
+|---|---|
+| `400` | `startDate` / `endDate` mancante o malformato (deve essere `YYYY-MM-DD`), oppure `startDate` successivo a `endDate`. |
+| `401` | Token di autenticazione mancante o non valido. |
+| `429` | Superato il rate limit globale per IP. Rispetta l'header `Retry-After`. |
+| `503` | È stato raggiunto il timeout server-side di 15 secondi. È sicuro riprovare. |
