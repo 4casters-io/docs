@@ -19,7 +19,9 @@ ROOTS = ['pages'] + LOCALES
 # Link targets that are not pages in this repo.
 EXTERNAL_PREFIXES = ('api-reference', 'sources')
 
-LINK = re.compile(r'\]\(([^)\s]+)\)')
+# markdown ](target) plus component href="target" -- Card/Columns hrefs are
+# real navigation and 404 just as loudly as a markdown link.
+LINK = re.compile(r"""\]\(([^)\s]+)\)|href=["']([^"']+)["']""")
 ANCHOR = re.compile(r'\{#([A-Za-z0-9_-]+)\}')
 HEADING = re.compile(r'^#{1,6}\s+(.*?)\s*$', re.M)
 
@@ -70,7 +72,8 @@ total = 0
 for key, path in sorted(mdx.items()):
     if key.split('/')[0] not in ROOTS:
         continue
-    for link in LINK.findall(open(path, encoding='utf-8').read()):
+    for m in LINK.findall(open(path, encoding='utf-8').read()):
+        link = m[0] or m[1]
         if link.startswith(('http://', 'https://', 'mailto:', '#')):
             continue
         total += 1

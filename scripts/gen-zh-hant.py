@@ -42,8 +42,10 @@ def convert_doc(text):
 
 
 def retarget(text, frm, to):
-    text = text.replace('](/%s/' % frm, '](/%s/' % to)
-    text = text.replace('file="%s/' % frm, 'file="%s/' % to)
+    text = text.replace('](/%s/' % frm, '](/%s/' % to)      # markdown links
+    text = text.replace('href="/%s/' % frm, 'href="/%s/' % to)   # Card/Columns hrefs
+    text = text.replace("href='/%s/" % frm, "href='/%s/" % to)
+    text = text.replace('file="%s/' % frm, 'file="%s/' % to)     # <Snippet file=...>
     return text
 
 
