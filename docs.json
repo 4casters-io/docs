@@ -303,7 +303,12 @@
               "zh-Hans/pages/changelog"
             ]
           }
-        ]
+        ],
+        "banner": {
+          "content": "本文档由 AI 翻译，仅为方便阅读而提供，可能存在错误。**英文文档为准**——依赖本页内容前请对照英文核对。[报告翻译问题](https://github.com/4casters-io/docs/issues/new?labels=translation&title=%5Bzh-Hans%5D+Translation+issue&body=%2A%2APage%3A%2A%2A+%3C%21--+paste+the+URL+of+the+page+--%3E%0A%0A%2A%2AWhat+reads+wrong%3A%2A%2A+%3C%21--+quote+the+text+--%3E%0A%0A%2A%2ASuggested+wording%3A%2A%2A%0A%0A---%0A_Language%3A+zh-Hans.+The+English+page+is+authoritative._%0A)",
+          "type": "warning",
+          "dismissible": false
+        }
       },
       {
         "language": "zh-Hant",
@@ -401,7 +406,12 @@
               "zh-Hant/pages/changelog"
             ]
           }
-        ]
+        ],
+        "banner": {
+          "content": "本文件由 AI 翻譯，僅為方便閱讀而提供，可能存在錯誤。**英文文件為準**——依賴本頁內容前請對照英文核對。[報告翻譯問題](https://github.com/4casters-io/docs/issues/new?labels=translation&title=%5Bzh-Hant%5D+Translation+issue&body=%2A%2APage%3A%2A%2A+%3C%21--+paste+the+URL+of+the+page+--%3E%0A%0A%2A%2AWhat+reads+wrong%3A%2A%2A+%3C%21--+quote+the+text+--%3E%0A%0A%2A%2ASuggested+wording%3A%2A%2A%0A%0A---%0A_Language%3A+zh-Hant.+The+English+page+is+authoritative._%0A)",
+          "type": "warning",
+          "dismissible": false
+        }
       }
     ]
   },

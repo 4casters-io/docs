@@ -49,7 +49,8 @@ The exception list is `INLINE_EXEMPT` in `scripts/check-structure.py`, keyed on 
 4. Add the `navigation.languages` block to `docs.json`.
 5. Add the locale to `LOCALES` in **both** `scripts/check-structure.py` and `scripts/check-links.py` — they are separate lists.
 6. Write the glossary section for the language, below, **before** drafting. Not after.
-7. Pass both gates.
+7. Add the disclaimer banner for the locale (see below) unless a fluent human has read the pages.
+8. Pass both gates.
 
 ### Gate 1 — mechanical
 
@@ -68,6 +69,48 @@ Both exit non-zero on failure. Zero failures is the bar.
 A fluent reader confirms the prose reads naturally and the glossary terms are right.
 
 **Do not ship a language on Gate 1 alone.** These docs describe a money API where `matched`, `unmatched`, `liability`, `stake` and `settle` have exact meanings. A structurally perfect translation that uses the wrong word for "unmatched" produces a developer who builds the wrong thing.
+
+## The AI-translation disclaimer
+
+Any locale whose text has **not** been read by a fluent human carries a banner saying so, in that language, on every page.
+
+It is a per-language `banner` in `docs.json` — not something added to the pages, so it cannot drift out of sync and does not touch the 39 files:
+
+```json
+{
+  "language": "zh-Hans",
+  "banner": {
+    "content": "本文档由 AI 翻译…[报告翻译问题](https://github.com/4casters-io/docs/issues/new?labels=translation&…)",
+    "type": "warning",
+    "dismissible": false
+  },
+  "tabs": [ … ]
+}
+```
+
+`dismissible: false` on purpose: it is an accuracy disclaimer, not an announcement. A reader who dismissed it on page one would read the other 38 pages with no warning.
+
+The banner says three things, and all three matter: the translation is machine-made, the English page is authoritative, and here is where to report a mistake. The report link is a **pre-filled GitHub issue** — labelled `translation`, titled with the locale, with a body template asking for the page URL, the wrong text, and a suggested fix. The audience is developers, so a GitHub issue is somewhere they already are, and the repo is public so anyone can file one.
+
+**Remove a locale's banner when, and only when, a fluent human has read the pages.** That is the visible difference between a reviewed language and an unreviewed one.
+
+Currently no banner: `en` (source), `es`, `it`.
+
+### Text for each locale
+
+Keep the three elements. Do not soften "the English version is authoritative" — that is the point of the sentence.
+
+| Locale | Content (`%s` is the report URL) |
+|---|---|
+| `zh-Hans` | 本文档由 AI 翻译，仅为方便阅读而提供，可能存在错误。**英文文档为准**——依赖本页内容前请对照英文核对。[报告翻译问题](%s) |
+| `zh-Hant` | 本文件由 AI 翻譯，僅為方便閱讀而提供，可能存在錯誤。**英文文件為準**——依賴本頁內容前請對照英文核對。[報告翻譯問題](%s) |
+| `ru` | Эта документация переведена ИИ для удобства и может содержать ошибки. **Английская версия является официальной** — сверяйтесь с ней, прежде чем полагаться на эту страницу. [Сообщить об ошибке перевода](%s) |
+| `fr` | Cette documentation est traduite par IA à titre de commodité et peut contenir des erreurs. **La version anglaise fait foi** — vérifiez-la avant de vous fier à cette page. [Signaler une erreur de traduction](%s) |
+| `pt-BR` | Esta documentação foi traduzida por IA por conveniência e pode conter erros. **A versão em inglês é a oficial** — confira nela antes de confiar nesta página. [Relatar um erro de tradução](%s) |
+| `pt` | Esta documentação foi traduzida por IA por conveniência e pode conter erros. **A versão inglesa é a oficial** — confirme nela antes de confiar nesta página. [Comunicar um erro de tradução](%s) |
+| `nl` | Deze documentatie is door AI vertaald voor het gemak en kan fouten bevatten. **De Engelse versie is leidend** — controleer die voordat u op deze pagina vertrouwt. [Een vertaalfout melden](%s) |
+
+Banner content supports basic MDX — links, bold, italic. Custom components are not supported.
 
 ## When English changes
 
