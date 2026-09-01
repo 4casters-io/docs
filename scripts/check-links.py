@@ -76,11 +76,16 @@ for key, path in sorted(mdx.items()):
         continue
     for m in LINK.findall(open(path, encoding='utf-8').read()):
         link = m[0] or m[1]
-        if link.startswith(('http://', 'https://', 'mailto:', '#')):
+        if link.startswith(('http://', 'https://', 'mailto:')):
             continue
         total += 1
         target, _, frag = link.partition('#')
         if not target:
+            # same-page anchor, e.g. ](#order-types) -- resolve against this
+            # page's own headings. This is the exact break from translating a
+            # heading without carrying the English {#id} over.
+            if frag and frag not in anchors_of(path):
+                bad_anchor.append((path, link, sorted(anchors_of(path))[:5]))
             continue
         if target.startswith('/'):
             resolved = target.strip('/')
