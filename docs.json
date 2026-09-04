@@ -89,7 +89,8 @@
           {
             "group": "Affiliate",
             "pages": [
-              "pages/rest/affiliate/get-affiliate-commission"
+              "pages/rest/affiliate/get-affiliate-commission",
+              "pages/rest/affiliate/deep-links"
             ]
           }
         ]
