@@ -1,0 +1,81 @@
+---
+title: 'Deep links'
+description: 'Link a player straight to a specific bet, with your referral attached'
+---
+
+A deep link opens the 4casters homepage with the take-bet modal already open on the game, market and side you chose. Add your referral code and any player who signs up after arriving through the link is attributed to you.
+
+```
+https://4casters.io/?game={gameID}&market=spread&side=away&line=3.5&ref=YOUR_CODE
+```
+
+The link works whether or not the visitor is logged in. A logged-out visitor sees the bet and a login / signup prompt; the referral code is remembered in their browser and pre-filled on the signup form.
+
+## Building a link
+
+Start from the game id, which you can get from [`/exchange/getGames`](/pages/rest/markets/get-games) or from the address bar of any game page (`/exchange-single/{gameID}`). Then add the market you want to open.
+
+<ParamField query="game" type="string" required>
+  The game id (24-character hex).
+</ParamField>
+<ParamField query="market" type="string" required>
+  `moneyline`, `spread`, `total`, or `1x2` (three-way soccer markets).
+</ParamField>
+<ParamField query="side" type="string" required>
+  `home` or `away` for moneyline, spread and 1x2. `over` or `under` for total. `draw` is also accepted for 1x2.
+</ParamField>
+<ParamField query="line" type="number">
+  The spread or total number, written from the chosen side's point of view. Away +3.5 is `side=away&line=3.5`; home -3.5 is `side=home&line=-3.5`. Omit it to open the main line.
+</ParamField>
+<ParamField query="pick" type="string">
+  1x2 only: `yes` (default) or `no`.
+</ParamField>
+<ParamField query="ref" type="string">
+  Your referral code, the same one used in `/sign-up/{code}` links.
+</ParamField>
+
+## Examples
+
+<CodeGroup>
+```text Away moneyline
+https://4casters.io/?game=6a84db9c5ddbd1134524a222&market=moneyline&side=away&ref=YOUR_CODE
+```
+
+```text Home -3.5
+https://4casters.io/?game=6a84db9c5ddbd1134524a222&market=spread&side=home&line=-3.5&ref=YOUR_CODE
+```
+
+```text Main-line total, under
+https://4casters.io/?game=6a84db9c5ddbd1134524a222&market=total&side=under&ref=YOUR_CODE
+```
+
+```text Draw, three-way
+https://4casters.io/?game=6a84db9c5ddbd1134524a222&market=1x2&side=draw&ref=YOUR_CODE
+```
+</CodeGroup>
+
+## On 4CX
+
+The same link works on 4CX with the `4cx.io` host. Parameters are identical; three-way (`1x2`) markets are not offered there.
+
+```
+https://4cx.io/?game={gameID}&market=spread&side=away&line=3.5&ref=YOUR_CODE
+```
+
+One difference: 4CX requires an account to see the board. A signed-in player gets the modal straight away. A signed-out visitor is taken to the login page first and lands on the bet, modal open, right after signing in. If they sign up instead, your referral code is already filled in.
+
+Game ids are per platform: a 4casters game id does not exist on 4CX and vice versa. Build 4CX links from 4CX game pages or from `api.4cx.io/exchange/getGames`.
+
+## What the player sees
+
+The link points at a market, not at a single order. When the page opens, the modal shows the best price currently resting on that side, along with the rest of the ladder. Prices move, so the number a player sees can differ from what you saw when you built the link; the modal always shows the live book and the player confirms the price before the bet is placed.
+
+If nobody is currently offering that side, the modal switches to creating an offer at that line instead of taking one, the same way clicking an empty cell on the exchange does.
+
+## Notes
+
+- **Games go live.** When a game kicks off, its prematch market closes and a separate live market opens. A prematch link followed after kickoff opens the live market's book instead.
+- **Unknown lines.** If the line in the link is not one the game has (or `line` is omitted and the game has no main line published yet), the homepage opens without a modal. The player is never moved to a different line silently.
+- **Referral attribution.** The first referral code a browser arrives with is the one kept until that visitor signs up. A visitor who already has an account is not re-attributed.
+- **Game pages too.** The same `market` / `side` / `line` / `ref` parameters also work on a game page (`/exchange-single/{gameID}?market=...`), opening the modal over that game's board instead of the homepage.
+- **Props and player markets** are not addressable with these parameters yet.
