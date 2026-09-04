@@ -1,0 +1,152 @@
+---
+title: 'Authentication'
+description: 'There are no API keys. Your 4casters login is your API credential.'
+---
+
+<Warning>
+**4casters does not issue API keys today.** You authenticate against every 4casters API with the same username and password you use to sign in at [4casters.io](https://4casters.io). There is nothing to request, generate, or copy from your account settings.
+
+Dedicated API keys are on the roadmap. When they ship they will be announced in the [changelog](/pages/changelog) and this page will be updated. Until then, your login is the credential.
+</Warning>
+
+## How it works
+
+1. **Log in** with your account's username (or email) and password via `POST /user/login` on the REST API.
+2. **Receive a token** in the response. It is a 256-character hex string.
+3. **Send that token** on every REST request and every WebSocket handshake. All three APIs accept the same token.
+
+There is no separate signup for API access. If you can log in on the website, you can use the API.
+
+## 1. Log in
+
+`POST https://api.4casters.io/user/login`
+
+<CodeGroup>
+```bash curl
+curl -X POST https://api.4casters.io/user/login \
+  -H "Content-Type: application/json" \
+  -d '{"username": "your_username", "password": "your_password"}'
+```
+
+```javascript JavaScript
+const res = await fetch('https://api.4casters.io/user/login', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    username: process.env.FOURCASTERS_USERNAME,
+    password: process.env.FOURCASTERS_PASSWORD,
+  }),
+});
+const { data } = await res.json();
+const token = data.user.auth;
+```
+
+```python Python
+import os, requests
+
+res = requests.post(
+    "https://api.4casters.io/user/login",
+    json={
+        "username": os.environ["FOURCASTERS_USERNAME"],
+        "password": os.environ["FOURCASTERS_PASSWORD"],
+    },
+    headers={"User-Agent": "my-bot/1.0"},
+)
+token = res.json()["data"]["user"]["auth"]
+```
+</CodeGroup>
+
+The `username` field accepts either your username or the email on the account.
+
+The token is at `data.user.auth` in the response body. The same value is also set as a signed `auth` cookie; server-side integrations should capture `data.user.auth` and ignore the cookie.
+
+```json
+{
+  "data": {
+    "user": {
+      "id": "5fe37acbb5a23600123662c1",
+      "username": "your_username",
+      "auth": "5cd551d6...",
+      "...": "..."
+    }
+  }
+}
+```
+
+The full response shape is documented on the [REST authentication page](/pages/rest/authentication).
+
+<Tip>
+Log in **once** and reuse the token. Login is rate-limited per IP and per account, and every successful login mints a new token. Logging in again does not invalidate tokens you already hold.
+</Tip>
+
+## 2. Send the token
+
+<Tabs>
+  <Tab title="REST API">
+    Pass the token in the `Authorization` header. The `Bearer ` prefix is optional.
+
+    ```bash
+    curl https://api.4casters.io/user/getMe \
+      -H "Authorization: Bearer 5cd551d6..."
+    ```
+
+    A missing, unknown, or expired token returns `401` with body `{ "error": { "message": "InvalidCredentials", "code": 401 } }`.
+  </Tab>
+  <Tab title="Orders WebSocket">
+    Pass the token in the `Authorization` header on the handshake. The server derives your account from the token.
+
+    ```javascript
+    const ws = new WebSocket('wss://orders-api.4casters.io/orders/ws', {
+      headers: { Authorization: token },
+    });
+    ```
+
+    See [Orders API](/pages/websocket/introduction).
+  </Tab>
+  <Tab title="Streaming WebSocket">
+    Same header, same token, for both the user feed and the price feed.
+
+    ```javascript
+    const ws = new WebSocket('wss://streaming-api.4casters.io/v2/user', {
+      headers: { Authorization: token },
+    });
+    ```
+
+    See [Streaming API](/pages/streaming/introduction).
+  </Tab>
+</Tabs>
+
+## Token lifetime
+
+| | |
+| --- | --- |
+| **Valid for** | 30 days from login. |
+| **After 30 days** | The next authenticated REST request rotates the token in place: the old value stops working immediately and the replacement is returned in the `X-Auth-Token` response header. |
+| **Logout** | `POST /user/logout` invalidates the token used to make that call. Other tokens for the account are unaffected. |
+
+For a long-running integration, do one of the following:
+
+- **Re-login on any `401`.** Simplest and robust. Treat `401` as "get a fresh token", not as a fatal error.
+- **Watch for `X-Auth-Token`.** Whenever that header is present on a response, persist its value and use it from then on.
+
+A script that logs in once, stores the token, and never looks at response headers will work for exactly 30 days and then fail with `401` on every request.
+
+## Two-factor authentication
+
+Two-factor authentication on 4casters protects **withdrawals**, not login. Enabling it on your account does not change how you authenticate against the API. `POST /user/login` never asks for a code.
+
+## Login errors
+
+| Status | Meaning | What to do |
+| --- | --- | --- |
+| `400` | `username` or `password` missing from the body. | Send both as JSON. |
+| `401` | Username or password is incorrect. | Check the credentials. The message is the same whether the account exists or not. |
+| `403` | Account banned, closed, or frozen. | Contact support. |
+| `428` | `CHALLENGE_REQUIRED`. Only returned while the platform is actively mitigating a credential-stuffing attack; a human-verification challenge is being demanded. | Keep using a token you already hold, or wait and retry. Scripted clients cannot solve the challenge. |
+| `429` | Login rate limit exceeded. | Back off for the `Retry-After` seconds and reuse existing tokens instead of re-logging in. |
+
+## Keeping credentials safe
+
+- Store the username and password in environment variables or a secrets manager, never in source control.
+- Treat the token like a password. Anyone holding it can place orders and read your account.
+- Consider a dedicated account for automated trading so a leaked bot credential does not expose your main balance. Accounts are opened the same way as any user account.

@@ -29,14 +29,14 @@ description: 'Programmatic access to the 4casters peer-to-peer betting exchange'
 
 ## Authentication
 
-All three APIs share one token.
+**There are no API keys.** You authenticate with the same username and password you use to log in at 4casters.io, and all three APIs share the one token that login returns. API keys are planned; see [Authentication](/pages/authentication) for the current state.
 
 1. Call [`POST /user/login`](/pages/rest/authentication) on the REST API with your username and password.
 2. Send the returned token on every subsequent request:
    - **REST**: `Authorization: Bearer <token>` header.
    - **WebSockets**: `Authorization: <token>` header on the handshake.
 
-Tokens are valid for 30 days and can be refreshed before expiry. See [Authentication](/pages/rest/authentication) for token refresh, signed-cookie auth, and details.
+Tokens are valid for 30 days and are rotated automatically after that. See [Authentication](/pages/authentication) for token lifetime, error handling, and credential guidance, and the [REST login reference](/pages/rest/authentication) for the full response shape.
 
 ## Conventions
 

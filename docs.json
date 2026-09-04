@@ -13,7 +13,8 @@
       {
         "tab": "Introduction",
         "pages": [
-          "pages/introduction"
+          "pages/introduction",
+          "pages/authentication"
         ]
       },
       {

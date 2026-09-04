@@ -4,6 +4,10 @@ description: 'Log in and authorize requests'
 openapi: 'POST /user/login'
 ---
 
+<Note>
+**No API keys.** 4casters does not issue API keys yet. Log in with your account's username and password, exactly as you would on the website, and use the returned token. See the [Authentication overview](/pages/authentication) for how the token is used across all three APIs and how to handle its 30-day lifetime.
+</Note>
+
 To use any authenticated route you need an auth token. Tokens are obtained by logging in and are valid for **30 days**, after which a fresh login is required.
 
 ## Log in
@@ -93,8 +97,12 @@ If no token is provided — or the token is unknown / expired — the server res
 
 ## Token rotation
 
-Authenticated requests with tokens older than 30 days automatically rotate to a new token. When this happens, the new token is returned in the `X-Auth-Token` response header (and as an updated signed `auth` cookie). Long-lived integrations should watch for this header and persist the new value.
+Authenticated requests with tokens older than 30 days automatically rotate to a new token. When this happens, the new token is returned in the `X-Auth-Token` response header (and as an updated signed `auth` cookie). The old token stops working immediately; the request that triggered the rotation still succeeds, but every later request with the old value returns `401`. Long-lived integrations should watch for this header and persist the new value, or simply log in again on any `401`.
 
 ## Logging out
 
-`POST /user/logout` invalidates the current token. Subsequent requests with that token return `401`.
+`POST /user/logout` invalidates the token used to make the call. Subsequent requests with that token return `401`; other tokens held for the same account are unaffected.
+
+## Two-factor authentication
+
+Two-factor authentication protects withdrawals, not login. `POST /user/login` never requires a code, regardless of the account's 2FA setting.
