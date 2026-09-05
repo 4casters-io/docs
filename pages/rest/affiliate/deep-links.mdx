@@ -54,18 +54,6 @@ https://4casters.io/?game=6a84db9c5ddbd1134524a222&market=1x2&side=draw&ref=YOUR
 ```
 </CodeGroup>
 
-## On 4CX
-
-The same link works on 4CX with the `4cx.io` host. Parameters are identical; three-way (`1x2`) markets are not offered there.
-
-```
-https://4cx.io/?game={gameID}&market=spread&side=away&line=3.5&ref=YOUR_CODE
-```
-
-One difference: 4CX requires an account to see the board. A signed-in player gets the modal straight away. A signed-out visitor is taken to the login page first and lands on the bet, modal open, right after signing in. If they sign up instead, your referral code is already filled in.
-
-Game ids are per platform: a 4casters game id does not exist on 4CX and vice versa. Build 4CX links from 4CX game pages or from `api.4cx.io/exchange/getGames`.
-
 ## What the player sees
 
 The link points at a market, not at a single order. When the page opens, the modal shows the best price currently resting on that side, along with the rest of the ladder. Prices move, so the number a player sees can differ from what you saw when you built the link; the modal always shows the live book and the player confirms the price before the bet is placed.
