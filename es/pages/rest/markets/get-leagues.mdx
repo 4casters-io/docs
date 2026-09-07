@@ -1,0 +1,54 @@
+---
+title: 'Obtener ligas'
+description: 'Lista ligas con mercados activos'
+openapi: 'GET /exchange/getLeagues'
+---
+
+Devuelve cada liga con mercados activos en el intercambio. Usa los códigos de liga de este endpoint para obtener juegos (`/exchange/v2/getGames`) y libros de órdenes (`/exchange/v2/getOrderbook`).
+
+Si la respuesta contiene un nombre de liga con `LIVE` (aparte de las ligas en vivo por deporte `NFL-LIVE`, `NBA-LIVE`, `NCAAF-LIVE`, `NCAAB-LIVE`), se agrega el valor `"LIVE"` como alias de "todos los juegos en curso".
+
+## Solicitud
+
+`GET /exchange/getLeagues`
+
+<ParamField query="sport" type="string">
+  Filtro opcional de deporte (`basketball`, `baseball`, `hockey`, `football`, `soccer`, `golf`, `tennis`, `mma`, etc.). Cuando `sport=soccer` o `sport=golf`, se agrega el valor `"all"` a la lista.
+</ParamField>
+
+<CodeGroup>
+```bash curl
+curl https://api.4casters.io/exchange/getLeagues \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+</CodeGroup>
+
+## Respuesta {#response}
+
+<ResponseField name="data.availableLeagues" type="array">
+  Array de códigos de liga.
+</ResponseField>
+
+### Ejemplo
+
+<CodeGroup>
+```json JSON
+{
+  "data": {
+    "availableLeagues": [
+      "CHAMPIONS-LEAGUE",
+      "NBA",
+      "NHL",
+      "BUNDESLIGA",
+      "PREMIER-LEAGUE",
+      "PGA",
+      "LA-LIGA",
+      "NON-UFC",
+      "SERIE-A",
+      "MLS",
+      "UFCMMA"
+    ]
+  }
+}
+```
+</CodeGroup>

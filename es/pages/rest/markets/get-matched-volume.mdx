@@ -1,0 +1,76 @@
+---
+title: 'Obtener volumen cruzado'
+description: 'Volumen cruzado total del sitio en un rango de fechas'
+openapi: 'GET /exchange/getMatchedVolume'
+---
+
+Devuelve el volumen cruzado total del sitio para un rango inclusivo de **días de calendario del Este de EE. UU. (ET)**.
+
+## Cómo se calcula el volumen
+
+Cada apuesta cruzada aporta las apuestas de **ambos lados** del cruce:
+
+- la **apuesta del taker** (el importe cruzado), más
+- la **apuesta del maker**, derivada de las cuotas del taker: a cuotas positivas del taker es `stake × odds / 100`, a cuotas negativas del taker es `stake × −100 / odds`.
+
+De forma equivalente, desde la perspectiva de cualquiera de las partes cada apuesta cruzada aporta **`risk + win`**: tu apuesta más tu ganancia potencial, porque tu ganancia potencial es exactamente la apuesta de la contraparte. Un take de $100 a +150 cuenta como $250 de volumen ($100 del lado taker + $150 del lado maker).
+
+<Note>
+El volumen usa las apuestas brutas antes de comisión. Los campos `risk` / `win` de [Obtener apuestas cruzadas](/es/pages/rest/user/get-matched-bets) ya incluyen comisión, así que sumarlos diferirá ligeramente de este endpoint.
+</Note>
+
+## Actualidad
+
+Los días ET finalizados se leen de un archivo diario cerrado. Si el rango termina hoy (un `endDate` posterior a hoy se recorta a hoy), se suma un agregado en vivo de los cruces de hoy, de modo que la porción del día actual se actualiza en tiempo real a medida que se cruzan apuestas.
+
+## Solicitud
+
+`GET /exchange/getMatchedVolume`
+
+<ParamField query="startDate" type="string" required>
+  Primer día de calendario ET del rango, `YYYY-MM-DD` (inclusivo).
+</ParamField>
+
+<ParamField query="endDate" type="string" required>
+  Último día de calendario ET del rango, `YYYY-MM-DD` (inclusivo). No debe ser anterior a `startDate`. Las fechas posteriores a hoy se recortan a hoy.
+</ParamField>
+
+<CodeGroup>
+```bash curl
+curl "https://api.4casters.io/exchange/getMatchedVolume?startDate=2026-08-10&endDate=2026-08-11" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+</CodeGroup>
+
+## Respuesta {#response}
+
+<ResponseField name="data" type="object">
+  <Expandable title="data">
+    <ResponseField name="startDate" type="string">Eco de la fecha de inicio solicitada.</ResponseField>
+    <ResponseField name="endDate" type="string">Eco de la fecha de fin solicitada (antes del recorte).</ResponseField>
+    <ResponseField name="matchedVolume" type="number">Volumen cruzado total en USD: la suma de las apuestas de ambos lados (riesgo + ganancia) de cada apuesta cruzada en el rango.</ResponseField>
+  </Expandable>
+</ResponseField>
+
+```json Example response
+{
+  "data": {
+    "startDate": "2026-08-10",
+    "endDate": "2026-08-11",
+    "matchedVolume": 6447933.012757301
+  }
+}
+```
+
+## Límites de tasa
+
+No hay un límite específico del endpoint: solo aplica el [límite global por IP](/es/pages/rest/introduction#rate-limiting) (3,000 solicitudes por minuto móvil). Para dashboards, consultar una vez cada pocos segundos es más que suficiente; ten en cuenta que los días finalizados nunca cambian, así que solo los rangos que incluyen hoy se benefician de volver a consultar.
+
+## Errores
+
+| Estado | Significado |
+|---|---|
+| `400` | Falta o está mal formado `startDate` / `endDate` (debe ser `YYYY-MM-DD`), o `startDate` es posterior a `endDate`. |
+| `401` | Token de autenticación ausente o inválido. |
+| `429` | Se superó el límite de tasa global por IP. Respeta el encabezado `Retry-After`. |
+| `503` | Se alcanzó el timeout de 15 segundos del servidor. Es seguro reintentar. |

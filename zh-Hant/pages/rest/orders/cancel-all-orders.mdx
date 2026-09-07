@@ -1,0 +1,57 @@
+---
+title: '取消全部訂單'
+description: '取消屬於你帳戶的每一筆未成交訂單'
+openapi: 'POST /session/cancelAllOrders'
+---
+
+取消呼叫方在所有賽事和聯賽上的**每一筆**未成交訂單。用於緊急停止 — 例如來自監控系統的熔斷開關。
+
+若需要破壞性更小、之後還能恢復訂單的替代方案，見 `POST /session/pauseOrders`（會取消並記住的配套端點；與 `resumeOrders` 配對使用）。
+
+## 請求 {#request}
+
+`POST /session/cancelAllOrders`
+
+不接受引數。
+
+<CodeGroup>
+```bash curl
+curl -X POST https://api.4casters.io/session/cancelAllOrders \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+</CodeGroup>
+
+## 回應 {#response}
+
+<ResponseField name="data" type="array">
+  按單取消結果。形態與 [取消一筆訂單](/zh-Hant/pages/rest/orders/cancel-order#response) 相同。
+</ResponseField>
+
+### 示例 {#example}
+
+<CodeGroup>
+```json JSON
+{
+  "data": [
+    {
+      "success": true,
+      "sessionID": "65b036dfb31407c2b6bc1cfe",
+      "odds": -110,
+      "filled": 0,
+      "offered": 0,
+      "remaining": 100,
+      "gameID": "65f0c3c24ef07d0008abc123"
+    },
+    {
+      "success": true,
+      "sessionID": "65b036e0b31407c2b6bc1d08",
+      "odds": 125,
+      "filled": 25,
+      "offered": 0,
+      "remaining": 75,
+      "gameID": "65f0c4ae4ef07d0008abc456"
+    }
+  ]
+}
+```
+</CodeGroup>

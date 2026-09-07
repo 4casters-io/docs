@@ -1,0 +1,89 @@
+---
+title: 'Obtener apuestas cruzadas'
+description: 'Lista apuestas que están cruzadas pero aún no liquidadas'
+openapi: 'GET /user/getMatchedBets'
+---
+
+Devuelve todas las apuestas de la cuenta autenticada que han sido **cruzadas pero aún no liquidadas**: es decir, posiciones abiertas en juegos que aún no se han liquidado.
+
+## Solicitud
+
+`GET /user/getMatchedBets`
+
+No recibe parámetros.
+
+<CodeGroup>
+```bash curl
+curl https://api.4casters.io/user/getMatchedBets \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+</CodeGroup>
+
+## Respuesta {#response}
+
+<ResponseField name="data.matchedBets" type="array">
+  Array de apuestas cruzadas, ordenadas de forma ascendente por hora de inicio del juego.
+  <Expandable title="MatchedBet">
+    <ResponseField name="id" type="string">Id de la apuesta.</ResponseField>
+    <ResponseField name="txID" type="string">Id de transacción del cruce.</ResponseField>
+    <ResponseField name="type" type="string">`moneyline`, `spread`, `total` o `moneyline1x2`.</ResponseField>
+    <ResponseField name="bet" type="number">Tamaño original de la apuesta.</ResponseField>
+    <ResponseField name="odds" type="integer">Cuotas americanas en el momento del cruce.</ResponseField>
+    <ResponseField name="spread" type="number">Presente en `spread`.</ResponseField>
+    <ResponseField name="total" type="number">Presente en `total`.</ResponseField>
+    <ResponseField name="OU" type="string">`over` o `under`. Presente en `total`.</ResponseField>
+    <ResponseField name="participantID" type="string">Presente en `moneyline` y `spread`.</ResponseField>
+    <ResponseField name="market" type="string">Presente en `moneyline1x2`.</ResponseField>
+    <ResponseField name="side" type="string">En `moneyline1x2` — `yes` o `no`.</ResponseField>
+    <ResponseField name="userReference" type="string">Identificador opcional definido por el cliente, pasado en el momento de colocación.</ResponseField>
+    <ResponseField name="createdAt" type="string">Marca de tiempo ISO 8601.</ResponseField>
+    <ResponseField name="matchedTime" type="string">Marca de tiempo ISO 8601 en que ocurrió el cruce.</ResponseField>
+    <ResponseField name="origin" type="string">`offer` (tú publicaste, el taker te cruzó) o `wager` (tomaste liquidez en espera).</ResponseField>
+    <ResponseField name="risk" type="string">Riesgo de la porción cruzada (formateado como cadena, 2 decimales). Incluye la comisión que pagarías en una pérdida.</ResponseField>
+    <ResponseField name="win" type="string">Importe de ganancia neto de la comisión que pagarías en una ganancia. No hay un campo `fee` separado en las apuestas cruzadas: la comisión se cobra al liquidar y solo aparece en las apuestas liquidadas; hasta entonces se refleja en `risk`/`win`.</ResponseField>
+    <ResponseField name="graded" type="boolean">Siempre `false` aquí.</ResponseField>
+    <ResponseField name="closed" type="boolean">Si la apuesta ha sido cerrada por una acción de administrador.</ResponseField>
+    <ResponseField name="adminRefund" type="boolean">Si un administrador reembolsó la apuesta.</ResponseField>
+    <Snippet file="es/types/game-summary.mdx" />
+  </Expandable>
+</ResponseField>
+
+### Ejemplo
+
+<CodeGroup>
+```json JSON
+{
+  "data": {
+    "matchedBets": [
+      {
+        "id": "67f45377c18c6697c172afa4",
+        "txID": "67f45377c18c6697c172afa3",
+        "type": "moneyline",
+        "bet": 50,
+        "odds": -185,
+        "participantID": "5d48bd5198366d41ec7238da",
+        "userReference": "my-ref-123",
+        "createdAt": "2025-09-24T19:30:59.482Z",
+        "matchedTime": "2025-09-24T19:30:59.482Z",
+        "origin": "wager",
+        "risk": "50.27",
+        "win": "27.16",
+        "graded": false,
+        "closed": false,
+        "adminRefund": false,
+        "game": {
+          "id": "688c0516fbc14da0c202d426",
+          "league": "NBA",
+          "sport": "basketball",
+          "start": "2025-09-25T00:10:00.000Z",
+          "ended": false,
+          "eventName": "TORONTO RAPTORS VS PHILADELPHIA 76ERS",
+          "isFutures": false,
+          "participants": [/* ... */]
+        }
+      }
+    ]
+  }
+}
+```
+</CodeGroup>

@@ -1,0 +1,54 @@
+---
+title: '獲取聯賽'
+description: '列出有活躍市場的聯賽'
+openapi: 'GET /exchange/getLeagues'
+---
+
+回傳交易所上所有有活躍市場的聯賽。使用此端點的聯賽程式碼獲取賽事（`/exchange/v2/getGames`）和訂單簿（`/exchange/v2/getOrderbook`）。
+
+如果回應中的聯賽名稱包含 `LIVE`（除按運動專案劃分的滾球聯賽 `NFL-LIVE`、`NBA-LIVE`、`NCAAF-LIVE`、`NCAAB-LIVE` 外），會追加值 `"LIVE"` 作為「全部進行中賽事」的別名。
+
+## 請求 {#request}
+
+`GET /exchange/getLeagues`
+
+<ParamField query="sport" type="string">
+  可選的運動專案過濾（`basketball`、`baseball`、`hockey`、`football`、`soccer`、`golf`、`tennis`、`mma` 等）。當 `sport=soccer` 或 `sport=golf` 時，列表會追加 `"all"`。
+</ParamField>
+
+<CodeGroup>
+```bash curl
+curl https://api.4casters.io/exchange/getLeagues \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+</CodeGroup>
+
+## 回應 {#response}
+
+<ResponseField name="data.availableLeagues" type="array">
+  聯賽程式碼陣列。
+</ResponseField>
+
+### 示例 {#example}
+
+<CodeGroup>
+```json JSON
+{
+  "data": {
+    "availableLeagues": [
+      "CHAMPIONS-LEAGUE",
+      "NBA",
+      "NHL",
+      "BUNDESLIGA",
+      "PREMIER-LEAGUE",
+      "PGA",
+      "LA-LIGA",
+      "NON-UFC",
+      "SERIE-A",
+      "MLS",
+      "UFCMMA"
+    ]
+  }
+}
+```
+</CodeGroup>

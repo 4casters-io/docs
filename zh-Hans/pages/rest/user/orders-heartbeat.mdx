@@ -1,0 +1,45 @@
+---
+title: '订单心跳'
+description: '客户端断开时自动取消你的订单'
+openapi: 'POST /user/ordersHeartbeat'
+---
+
+一种安全机制：发送带 `timeout`（单位为秒）的心跳。如果在 `timeout` 秒内未收到下一次心跳，**你的所有未成交订单将被取消**。
+
+在任何会挂单的客户端中使用此端点 — 如果进程崩溃或失去连接，心跳可确保过期订单被撤下，而不是留在订单簿上。
+
+## 请求 {#request}
+
+`POST /user/ordersHeartbeat`
+
+<ParamField body="timeout" type="integer" required>
+  超时后取消，单位为秒。必须大于 `5`。
+</ParamField>
+
+<CodeGroup>
+```bash curl
+curl -X POST https://api.4casters.io/user/ordersHeartbeat \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"timeout": 30}'
+```
+
+```json JSON 请求体
+{ "timeout": 30 }
+```
+</CodeGroup>
+
+## 响应 {#response}
+
+响应由订单服务转发：
+
+```json
+{ "data": { /* heartbeat ack payload */ } }
+```
+
+## 错误 {#errors}
+
+| 状态 | 含义 |
+| ------ | ------- |
+| `400`  | `timeout` 缺失、不是数字，或 `<= 5`。 |
+| `503`  | 订单服务不可达。 |

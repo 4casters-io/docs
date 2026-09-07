@@ -1,0 +1,46 @@
+---
+title: '取消某聯賽的全部訂單'
+description: '非同步取消某聯賽中的每一筆未成交訂單'
+openapi: 'POST /session/cancelAllForLeague'
+---
+
+安排取消某聯賽中的每一筆未成交訂單。此端點**非同步派發** — 立即以 `{ ordersReceived: true }` 確認，取消在後臺進行。
+
+若需要知道哪些訂單被取消，請隨後呼叫 [獲取未撮合訂單](/zh-Hant/pages/rest/user/get-unmatched-orders)，或訂閱 [WebSocket 推送 API](/zh-Hant/pages/streaming/user-feed) 上的使用者推送。
+
+## 請求 {#request}
+
+`POST /session/cancelAllForLeague`
+
+<ParamField body="league" type="string" required>
+  聯賽程式碼。列表可從 `GET /exchange/getLeagues` 獲取。不區分大小寫。
+</ParamField>
+
+<CodeGroup>
+```bash curl
+curl -X POST https://api.4casters.io/session/cancelAllForLeague \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{ "league": "NBA" }'
+```
+</CodeGroup>
+
+## 回應 {#response}
+
+<ResponseField name="data.ordersReceived" type="boolean">
+  成功時始終為 `true`。取消操作非同步處理。
+</ResponseField>
+
+### 示例 {#example}
+
+<CodeGroup>
+```json JSON
+{ "data": { "ordersReceived": true } }
+```
+</CodeGroup>
+
+## 錯誤 {#errors}
+
+| 狀態 | 含義 |
+| ------ | ------- |
+| `400`  | `league` 缺失、不是字串，或未知。 |

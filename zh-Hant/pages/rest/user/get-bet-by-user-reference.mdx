@@ -1,0 +1,49 @@
+---
+title: '按使用者引用獲取投注'
+description: '查詢與客戶端自定義識別碼關聯的全部投注'
+openapi: 'GET /user/getBetByUserReference'
+---
+
+查詢與 `userReference` 關聯的全部投注。`userReference` 是可選的客戶端自定義字串，可在下單時附加到訂單以便在你這邊跟蹤 — 此端點是對應的讀取介面。
+
+回應將結果分為三個桶：
+
+- `unmatched` — 該引用下仍掛在訂單簿上的未成交掛單。
+- `matched`   — 該引用下已撮合（未結算）的投注。
+- `graded`    — 該引用下已結算的投注，包含 `risk`、`win`、`fee` 和 `result`。
+
+## 請求 {#request}
+
+`GET /user/getBetByUserReference`
+
+<ParamField query="userReference" type="string" required>
+  下單時傳入的客戶端自定義引用。
+</ParamField>
+<ParamField query="gameID" type="string" required>
+  將查詢限定到單場賽事。
+</ParamField>
+
+<CodeGroup>
+```bash curl
+curl "https://api.4casters.io/user/getBetByUserReference?userReference=my-order-1&gameID=67d1c942215edc7ee0c806ef" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+</CodeGroup>
+
+## 回應 {#response}
+
+<ResponseField name="data.unmatched" type="array">
+  未成交訂單 — 形態與 [獲取未撮合訂單](/zh-Hant/pages/rest/user/get-unmatched-orders#response) 相同。
+</ResponseField>
+<ResponseField name="data.matched" type="array">
+  已撮合（未結算）投注 — 形態與 [獲取已撮合投注](/zh-Hant/pages/rest/user/get-matched-bets#response) 相同。
+</ResponseField>
+<ResponseField name="data.graded" type="array">
+  已結算投注 — 形態與 [獲取已結算注單](/zh-Hant/pages/rest/user/get-graded-wagers#response) 相同。
+</ResponseField>
+
+## 錯誤 {#errors}
+
+| 狀態 | 含義 |
+| ------ | ------- |
+| `408`  | `userReference` 或 `gameID` 缺失。 |

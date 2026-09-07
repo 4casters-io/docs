@@ -1,0 +1,51 @@
+---
+title: 'Consultar una orden'
+description: 'Obtén el estado actual de una de tus órdenes'
+openapi: 'GET /session/lookupOrder'
+---
+
+Obtén el estado actual de una de las órdenes de la cuenta autenticada. Devuelve la orden con el desglose `matchedRisk` / `unmatchedRisk` y una instantánea desnormalizada del juego subyacente.
+
+## Solicitud
+
+`GET /session/lookupOrder`
+
+<ParamField query="orderID" type="string" required>
+  Un id de orden de 4casters. Obtén uno de `data.unmatched.orderID` de `/session/v3/place` o de `id` de `/user/getUnmatched`.
+</ParamField>
+
+<CodeGroup>
+```bash curl
+curl "https://api.4casters.io/session/lookupOrder?orderID=ORDER_ID" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+</CodeGroup>
+
+## Respuesta {#response}
+
+<ResponseField name="data.order" type="object">
+  <Expandable title="order">
+    <ResponseField name="id" type="string" />
+    <ResponseField name="cancelled" type="boolean" />
+    <ResponseField name="isTheBestOffer" type="boolean">
+      `true` cuando no hay una oferta competidora en el otro lado a mejores cuotas que esta orden.
+    </ResponseField>
+    <ResponseField name="odds" type="integer">Cuotas americanas de esta orden (signo invertido respecto al almacenamiento interno).</ResponseField>
+    <ResponseField name="type" type="string">`moneyline`, `spread`, `total` o `moneyline1x2`.</ResponseField>
+    <ResponseField name="OU" type="string">Opuesto del lado de la orden en mercados `total`. `null` si no es total.</ResponseField>
+    <ResponseField name="participant" type="string">Id del participante al que apostaste. `null` en `total`.</ResponseField>
+    <ResponseField name="participantLongName" type="string" />
+    <ResponseField name="spread" type="number" />
+    <ResponseField name="total" type="number" />
+    <ResponseField name="matchedRisk" type="string">Riesgo que ya se ha cruzado (formateado como cadena, 2 decimales).</ResponseField>
+    <ResponseField name="unmatchedRisk" type="string">Riesgo restante que sigue en el libro.</ResponseField>
+    <Snippet file="es/types/game-summary.mdx" />
+  </Expandable>
+</ResponseField>
+
+## Errores
+
+| Estado | Significado |
+| ------ | ------- |
+| `403`  | No es tu orden. |
+| `404`  | Id de orden inválido. |

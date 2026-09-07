@@ -1,0 +1,532 @@
+使用者推送投遞你帳戶範圍內的更新（訂單、成交、取消）。
+
+<CodeGroup>
+```javascript JavaScript
+// user_feed_quickstart.js 
+const WebSocket = require('ws'); 
+const token = process.env.FOURCASTERS_TOKEN; 
+function connectUserFeed() { 
+  const ws = new WebSocket('wss://streaming-api.4casters.io/v2/user', { 
+    headers: { Authorization: token }, 
+  });
+  let pingTimer; let lastPong = Date.now(); 
+  ws.on('open', () => { 
+    console.log('user feed connected'); 
+    pingTimer = setInterval(() => { 
+      if (ws.readyState === WebSocket.OPEN) { 
+        ws.ping(); 
+      } 
+      if (Date.now() - lastPong > 30000) { 
+        console.warn('user feed: missed pong >30s, closing'); 
+        ws.terminate(); 
+      } 
+    }, 10000); 
+  }); 
+ 
+  ws.on('pong', () => { lastPong = Date.now(); }); 
+ 
+  ws.on('message', (buf) => { 
+    try { 
+      const msg = JSON.parse(buf.toString()); 
+      console.log('user update:', JSON.stringify(msg, null, 2)); 
+    } catch { console.log('user update (raw):', buf.toString()); } 
+  }); 
+ 
+  ws.on('error', (e) => console.error('⚠️ user feed error:', e.message));
+ 
+  ws.on('close', (code, reason) => { 
+    console.log(`user feed closed: ${code} ${reason}`); 
+    clearInterval(pingTimer); 
+    // basic backoff reconnect 
+    setTimeout(connectUserFeed, 1000); 
+  }); 
+} 
+ 
+connectUserFeed(); 
+```
+</CodeGroup>
+
+## 訊息 {#messages}
+
+使用者推送將每條更新作為**裸 JSON 物件**傳送（無元組信封）。所有更新共用同一信封；動作由 `unmatched` / `matched` 哪個被填充以及 `origin` 決定。
+
+### 公共信封 {#common-envelope}
+
+<CodeGroup>
+```typescript Schema
+{
+  matched:    null | MatchedBlock,
+  unmatched:  null | UnmatchedBlock,
+  origin:     "offer" | "wager",
+
+  gameID:             string,
+  parentGameID:       string | null,
+  eventName:          string,
+  league:             string,
+  sport:              string,
+  live:               boolean,
+  start:              string,   // RFC3339
+  awayRotationNumber: string,
+
+  platform:           string,   // e.g. "api"
+  createdAt:          string,   // RFC3339
+  messageID:          string,   // Redis stream entry id, e.g. "1715361234567-0"
+}
+```
+</CodeGroup>
+
+`messageID` 是 streaming-api 在傳送前新增的流條目 id。請持久化你已處理的最新一條 — 它就是你的回放遊標。參見下方[回放錯過的訊息](#replaying-missed-messages)。
+
+### `matched` 塊 {#the-matched-block}
+
+只要更新表示一筆成交（`matched != null`），就會出現該塊。除非標明為有條件，下列每個欄位都會在每筆成交上傳送。所有取值都從**你的**視角出發 — 作為 taker 你看到自己吃到的方向，作為 maker 你看到自己掛出的方向。
+
+| 欄位 | 型別 | 是否下發 | 含義 |
+|---|---|---|---|
+| `txID` | string | 始終 | 該注單的 id。用它做成交去重 — 與[獲取已撮合投注](/zh-Hant/pages/rest/user/get-matched-bets)回傳的 `txID` 相同。 |
+| `orderID` | string | 始終 | 該成交來自的訂單 id。作為 maker，是你的掛單；作為 taker，是你吃到的訂單。 |
+| `wagerRequestID` | string | 始終 | 該成交背後的下單請求 id。作為 taker，是你自己的請求；作為 maker，是最初掛出你訂單的請求。 |
+| `amount` | number | 始終 | **不含**佣金的本金。在 maker 成交上等於 `risk`，但在 taker 成交上**不等於** — 見下文。 |
+| `risk` | number | 始終 | 你在該筆成交上可能虧損的金額。作為 taker，包含虧損時收取的佣金；作為 maker，不適用佣金。 |
+| `win` | number | 始終 | 你在該筆成交上可能贏得的金額。作為 taker，已扣除獲勝時收取的佣金；作為 maker，不適用佣金。 |
+| `odds` | integer | 始終 | 該成交中你這一側的美式賠率。 |
+| `type` | string | 始終 | `moneyline`、`spread`、`total` 或 `moneyline1x2`。 |
+| `side` | string | 始終 | 參見[按投注型別區分的 side 與 market 語義](#side-and-market-semantics-by-bet-type)。 |
+| `number` | number | 有條件 | 讓分或大小球盤口。在 `moneyline` 和 `moneyline1x2` 上完全省略。 |
+| `market` | string | 有條件 | 僅 `moneyline1x2`。 |
+| `userReference` | string \| null | 始終 | 回顯你在訂單上傳送的 `userReference`。未傳送則為 `null`。 |
+| `isPostArb` | boolean | 有條件 | `postArb` 訂單的成交上為 `true`；否則省略。 |
+
+<Warning>
+  **不要用 `risk` 推導 `win`。** `risk` 和 `win` 各自從未經四捨五入的本金獨立保留到 2 位小數，因此 `risk x odds` 可能與 `win` 相差一分錢。請按下發的 `win` 入賬；若該欄位缺失，應將訊息視為格式錯誤，而不是自行重建。
+
+  **不要把 `amount` 當作 `risk` 的同義詞。** 在 taker 成交上，`amount` 不含虧損時收取的佣金，而 `risk` 包含它。把 `amount` 當作風險金額入賬，會在每次吃單時少計佣金。
+</Warning>
+
+<Note>
+  REST 上的相同數量（[獲取已撮合投注](/zh-Hant/pages/rest/user/get-matched-bets)）以保留 2 位小數的字串而非數字給出，且佣金與舍入順序略有不同。對賬時請允許一分錢的容差，不要要求精確相等。
+</Note>
+
+### `unmatched` 塊 {#the-unmatched-block}
+
+只要更新涉及留在（或離開）訂單簿的訂單 — 下單、取消，以及成交的 maker 一側 — 就會出現該塊。賠率和方向來自 **maker** 視角，即你掛出的內容，而不是訂單簿向他人展示的報價。
+
+| 欄位 | 型別 | 是否下發 | 含義 |
+|---|---|---|---|
+| `orderID` | string | 始終 | 訂單 id。 |
+| `wagerRequestID` | string | 始終 | 建立該訂單的下單請求 id。 |
+| `filled` | number | 始終 | **在成交上：僅本事件匹配到的風險**，不是累計值。下單時為 `0`。取消時則為取消到達前已匹配的累計風險。 |
+| `offered` | number | 始終 | 該訂單掛出的總風險。`0` 表示取消。 |
+| `remaining` | number | 始終 | 仍掛在訂單簿上的風險。`0` 表示全部成交。 |
+| `odds` | integer | 始終 | 該訂單中你這一側的美式賠率。 |
+| `type` | string | 始終 | `moneyline`、`spread`、`total` 或 `moneyline1x2`。 |
+| `side` | string | 始終 | 參見[按投注型別區分的 side 與 market 語義](#side-and-market-semantics-by-bet-type)。 |
+| `number` | number | 有條件 | 讓分或大小球盤口。在 `moneyline` 和 `moneyline1x2` 上完全省略。 |
+| `market` | string | 有條件 | 僅 `moneyline1x2`。 |
+| `userReference` | string | 有條件 | 回顯你傳送的 `userReference`；訂單未攜帶時省略。 |
+| `isPostArb` | boolean | 有條件 | `postArb` 訂單為 `true`；否則省略。 |
+
+<Warning>
+  `filled` 和 `remaining` 不是同一類數字。`remaining` 是執行時狀態 — 此刻訂單簿上還剩多少 — 但在成交上 `filled` 只描述該事件。跨多筆部分成交時它們不會相加：`filled + remaining` 在第一筆成交時等於 `offered`，之後會逐漸偏離。
+
+  要跟蹤一筆掛單已成交多少，請使用 `offered - remaining`，或自行累加 `filled`。不要把兩者混用。
+</Warning>
+
+### 如何識別動作 {#how-to-identify-the-action}
+
+- `unmatched.filled === 0 && unmatched.offered > 0` -> 已下單
+- `unmatched.offered === 0` -> 已取消
+- `matched != null && unmatched == null` -> 作為 taker 成交
+- `matched != null && unmatched != null` -> 作為 maker 成交（若 `unmatched.remaining > 0` 則為部分成交）
+
+以 `orderType: "postArb"` 下的訂單，其更新還會在 `matched` / `unmatched` 內帶有 `isPostArb: true`（下單、成交和取消更新均如此）；否則省略該欄位。
+
+### 按投注型別區分的 side 與 market 語義 {#side-and-market-semantics-by-bet-type}
+
+`matched` / `unmatched` 內 `side` 的含義（以及會出現哪些額外欄位）取決於 `type`：
+
+| `type` | `side` | `number` | `market` |
+|---|---|---|---|
+| `moneyline` | 參賽者 ObjectID 十六進位制 | — | — |
+| `spread` | 參賽者 ObjectID 十六進位制 | 讓分盤口（例如 `6.5`） | — |
+| `total` | `"over"` / `"under"` | 大小球盤口（例如 `209.5`） | — |
+| `moneyline1x2` | `"yes"` / `"no"` | — | 參賽者 ObjectID 十六進位制（主隊或客隊）或 `"draw"` |
+
+`market` 僅出現在 `moneyline1x2` 更新中：它指明該盤口所針對的三項結果（主隊、客隊或平局），`side` 則表示對該結果是 yes 還是 no。所有欄位都從**你的**視角出發 — 作為 maker 你看到自己掛出的方向；作為 taker 你看到自己吃到的方向。
+
+### 動作：已下單 {#action-order-placed}
+
+一筆新掛單進入訂單簿。`unmatched.filled` 為 `0`，`unmatched.offered > 0`，且 `matched` 為 `null`。
+
+<CodeGroup>
+```json JSON
+{
+  "unmatched": {
+    "filled": 0,
+    "offered": 999,
+    "remaining": 999,
+    "orderID": "62619e6b40e36d0494600f67",
+    "wagerRequestID": "62619e6b40e36d0494600f70",
+    "type": "moneyline",
+    "side": "607349dc22a237cf46b021fb",
+    "odds": -105
+  },
+  "matched": null,
+  "origin": "offer",
+  "gameID": "603eb5d05eca45001243aedc",
+  "parentGameID": null,
+  "eventName": "PHILADELPHIA-76ERS-VS-MIAMI-HEAT",
+  "league": "NBA",
+  "sport": "basketball",
+  "live": false,
+  "start": "2026-04-22T01:00:00.000Z",
+  "awayRotationNumber": "571",
+  "platform": "api",
+  "createdAt": "2026-04-21T18:11:54.614Z",
+  "messageID": "1715361234567-0"
+}
+```
+</CodeGroup>
+
+### 動作：已取消 {#action-order-cancelled}
+
+使用者（或系統代其）取消了一筆掛單。區分欄位是 **`unmatched.offered === 0`**。
+
+<CodeGroup>
+```json JSON
+{
+  "unmatched": {
+    "filled": 0,
+    "offered": 0,
+    "remaining": 0,
+    "orderID": "62619e6b40e36d0494600f67",
+    "wagerRequestID": "62619e6b40e36d0494600f70",
+    "type": "spread",
+    "side": "607349dc22a237cf46b021fb",
+    "number": 6.5,
+    "odds": -110
+  },
+  "matched": null,
+  "origin": "offer",
+  "gameID": "603eb5d05eca45001243aedc",
+  "parentGameID": null,
+  "eventName": "PHILADELPHIA-76ERS-VS-MIAMI-HEAT",
+  "league": "NBA",
+  "sport": "basketball",
+  "live": false,
+  "start": "2026-04-22T01:00:00.000Z",
+  "awayRotationNumber": "571",
+  "platform": "api",
+  "createdAt": "2026-04-21T18:12:30.000Z",
+  "messageID": "1715361234890-0"
+}
+```
+</CodeGroup>
+
+### 動作：訂單成交（taker） {#action-order-matched-taker}
+
+使用者吃掉了他人的掛單。`unmatched` 為 `null`，`matched` 攜帶成交，`origin` 為 `"wager"`。
+
+<CodeGroup>
+```json JSON
+{
+  "unmatched": null,
+  "matched": {
+    "txID": "62619e6b40e36d0494600f99",
+    "amount": 100.0,
+    "risk": 100.0,
+    "win": 95.24,
+    "odds": -105,
+    "orderID": "62619e6b40e36d0494600f67",
+    "wagerRequestID": "62619e6b40e36d0494600f70",
+    "type": "moneyline",
+    "side": "607349dc22a237cf46b021fb"
+  },
+  "origin": "wager",
+  "gameID": "603eb5d05eca45001243aedc",
+  "parentGameID": null,
+  "eventName": "PHILADELPHIA-76ERS-VS-MIAMI-HEAT",
+  "league": "NBA",
+  "sport": "basketball",
+  "live": false,
+  "start": "2026-04-22T01:00:00.000Z",
+  "awayRotationNumber": "571",
+  "platform": "api",
+  "createdAt": "2026-04-21T18:13:00.000Z",
+  "messageID": "1715361240000-0"
+}
+```
+</CodeGroup>
+
+### 動作：訂單成交（maker，部分成交） {#action-order-matched-maker-partial-fill}
+
+有人吃到了使用者掛出的報價。`matched` 和 `unmatched` 均被填充；`unmatched.remaining` 顯示訂單簿上仍剩餘的數量。因為設定了 `unmatched`，`origin` 為 `"offer"`。
+
+<CodeGroup>
+```json JSON
+{
+  "unmatched": {
+    "filled": 100,
+    "offered": 500,
+    "remaining": 400,
+    "orderID": "62619e6b40e36d0494600f67",
+    "wagerRequestID": "62619e6b40e36d0494600f70",
+    "type": "spread",
+    "side": "607349dc22a237cf46b021fb",
+    "number": 6.5,
+    "odds": 110
+  },
+  "matched": {
+    "txID": "62619e6b40e36d0494600fa0",
+    "amount": 100,
+    "risk": 100,
+    "win": 110,
+    "odds": 110,
+    "orderID": "62619e6b40e36d0494600f67",
+    "wagerRequestID": "62619e6b40e36d0494600f70",
+    "type": "spread",
+    "side": "607349dc22a237cf46b021fb",
+    "number": 6.5
+  },
+  "origin": "offer",
+  "gameID": "603eb5d05eca45001243aedc",
+  "parentGameID": null,
+  "eventName": "PHILADELPHIA-76ERS-VS-MIAMI-HEAT",
+  "league": "NBA",
+  "sport": "basketball",
+  "live": false,
+  "start": "2026-04-22T01:00:00.000Z",
+  "awayRotationNumber": "571",
+  "platform": "api",
+  "createdAt": "2026-04-21T18:14:00.000Z",
+  "messageID": "1715361250000-0"
+}
+```
+</CodeGroup>
+
+### 動作：訂單成交（moneyline1x2） {#action-order-matched-moneyline1x2}
+
+足球三項盤上的成交攜帶上文所述的 **`market` + `side` 組合**，而不是參賽者十六進位制 `side`。此處使用者以 +120 吃了主隊的 "yes"（投注阿森納獲勝）：
+
+<CodeGroup>
+```json JSON（吃單）
+{
+  "unmatched": null,
+  "matched": {
+    "txID": "685e321440e36d0494601b07",
+    "amount": 100.0,
+    "risk": 100.0,
+    "win": 120.0,
+    "odds": 120,
+    "orderID": "685e2f1c40e36d0494601a22",
+    "wagerRequestID": "685e321440e36d0494601b00",
+    "type": "moneyline1x2",
+    "side": "yes",
+    "market": "607349dc22a237cf46b021fb"
+  },
+  "origin": "wager",
+  "gameID": "685e21aa0be1b7d5a3f9c4d2",
+  "parentGameID": null,
+  "eventName": "ARSENAL-VS-CHELSEA",
+  "league": "EPL",
+  "sport": "soccer",
+  "live": false,
+  "start": "2026-07-04T19:00:00.000Z",
+  "awayRotationNumber": "3012",
+  "platform": "api",
+  "createdAt": "2026-07-03T14:25:02.114Z",
+  "messageID": "1751552702114-0"
+}
+```
+```json JSON（掛單，部分成交）
+{
+  "unmatched": {
+    "filled": 100,
+    "offered": 500,
+    "remaining": 400,
+    "orderID": "685e2f1c40e36d0494601a22",
+    "wagerRequestID": "685e2f1c40e36d0494601a19",
+    "type": "moneyline1x2",
+    "side": "no",
+    "market": "607349dc22a237cf46b021fb",
+    "odds": -120
+  },
+  "matched": {
+    "txID": "685e321440e36d0494601b07",
+    "amount": 120.0,
+    "risk": 120.0,
+    "win": 100.0,
+    "odds": -120,
+    "orderID": "685e2f1c40e36d0494601a22",
+    "wagerRequestID": "685e2f1c40e36d0494601a19",
+    "type": "moneyline1x2",
+    "side": "no",
+    "market": "607349dc22a237cf46b021fb"
+  },
+  "origin": "offer",
+  "gameID": "685e21aa0be1b7d5a3f9c4d2",
+  "parentGameID": null,
+  "eventName": "ARSENAL-VS-CHELSEA",
+  "league": "EPL",
+  "sport": "soccer",
+  "live": false,
+  "start": "2026-07-04T19:00:00.000Z",
+  "awayRotationNumber": "3012",
+  "platform": "api",
+  "createdAt": "2026-07-03T14:25:02.114Z",
+  "messageID": "1751552702114-1"
+}
+```
+</CodeGroup>
+
+注意同一筆成交的兩個視角：taker 看到同一 `market` 上 `side: "yes"`、賠率 `+120`，maker 看到 `side: "no"`、賠率 `-120`。
+
+## 回放錯過的訊息 {#replaying-missed-messages}
+
+v2 使用者推送支援**連線中斷後的缺口恢復**。每條訊息都帶有 `messageID`（單調遞增的流條目 id，例如 `"1751552702114-0"`）。若連線斷開，你可以精確拉取錯過的訊息。
+
+### 介面 {#endpoint}
+
+```
+GET https://streaming-api.4casters.io/v2/user/messages?afterID=<messageID>&beforeID=<messageID>
+```
+
+鑑權方式與 WebSocket 相同：在 `Authorization` 請求標頭、`Auth` 請求標頭或 `token` 查詢引數中攜帶 token。僅回傳屬於已鑑權使用者的訊息。
+
+| 引數 | 是否必填 | 含義 |
+|---|---|---|
+| `afterID` | 是 | 斷開前**你處理的最後一條訊息**的 `messageID`。結果從嚴格晚於它的位置開始。 |
+| `beforeID` | 否 | 不包含的上界。省略則讀到保留歷史的末尾。 |
+
+### 回應：`success` {#response-success}
+
+你的 `afterID` 仍在保留歷史中，因此回傳的列表是**完整的**缺口填充 — `afterID` 與 `beforeID` 之間沒有任何丟失：
+
+```json
+{
+  "status": "success",
+  "messages": [
+    { "...": "feed messages in order, each with its messageID" }
+  ]
+}
+```
+
+按順序應用這些訊息，然後繼續處理即時訊息。
+
+### 回應：`cache_expired` {#response-cache_expired}
+
+你的 `afterID` 已超出保留歷史，因此伺服器**無法證明回放是完整的**：
+
+```json
+{
+  "status": "cache_expired",
+  "availableMessages": [
+    { "...": "whatever is still retained, oldest first" }
+  ]
+}
+```
+
+`availableMessages` 是仍被保留的內容，最舊的在前。超出保留視窗的更早訊息無法透過回放恢復 — 請及時重連，而不要依賴過長的回看。
+
+### 示例：帶回放的重連客戶端 {#example-reconnecting-client-with-replay}
+
+完整的 Node.js 客戶端（為簡潔起見省略 keepalive ping/pong — 參見本頁頂部的快速入門）。正確性依賴兩點：每條訊息 — 即時、緩衝或回放 — 都經過同一套只向前推進的遊標檢查；回放失敗時重連，而不是帶著缺口進入即時。
+
+<CodeGroup>
+```javascript JavaScript
+// user_feed_replay_client.js
+const WebSocket = require('ws');
+const token = process.env.FOURCASTERS_TOKEN;
+const HOST = 'streaming-api.4casters.io';
+
+// Your replay cursor: the messageID of the last message you processed.
+// Persist it durably (disk/db) so replay also works across process restarts.
+let cursor = null;
+
+// messageIDs are "<unix-ms>-<seq>"; compare numerically part by part.
+function isAfterCursor(messageID) {
+  if (!cursor) return true;
+  const [ms, seq] = messageID.split('-').map(Number);
+  const [cMs, cSeq] = cursor.split('-').map(Number);
+  return ms > cMs || (ms === cMs && seq > cSeq);
+}
+
+function processMessage(msg) {
+  // Replay can overlap live delivery, so every message — live, buffered,
+  // or replayed — passes through this check. The cursor only moves forward.
+  if (!isAfterCursor(msg.messageID)) return;
+  cursor = msg.messageID;
+  // Business logic goes here. `msg` is the same envelope everywhere.
+  console.log('user update:', msg.origin, msg.messageID);
+}
+
+async function replayGap() {
+  const params = new URLSearchParams({ afterID: cursor });
+  const res = await fetch(`https://${HOST}/v2/user/messages?${params}`, {
+    headers: { Authorization: token },
+  });
+  if (!res.ok) throw new Error(`replay request failed: ${res.status}`);
+  const body = await res.json();
+
+  if (body.status === 'success') {
+    // Complete gap-fill: nothing between the cursor and now was lost.
+    body.messages.forEach(processMessage);
+  } else if (body.status === 'cache_expired') {
+    // Apply what is still retained; anything older is not recoverable.
+    console.warn('replay window expired - messages may have been lost');
+    body.availableMessages.forEach(processMessage);
+  } else {
+    throw new Error(`unexpected replay status: ${body.status}`);
+  }
+}
+
+function connect() {
+  const ws = new WebSocket(`wss://${HOST}/v2/user`, {
+    headers: { Authorization: token },
+  });
+
+  let live = false; // false while replay is in flight
+  const buffer = [];
+  // Settles when the open handler is done, so a reconnect never starts a
+  // second replay while this one is in flight.
+  let openTask = Promise.resolve();
+
+  ws.on('open', () => {
+    openTask = (async () => {
+      console.log('user feed connected');
+      if (cursor !== null) {
+        try {
+          await replayGap();
+        } catch (e) {
+          // Going live now would advance the cursor over the unfilled gap
+          // and lose it — reconnect and retry from the same cursor.
+          console.error('replay failed, reconnecting:', e.message);
+          ws.terminate();
+          return;
+        }
+      }
+      // Drain messages buffered during replay; processMessage skips
+      // anything the replay already covered.
+      buffer.splice(0).forEach(processMessage);
+      live = true;
+    })();
+  });
+
+  ws.on('message', (buf) => {
+    const msg = JSON.parse(buf.toString());
+    if (live) processMessage(msg);
+    else buffer.push(msg);
+  });
+
+  ws.on('close', async (code, reason) => {
+    console.log(`user feed closed: ${code} ${reason} - reconnecting`);
+    await openTask.catch(() => {});
+    setTimeout(connect, 1000);
+  });
+
+  ws.on('error', (e) => console.error('user feed error:', e.message));
+}
+
+connect();
+```
+</CodeGroup>

@@ -1,0 +1,65 @@
+---
+title: '4casters API'
+description: '以程式設計方式訪問 4casters 點對點博彩交易所'
+---
+
+4casters 提供三套 API，共用同一認證令牌以及同一套底層帳戶 / 訂單簿 / 結算引擎。按你要構建的功能選擇其一，也可以組合使用 — 大多數整合用 REST 完成初始化與歷史查詢，用 WebSocket 進行即時交易。
+
+## 選擇 API {#choose-your-api}
+
+<CardGroup cols={3}>
+  <Card title="REST API" icon="globe" href="/zh-Hant/pages/rest/introduction">
+    基於 HTTPS 的請求 / 回應。用於登入、帳戶狀態、歷史記錄、市場查詢，以及批次下單 / 改單 / 取消。
+  </Card>
+  <Card title="訂單 WebSocket" icon="bolt" href="/zh-Hant/pages/websocket/introduction">
+    用於下單和取消訂單的持久低延遲通道。在你關心往返延遲時使用。
+  </Card>
+  <Card title="推送 WebSocket" icon="signal-stream" href="/zh-Hant/pages/streaming/introduction">
+    訂單簿行情以及按帳戶的成交 / 結算推送。用於在不輪詢的情況下保持狀態同步。
+  </Card>
+</CardGroup>
+
+## 何時使用哪種 {#when-to-use-which}
+
+| 介面 | 適用於 | 不適用於 |
+| --- | --- | --- |
+| **REST** (`https://api.4casters.io`) | 登入、帳戶資訊、投注歷史、查詢、市場瀏覽、批次下單 / 改單 / 取消，以及任何你會從指令碼或後端任務執行的操作。 | 往返延遲很關鍵的緊湊內迴圈。 |
+| **訂單 WebSocket** (`wss://orders-api.4casters.io/orders/ws`) | 即時交易：帶持久會話和 `requestID` 關聯的低延遲下單 + 取消。 | 讀取狀態 — 這是寫入/命令通道，不是查詢 API。 |
+| **推送 WebSocket** (`wss://streaming-api.4casters.io/...`) | 即時訂單簿行情（價格推送）以及按帳戶的成交 / 結算事件（使用者推送）。 | 一次性讀取 — 請用 REST，而不是開啟推送連線。 |
+
+## 認證 {#authentication}
+
+三套 API 共用一個令牌。
+
+1. 在 REST API 上使用使用者名稱和密碼呼叫 [`POST /user/login`](/zh-Hant/pages/rest/authentication)。
+2. 在後續每個請求中傳送回傳的令牌：
+   - **REST**：`Authorization: Bearer <token>` 請求標頭。
+   - **WebSockets**：握手時使用 `Authorization: <token>` 請求標頭。
+
+令牌有效期為 30 天，可在過期前重新整理。令牌重新整理、簽名 Cookie 認證及其他細節見 [認證](/zh-Hant/pages/rest/authentication)。
+
+## 約定 {#conventions}
+
+- **傳輸**：僅 HTTPS / WSS。
+- **編碼**：一律使用 JSON。
+- **回應信封（REST）**：成功時為 `{ "data": <payload> }`；HTTP 錯誤時為 `{ "error": "<message>" }`。
+- **識別符號**：賽事 ID、參賽方 ID 和訂單 ID 均為 MongoDB `ObjectID` 字串（24 位十六進位制）。
+- **賠率**：美式格式（熱門為負，冷門為正），除非另有說明。
+- **時間**：帶 `Z` 的 ISO 8601（UTC）。
+
+## 典型整合方式 {#a-typical-integration}
+
+大多數非平凡客戶端會組合使用全部三套介面：
+
+1. **REST** — 呼叫一次 `POST /user/login`，快取令牌，然後呼叫 `GET /user/getMe` 和 `GET /games/v2/leagues` 以引導狀態。
+2. **推送 WebSocket** — 開啟你關心的市場價格推送，以及使用者推送以回應你自己的成交 / 結算。
+3. **訂單 WebSocket** — 開啟持久連線，以低延遲下單 / 取消，並透過 `requestID` 關聯回應。
+4. **REST** — 回退到 `POST /myBets/getMatchedBets`、`/myBets/getOrdersForGame` 等，用於歷史記錄和對賬。
+
+## 需要舊版文件？ {#need-the-old-docs}
+
+先前的文件以 Postman 集合形式存在。它仍保留作參考，但這些 Mintlify 文件現為權威來源 — Postman 集合在新端點、引數或回應形態上可能滯後。
+
+<Card title="4Casters API — Postman 集合" icon="link" href="https://documenter.getpostman.com/view/6710109/U16gNmHG">
+  檢視舊版 Postman 文件
+</Card>

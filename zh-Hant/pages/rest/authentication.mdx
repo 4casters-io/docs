@@ -1,0 +1,100 @@
+---
+title: '認證'
+description: '登入併為請求授權'
+openapi: 'POST /user/login'
+---
+
+要使用任何需認證的路由，你需要一個認證令牌。令牌透過登入獲取，有效期為 **30 天**，之後需要重新登入。
+
+## 登入 {#log-in}
+
+`POST /user/login`
+
+<CodeGroup>
+```bash curl
+curl -X POST https://api.4casters.io/user/login \
+  -H "Content-Type: application/json" \
+  -d '{"username": "your_username", "password": "your_password"}'
+```
+
+```json JSON 請求主體
+{
+  "username": "your_username",
+  "password": "your_password"
+}
+```
+</CodeGroup>
+
+### 請求 {#request}
+
+<ParamField body="username" type="string" required>帳戶使用者名稱（或郵箱）。</ParamField>
+<ParamField body="password" type="string" required>帳戶密碼。</ParamField>
+
+### 回應 {#response}
+
+令牌會同時作為 `data.user.auth` **以及**簽名 `auth` Cookie（`Set-Cookie`）回傳。對於大多數服務端整合，你應捕獲 `data.user.auth` 並丟棄 Cookie。
+
+```json
+{
+  "data": {
+    "user": {
+      "id": "5fe37acbb5a23600123662c1",
+      "username": "your_username",
+      "auth": "5cd551d6...",
+      "type": "p2p",
+      "oddsFormat": "american",
+      "displayBalance": 1250.50,
+      "creditLimit": 500,
+      "liability": -125.00,
+      "commissionCharged": 0.01,
+      "hasMarketMakerAccess": false,
+      "isPro": false,
+      "createdAt": "2020-12-23T17:14:09.000Z"
+    }
+  }
+}
+```
+
+全部欄位見 OpenAPI schema 中的 [`User`](/api-reference/openapi.json)。
+
+### 錯誤回應 {#error-responses}
+
+| 狀態 | 含義 |
+| ------ | ------- |
+| `400`  | `username` 和 `password` 為必填。 |
+| `401`  | 使用者名稱或密碼不正確。 |
+| `403`  | 帳戶被封禁、鎖定或已關閉。 |
+| `429`  | 超出登入速率限制。 |
+
+## 為請求授權 {#authorizing-requests}
+
+在後續每個請求中傳遞來自 `data.user.auth` 的令牌。按以下優先順序接受三種請求標頭 / 酬載格式：
+
+<Tabs>
+  <Tab title="Authorization 請求標頭（推薦）">
+    ```bash
+    curl https://api.4casters.io/user/getMe \
+      -H "Authorization: Bearer 5cd551d6..."
+    ```
+    `Bearer ` 字首是可選的 — 直接傳遞裸令牌也可以。
+  </Tab>
+  <Tab title="Cookie">
+    `/user/login` 設定的簽名 `auth` Cookie 在同一客戶端複用時，會在每個端點上自動生效。
+  </Tab>
+  <Tab title="請求主體欄位（僅 POST）">
+    ```json
+    { "token": "5cd551d6...", "...": "..." }
+    ```
+    作為無法方便設定自定義請求標頭的客戶端（例如某些 webhook 傳送方）的回退方案。
+  </Tab>
+</Tabs>
+
+如果未提供令牌 — 或令牌未知 / 已過期 — 伺服器回應 `401 InvalidCredentials`。
+
+## 令牌輪換 {#token-rotation}
+
+使用超過 30 天的令牌發起的已認證請求會自動輪換為新令牌。發生時，新令牌會在 `X-Auth-Token` 回應標頭中回傳（並作為更新後的簽名 `auth` Cookie）。長期執行的整合應監聽此回應標頭並持久化新值。
+
+## 登出 {#logging-out}
+
+`POST /user/logout` 會使當前令牌失效。之後使用該令牌的請求回傳 `401`。

@@ -1,0 +1,51 @@
+---
+title: '查詢訂單'
+description: '獲取你某一筆訂單的當前狀態'
+openapi: 'GET /session/lookupOrder'
+---
+
+獲取呼叫方某一筆訂單的當前狀態。回傳帶 `matchedRisk` / `unmatchedRisk` 核算以及底層賽事反規範化快照的訂單。
+
+## 請求 {#request}
+
+`GET /session/lookupOrder`
+
+<ParamField query="orderID" type="string" required>
+  4casters 訂單 ID。可從 `/session/v3/place` 的 `data.unmatched.orderID` 或 `/user/getUnmatched` 的 `id` 獲取。
+</ParamField>
+
+<CodeGroup>
+```bash curl
+curl "https://api.4casters.io/session/lookupOrder?orderID=ORDER_ID" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+</CodeGroup>
+
+## 回應 {#response}
+
+<ResponseField name="data.order" type="object">
+  <Expandable title="order">
+    <ResponseField name="id" type="string" />
+    <ResponseField name="cancelled" type="boolean" />
+    <ResponseField name="isTheBestOffer" type="boolean">
+      當對面沒有比該訂單更優賠率的競爭掛單時為 `true`。
+    </ResponseField>
+    <ResponseField name="odds" type="integer">該訂單的美式賠率（相對內部儲存做了符號翻轉）。</ResponseField>
+    <ResponseField name="type" type="string">`moneyline`、`spread`、`total` 或 `moneyline1x2`。</ResponseField>
+    <ResponseField name="OU" type="string">`total` 市場上該訂單方向的對面。非大小分盤為 `null`。</ResponseField>
+    <ResponseField name="participant" type="string">你下注的參賽方 ID。`total` 為 `null`。</ResponseField>
+    <ResponseField name="participantLongName" type="string" />
+    <ResponseField name="spread" type="number" />
+    <ResponseField name="total" type="number" />
+    <ResponseField name="matchedRisk" type="string">已被撮合的風險額（字串格式，兩位小數）。</ResponseField>
+    <ResponseField name="unmatchedRisk" type="string">仍掛在訂單簿上的剩餘風險額。</ResponseField>
+    <Snippet file="zh-Hant/types/game-summary.mdx" />
+  </Expandable>
+</ResponseField>
+
+## 錯誤 {#errors}
+
+| 狀態 | 含義 |
+| ------ | ------- |
+| `403`  | 不是你的訂單。 |
+| `404`  | 無效的訂單 ID。 |

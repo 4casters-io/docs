@@ -1,0 +1,36 @@
+---
+title: '4casters 推送 API'
+---
+
+4casters 推送 API 透過原始 WebSocket 連線投遞即時的使用者和市場更新。
+
+## 端點 {#endpoints}
+- **使用者推送**：`wss://streaming-api.4casters.io/v2/user`
+- **行情推送**：`wss://streaming-api.4casters.io/price-stream`
+
+行情推送預設廣播全部市場更新。客戶端可以選擇將推送收窄到特定賽事、聯賽或運動專案 — 見 [訂閱](/zh-Hant/pages/streaming/price-feed#subscriptions)。
+
+## 認證 {#auth}
+
+兩路推送均使用 4Casters 令牌進行認證。在 WebSocket 握手時於
+`Authorization` 請求標頭中傳送令牌。伺服器從令牌推導使用者
+— **URL 中無需使用者名稱**。
+
+### 獲取令牌 {#get-a-token}
+
+使用你的 4Casters 使用者名稱和密碼，呼叫 4Casters REST API 的 `/user/login`
+端點登入。回應中包含可在此處使用的令牌。
+
+見 [4Casters REST API 文件中的 `POST /user/login`](/zh-Hant/pages/rest/authentication)。
+
+### 連線 {#connect}
+
+<CodeGroup>
+```javascript JavaScript
+const WebSocket = require('ws');
+const token = process.env.FOURCASTERS_TOKEN;
+const ws = new WebSocket('wss://streaming-api.4casters.io/v2/user', {
+  headers: { Authorization: token },
+});
+```
+</CodeGroup>

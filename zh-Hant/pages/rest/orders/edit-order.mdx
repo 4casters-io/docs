@@ -1,0 +1,84 @@
+---
+title: '修改訂單'
+description: '更改掛單的價格或數量'
+openapi: 'POST /session/editOrder'
+---
+
+更改現有 **limit** 訂單的價格（`orderOdds`）和/或數量（`orderVolume`）。
+
+對於部分成交的訂單，4casters 會取消現有訂單並按所提供的值提交一筆新訂單。新的 `orderVolume` **不會**計入此前已成交的數量 — 如果你最初下單 `bet: 10`，其中 $5 已成交，然後改單為 `orderVolume: 10`，則原訂單被取消（退回 $5），並建立一筆 $10 的新訂單（扣款 $10），淨效果是你少了 $5。
+
+<Note>
+更新的 gRPC 變體位於 `POST /session/v4/editOrder`。它接受相同的請求主體，並在校驗失敗時額外回傳 `errorType`。確認形態適合你後，新整合請優先使用它。
+</Note>
+
+## 請求 {#request}
+
+`POST /session/editOrder`
+
+<ParamField body="sessionID" type="string" required>
+  要修改的訂單 ID。可從 `/session/v3/place` 的 `data.unmatched.orderID` 或 `/user/getUnmatched` 的 `id` 獲取。
+</ParamField>
+<ParamField body="orderOdds" type="integer">
+  新的美式賠率。傳 `null` 表示賠率不變。
+</ParamField>
+<ParamField body="orderVolume" type="number">
+  新的 `bet` 金額。傳 `null` 表示數量不變。
+</ParamField>
+<ParamField body="orderType" type="string">
+  預設為 `limit`。見 [訂單型別](/zh-Hant/pages/rest/orders/place-order#order-types)。
+</ParamField>
+<ParamField body="userReference" type="string">
+  可選。替換訂單上現有的 `userReference`。
+</ParamField>
+<ParamField body="intendedOrderVolume" type="number">
+  可選。你最初打算下單的數量；伺服器在對賬部分成交時使用。
+</ParamField>
+<ParamField body="expiryChange" type="string">
+  可選。新的過期時間（分鐘，字串）。
+</ParamField>
+<ParamField body="blockIfNoOtherSideOrders" type="boolean">
+  僅 v4。若對面沒有掛單流動性，則拒絕此次改單。
+</ParamField>
+
+<CodeGroup>
+```bash curl
+curl -X POST https://api.4casters.io/session/editOrder \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "sessionID": "6549b6df6634097d2704716f",
+    "orderOdds": 185,
+    "orderVolume": 100
+  }'
+```
+
+```json JSON 請求主體
+{
+  "sessionID": "6549b6df6634097d2704716f",
+  "orderOdds": 185,
+  "orderVolume": 100
+}
+```
+</CodeGroup>
+
+## 回應 {#response}
+
+結果映象 [下單](/zh-Hant/pages/rest/orders/place-order#response) 的回應形態 — 一個 `cancelled` 彙總，加上新的 `matched` / `unmatched` 結果：
+
+<ResponseField name="data.cancelled" type="object">
+  被取消並替換的原訂單彙總。
+</ResponseField>
+<ResponseField name="data.matched" type="array">
+  按新價格/數量重新提交所產生的成交。形態與 [下單](/zh-Hant/pages/rest/orders/place-order#response) 中的 `MatchedFill` 相同。
+</ResponseField>
+<ResponseField name="data.unmatched" type="object">
+  新訂單未成交剩餘部分的掛單。
+</ResponseField>
+
+## 錯誤 {#errors}
+
+| 狀態 | 含義 |
+| ------ | ------- |
+| `400`  | 校驗錯誤（`v4/editOrder` 會為這些錯誤回傳 `errorType`）。 |
+| `503`  | 訂單服務不可達。 |

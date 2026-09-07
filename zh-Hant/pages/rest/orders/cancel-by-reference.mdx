@@ -1,0 +1,42 @@
+---
+title: '按使用者引用取消'
+description: '按客戶端自定義引用取消訂單'
+openapi: 'POST /session/cancelByReference'
+---
+
+取消指定賽事中 `userReference` 匹配所提供引用之一的每一筆未成交訂單。適用於你用自己的 ID 標記了訂單、並希望按這些 ID 取消而不是跟蹤 4casters 訂單 ID 的情況。
+
+## 請求 {#request}
+
+`POST /session/cancelByReference`
+
+<ParamField body="gameID" type="string" required>
+  將搜尋限定到單場賽事。
+</ParamField>
+<ParamField body="userReferences" type="array" required>
+  `userReference` 字串陣列。`gameID` 中 `userReference` 屬於該陣列的每一筆未成交訂單都會被取消。
+</ParamField>
+
+<CodeGroup>
+```bash curl
+curl -X POST https://api.4casters.io/session/cancelByReference \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "gameID": "6924f82640a7e89c3d3acc41",
+    "userReferences": ["my-order-1", "my-order-2"]
+  }'
+```
+</CodeGroup>
+
+## 回應 {#response}
+
+<ResponseField name="data" type="array">
+  按單取消結果。形態與 [取消一筆訂單](/zh-Hant/pages/rest/orders/cancel-order#response) 相同。
+</ResponseField>
+
+## 錯誤 {#errors}
+
+| 狀態 | 含義 |
+| ------ | ------- |
+| `400`  | `userReferences` 缺失或不是陣列。 |

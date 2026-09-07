@@ -1,0 +1,100 @@
+---
+title: 'Autenticación'
+description: 'Inicia sesión y autoriza solicitudes'
+openapi: 'POST /user/login'
+---
+
+Para usar cualquier ruta autenticada necesitas un token de autenticación. Los tokens se obtienen al iniciar sesión y son válidos durante **30 días**, tras lo cual se requiere un nuevo inicio de sesión.
+
+## Iniciar sesión
+
+`POST /user/login`
+
+<CodeGroup>
+```bash curl
+curl -X POST https://api.4casters.io/user/login \
+  -H "Content-Type: application/json" \
+  -d '{"username": "your_username", "password": "your_password"}'
+```
+
+```json JSON body
+{
+  "username": "your_username",
+  "password": "your_password"
+}
+```
+</CodeGroup>
+
+### Solicitud
+
+<ParamField body="username" type="string" required>Nombre de usuario de la cuenta (o email).</ParamField>
+<ParamField body="password" type="string" required>Contraseña de la cuenta.</ParamField>
+
+### Respuesta
+
+El token se devuelve tanto en `data.user.auth` **como** en una cookie `auth` firmada (`Set-Cookie`). En la mayoría de las integraciones de servidor querrás capturar `data.user.auth` y descartar la cookie.
+
+```json
+{
+  "data": {
+    "user": {
+      "id": "5fe37acbb5a23600123662c1",
+      "username": "your_username",
+      "auth": "5cd551d6...",
+      "type": "p2p",
+      "oddsFormat": "american",
+      "displayBalance": 1250.50,
+      "creditLimit": 500,
+      "liability": -125.00,
+      "commissionCharged": 0.01,
+      "hasMarketMakerAccess": false,
+      "isPro": false,
+      "createdAt": "2020-12-23T17:14:09.000Z"
+    }
+  }
+}
+```
+
+Consulta [`User`](/api-reference/openapi.json) en el esquema OpenAPI para todos los campos.
+
+### Respuestas de error
+
+| Estado | Significado |
+| ------ | ------- |
+| `400`  | `username` y `password` son obligatorios. |
+| `401`  | El nombre de usuario o la contraseña es incorrecto. |
+| `403`  | Cuenta baneada, bloqueada o cerrada. |
+| `429`  | Se superó el límite de tasa de inicio de sesión. |
+
+## Autorizar solicitudes
+
+Pasa el token de `data.user.auth` en cada solicitud posterior. Se aceptan tres formatos de encabezado / payload, en este orden de preferencia:
+
+<Tabs>
+  <Tab title="Encabezado Authorization (recomendado)">
+    ```bash
+    curl https://api.4casters.io/user/getMe \
+      -H "Authorization: Bearer 5cd551d6..."
+    ```
+    El prefijo `Bearer ` es opcional: pasar el token desnudo también funciona.
+  </Tab>
+  <Tab title="Cookie">
+    La cookie `auth` firmada que establece `/user/login` se honra automáticamente en cada endpoint cuando se reutiliza en el mismo cliente.
+  </Tab>
+  <Tab title="Campo del cuerpo (solo POST)">
+    ```json
+    { "token": "5cd551d6...", "...": "..." }
+    ```
+    Se ofrece como respaldo para clientes que no pueden establecer encabezados personalizados con facilidad (p. ej. algunos emisores de webhooks).
+  </Tab>
+</Tabs>
+
+Si no se proporciona token — o el token es desconocido / está expirado — el servidor responde con `401 InvalidCredentials`.
+
+## Rotación de token
+
+Las solicitudes autenticadas con tokens de más de 30 días rotan automáticamente a un token nuevo. Cuando ocurre, el token nuevo se devuelve en el encabezado de respuesta `X-Auth-Token` (y como cookie `auth` firmada actualizada). Las integraciones de larga duración deben vigilar este encabezado y persistir el valor nuevo.
+
+## Cerrar sesión
+
+`POST /user/logout` invalida el token actual. Las solicitudes posteriores con ese token devuelven `401`.

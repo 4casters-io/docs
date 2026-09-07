@@ -1,0 +1,85 @@
+---
+title: '獲取當前使用者'
+description: '讀取已認證帳戶'
+openapi: 'GET /user/getMe'
+---
+
+回傳當前已認證使用者的帳戶資訊，包括餘額、信用額度、當前負債、預設賠率格式和訪問標誌。
+
+## 請求 {#request}
+
+`GET /user/getMe`
+
+此端點不接受引數。需要認證（見 [認證](/zh-Hant/pages/rest/authentication)）。
+
+<CodeGroup>
+```bash curl
+curl https://api.4casters.io/user/getMe \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+</CodeGroup>
+
+## 回應 {#response}
+
+<ResponseField name="data" type="object">
+  <Expandable title="data">
+    <ResponseField name="user" type="object">
+      <Expandable title="user">
+        <ResponseField name="id" type="string">使用者 ID。</ResponseField>
+        <ResponseField name="username" type="string">帳戶使用者名稱。</ResponseField>
+        <ResponseField name="type" type="string">帳戶型別 — `free`、`p2p`、`marketmaker` 或 `agent`。</ResponseField>
+        <ResponseField name="oddsFormat" type="string">預設賠率格式。`american` 或 `decimal`。</ResponseField>
+        <ResponseField name="displayBalance" type="number">當前餘額（展示值）。</ResponseField>
+        <ResponseField name="creditLimit" type="number">信用額度（信用帳戶為負）。</ResponseField>
+        <ResponseField name="liability" type="number">當前所有賽事上的未平倉負債。</ResponseField>
+        <ResponseField name="commissionCharged" type="number">向該帳戶收取的佣金費率。</ResponseField>
+        <ResponseField name="maxLiability" type="number">帳戶級負債上限。</ResponseField>
+        <ResponseField name="hasMarketMakerAccess" type="boolean">帳戶是否可使用做市商功能。</ResponseField>
+        <ResponseField name="isAdmin" type="boolean" />
+        <ResponseField name="isPro" type="boolean" />
+        <ResponseField name="isDeposit" type="boolean" />
+        <ResponseField name="isAlphaUser" type="boolean" />
+        <ResponseField name="defaultExpiry" type="integer">預設訂單過期時間（分鐘）。`null` 表示「無預設值」。</ResponseField>
+        <ResponseField name="defaultOffer" type="number">下單時的預設掛單數量。</ResponseField>
+        <ResponseField name="sportsbookDefault" type="boolean" />
+        <ResponseField name="sportsbookMinimumDisplay" type="number" />
+        <ResponseField name="defaultRotationNumbers" type="boolean" />
+        <ResponseField name="displayRotationNumbers" type="boolean" />
+        <ResponseField name="viewOddsWithCommission" type="boolean" />
+        <ResponseField name="defaultSendOrderMessage" type="boolean" />
+        <ResponseField name="showChatLastMessage" type="boolean" />
+        <ResponseField name="yesNoSummary" type="boolean" />
+        <ResponseField name="accessCode" type="string">帳戶上的註冊碼。</ResponseField>
+        <ResponseField name="p2pCode" type="string">若為 P2P 代理帳戶，其推薦使用者註冊時使用的邀請碼。</ResponseField>
+        <ResponseField name="createdAt" type="string">ISO 8601 帳戶建立時間戳。</ResponseField>
+        <ResponseField name="emailConfirmation" type="boolean">帳戶郵箱是否已確認。</ResponseField>
+      </Expandable>
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+### 示例 {#example}
+
+<CodeGroup>
+```json JSON
+{
+  "data": {
+    "user": {
+      "id": "5fe37acbb5a23600123662c1",
+      "username": "your_username",
+      "type": "p2p",
+      "oddsFormat": "american",
+      "displayBalance": 1250.50,
+      "creditLimit": 500,
+      "liability": -125.00,
+      "commissionCharged": 0.01,
+      "hasMarketMakerAccess": false,
+      "isAdmin": false,
+      "isPro": false,
+      "createdAt": "2020-12-23T17:14:09.000Z",
+      "emailConfirmation": true
+    }
+  }
+}
+```
+</CodeGroup>
