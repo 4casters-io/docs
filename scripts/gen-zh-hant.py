@@ -36,6 +36,8 @@ POST = [
     ('組合**標識', '組合**識別'),        # identified by the market+side combination
     ('標識', '識別碼'),
     ('載荷', '酬載'),
+    ('釋出', '發布'),      # s2twp turns 发布 (publish) into 釋出 (a software release)
+    ('平臺', '平台'),
 ]
 
 INLINE = re.compile(r'`[^`\n]+`')

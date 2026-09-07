@@ -6,7 +6,7 @@ description: '沒有 API 金鑰。你的 4casters 登入就是你的 API 憑據�
 <Warning>
 **4casters 目前不發放 API 金鑰。**你使用在 [4casters.io](https://4casters.io) 登入時的同一組使用者名稱和密碼，對所有 4casters API 進行認證。無需在帳戶設定中申請、生成或複製任何東西。
 
-專用 API 金鑰已在路線圖中。釋出時會在 [更新日誌](/zh-Hant/pages/changelog) 中公告，本頁也會隨之更新。在此之前，你的登入就是憑據。
+專用 API 金鑰已在路線圖中。發布時會在 [更新日誌](/zh-Hant/pages/changelog) 中公告，本頁也會隨之更新。在此之前，你的登入就是憑據。
 </Warning>
 
 ## 工作原理 {#how-it-works}
@@ -142,7 +142,7 @@ token = res.json()["data"]["user"]["auth"]
 | `400` | 請求主體缺少 `username` 或 `password`。 | 以 JSON 同時傳送兩者。 |
 | `401` | 使用者名稱或密碼不正確。 | 檢查憑據。無論帳戶是否存在，訊息都相同。 |
 | `403` | 帳戶已被封禁、關閉或凍結。 | 聯絡支援。 |
-| `428` | `CHALLENGE_REQUIRED`。僅在平臺正在主動抵禦撞庫攻擊時回傳；此時要求完成人機驗證。 | 繼續使用已持有的令牌，或稍後重試。指令碼客戶端無法完成該驗證。 |
+| `428` | `CHALLENGE_REQUIRED`。僅在平台正在主動抵禦撞庫攻擊時回傳；此時要求完成人機驗證。 | 繼續使用已持有的令牌，或稍後重試。指令碼客戶端無法完成該驗證。 |
 | `429` | 超出登入限流。 | 按 `Retry-After` 指定的秒數退避，並複用現有令牌而不是重新登入。 |
 
 ## 保護憑據安全 {#keeping-credentials-safe}
