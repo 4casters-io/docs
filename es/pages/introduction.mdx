@@ -29,14 +29,14 @@ description: 'Acceso programático al intercambio de apuestas peer-to-peer de 4c
 
 ## Autenticación
 
-Las tres APIs comparten un solo token.
+**No hay claves de API.** Te autenticas con el mismo nombre de usuario y contraseña con los que inicias sesión en 4casters.io, y las tres APIs comparten el único token que devuelve el inicio de sesión. Las claves de API están planificadas; consulta [Autenticación](/es/pages/authentication) para conocer el estado actual.
 
 1. Llama a [`POST /user/login`](/es/pages/rest/authentication) en la API REST con tu nombre de usuario y contraseña.
 2. Envía el token devuelto en cada solicitud posterior:
    - **REST**: encabezado `Authorization: Bearer <token>`.
    - **WebSockets**: encabezado `Authorization: <token>` en el handshake.
 
-Los tokens son válidos durante 30 días y se pueden renovar antes de que expiren. Consulta [Autenticación](/es/pages/rest/authentication) para la renovación del token, autenticación con cookie firmada y más detalles.
+Los tokens son válidos durante 30 días y después se rotan automáticamente. Consulta [Autenticación](/es/pages/authentication) para la vida útil del token, el manejo de errores y las recomendaciones sobre credenciales, y la [referencia de inicio de sesión REST](/es/pages/rest/authentication) para la forma completa de la respuesta.
 
 ## Convenciones
 

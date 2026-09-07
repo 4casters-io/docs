@@ -29,14 +29,14 @@ description: '以编程方式访问 4casters 点对点博彩交易所'
 
 ## 认证 {#authentication}
 
-三套 API 共用一个令牌。
+**没有 API 密钥。**你使用在 4casters.io 登录时的同一组用户名和密码进行认证，三套 API 共用登录返回的同一个令牌。API 密钥已在规划中；当前状态见 [认证](/zh-Hans/pages/authentication)。
 
 1. 在 REST API 上使用用户名和密码调用 [`POST /user/login`](/zh-Hans/pages/rest/authentication)。
 2. 在后续每个请求中发送返回的令牌：
    - **REST**：`Authorization: Bearer <token>` 请求头。
    - **WebSockets**：握手时使用 `Authorization: <token>` 请求头。
 
-令牌有效期为 30 天，可在过期前刷新。令牌刷新、签名 Cookie 认证及其他细节见 [认证](/zh-Hans/pages/rest/authentication)。
+令牌有效期为 30 天，之后会自动轮换。令牌有效期、错误处理和凭据建议见 [认证](/zh-Hans/pages/authentication)，完整的响应结构见 [REST 登录参考](/zh-Hans/pages/rest/authentication)。
 
 ## 约定 {#conventions}
 

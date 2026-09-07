@@ -4,6 +4,10 @@ description: 'Inicia sesión y autoriza solicitudes'
 openapi: 'POST /user/login'
 ---
 
+<Note>
+**Sin claves de API.** 4casters todavía no emite claves de API. Inicia sesión con el nombre de usuario y la contraseña de tu cuenta, exactamente como lo harías en el sitio web, y usa el token devuelto. Consulta la [descripción general de autenticación](/es/pages/authentication) para ver cómo se usa el token en las tres APIs y cómo manejar su vida útil de 30 días.
+</Note>
+
 Para usar cualquier ruta autenticada necesitas un token de autenticación. Los tokens se obtienen al iniciar sesión y son válidos durante **30 días**, tras lo cual se requiere un nuevo inicio de sesión.
 
 ## Iniciar sesión
@@ -93,8 +97,12 @@ Si no se proporciona token — o el token es desconocido / está expirado — el
 
 ## Rotación de token
 
-Las solicitudes autenticadas con tokens de más de 30 días rotan automáticamente a un token nuevo. Cuando ocurre, el token nuevo se devuelve en el encabezado de respuesta `X-Auth-Token` (y como cookie `auth` firmada actualizada). Las integraciones de larga duración deben vigilar este encabezado y persistir el valor nuevo.
+Las solicitudes autenticadas con tokens de más de 30 días rotan automáticamente a un token nuevo. Cuando ocurre, el token nuevo se devuelve en el encabezado de respuesta `X-Auth-Token` (y como cookie `auth` firmada actualizada). El token antiguo deja de funcionar de inmediato; la solicitud que provocó la rotación sigue teniendo éxito, pero cada solicitud posterior con el valor antiguo devuelve `401`. Las integraciones de larga duración deben vigilar este encabezado y persistir el valor nuevo, o simplemente volver a iniciar sesión ante cualquier `401`.
 
 ## Cerrar sesión
 
-`POST /user/logout` invalida el token actual. Las solicitudes posteriores con ese token devuelven `401`.
+`POST /user/logout` invalida el token usado para hacer la llamada. Las solicitudes posteriores con ese token devuelven `401`; los demás tokens de la misma cuenta no se ven afectados.
+
+## Autenticación de dos factores {#two-factor-authentication}
+
+La autenticación de dos factores protege los retiros, no el inicio de sesión. `POST /user/login` nunca requiere un código, sea cual sea la configuración de 2FA de la cuenta.
