@@ -20,7 +20,7 @@ https://api.4casters.io
 - **回應結構**：除少數明確標註的例外（`/affiliate/getAffiliateCommission`、`/exchange/getOddsForAveragePrice`）外，每個成功回應都包裝為：`{ "data": <payload> }`。
 - **識別符號**：賽事 ID、參賽方 ID 和訂單 ID 均為 MongoDB `ObjectID` 字串（24 位十六進位）。
 - **賠率**：所有賠率均為美式格式（熱門為負，冷門為正），除非另有說明。
-- **時間**：所有時間戳均為帶 `Z` 的 ISO 8601（UTC）。
+- **時間**：所有時間戳記均為帶 `Z` 的 ISO 8601（UTC）。
 
 ## 認證 {#authentication}
 
@@ -44,7 +44,7 @@ HTTP 級別的錯誤（`4xx`、`5xx`）以 `{ "error": "<message>" }` 回傳。
 
 ## 超時 {#timeouts}
 
-服務端耗時超過 **15 秒** 的請求會被中止，並回傳 `503`，回應主體為 `{ "error": { "message": "Network Error", "code": 503 } }`。
+伺服器端耗時超過 **15 秒** 的請求會被中止，並回傳 `503`，回應主體為 `{ "error": { "message": "Network Error", "code": 503 } }`。
 
 ## 即時更新 {#real-time-updates}
 

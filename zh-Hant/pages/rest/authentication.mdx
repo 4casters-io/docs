@@ -36,7 +36,7 @@ curl -X POST https://api.4casters.io/user/login \
 
 ### 回應 {#response}
 
-令牌會同時作為 `data.user.auth` **以及**簽名 `auth` Cookie（`Set-Cookie`）回傳。對於大多數服務端整合，你應捕獲 `data.user.auth` 並丟棄 Cookie。
+令牌會同時作為 `data.user.auth` **以及**簽名 `auth` Cookie（`Set-Cookie`）回傳。對於大多數伺服器端整合，你應捕獲 `data.user.auth` 並丟棄 Cookie。
 
 ```json
 {

@@ -73,4 +73,4 @@ curl "https://api.4casters.io/exchange/getMatchedVolume?startDate=2026-08-10&end
 | `400` | `startDate` / `endDate` 缺失或格式錯誤（必須為 `YYYY-MM-DD`），或 `startDate` 晚於 `endDate`。 |
 | `401` | 認證令牌缺失或無效。 |
 | `429` | 超出全域每 IP 速率限制。請遵守 `Retry-After` 回應標頭。 |
-| `503` | 觸發了服務端 15 秒超時。可以安全重試。 |
+| `503` | 觸發了伺服器端 15 秒超時。可以安全重試。 |

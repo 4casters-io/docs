@@ -6,8 +6,8 @@
 <ResponseField name="odds" type="integer">美式賠率（熱門為負，冷門為正）。</ResponseField>
 <ResponseField name="gameID" type="string">該訂單所屬的賽事 ID。</ResponseField>
 <ResponseField name="takenRatio" type="number">訂單已撮合的比例，介於 `0` 和 `1` 之間。</ResponseField>
-<ResponseField name="expiry" type="string">取消時間戳（ISO 8601）。未設定過期時間時為 `null`。</ResponseField>
-<ResponseField name="createdAt" type="string">下單時間戳。</ResponseField>
+<ResponseField name="expiry" type="string">取消時間戳記（ISO 8601）。未設定過期時間時為 `null`。</ResponseField>
+<ResponseField name="createdAt" type="string">下單時間戳記。</ResponseField>
 <ResponseField name="gameStartExpiry" type="boolean">為 `true` 時，訂單會在開賽時自動取消。</ResponseField>
 <ResponseField name="isPostArb" type="boolean">僅當訂單以 `orderType: postArb` 下達時出現。</ResponseField>
 <ResponseField name="participantID" type="string">出現在 `moneyline` 和 `spread` 上 — 所支援的參賽方。</ResponseField>

@@ -36,7 +36,7 @@ description: '以程式化方式存取 4casters 點對點博彩交易所'
    - **REST**：`Authorization: Bearer <token>` 請求標頭。
    - **WebSockets**：握手時使用 `Authorization: <token>` 請求標頭。
 
-令牌有效期為 30 天，之後會自動輪換。令牌有效期、錯誤處理和憑據建議見 [認證](/zh-Hant/pages/authentication)，完整的回應結構見 [REST 登入參考](/zh-Hant/pages/rest/authentication)。
+令牌有效期為 30 天，之後會自動輪換。令牌有效期、錯誤處理和憑證建議見 [認證](/zh-Hant/pages/authentication)，完整的回應結構見 [REST 登入參考](/zh-Hant/pages/rest/authentication)。
 
 ## 約定 {#conventions}
 
@@ -54,7 +54,7 @@ description: '以程式化方式存取 4casters 點對點博彩交易所'
 1. **REST** — 呼叫一次 `POST /user/login`，快取令牌，然後呼叫 `GET /user/getMe` 和 `GET /games/v2/leagues` 以初始化狀態。
 2. **推送 WebSocket** — 開啟你關心的市場價格推送，以及使用者推送以回應你自己的成交 / 結算。
 3. **訂單 WebSocket** — 開啟持久連線，以低延遲下單 / 取消，並透過 `requestID` 關聯回應。
-4. **REST** — 回退到 `POST /myBets/getMatchedBets`、`/myBets/getOrdersForGame` 等，用於歷史記錄和對賬。
+4. **REST** — 回退到 `POST /myBets/getMatchedBets`、`/myBets/getOrdersForGame` 等，用於歷史記錄和對帳。
 
 ## 需要舊版文件？ {#need-the-old-docs}
 

@@ -37,8 +37,8 @@ curl https://api.4casters.io/user/getUnmatched \
     <ResponseField name="offered" type="number">原始掛單金額（已撮合 + 剩餘）。</ResponseField>
     <ResponseField name="remaining" type="number">該訂單上仍可成交的可贏金額（吃單方支付風險額以獲取）。</ResponseField>
     <ResponseField name="takenRatio" type="number">訂單已撮合的比例，介於 `0` 和 `1` 之間。</ResponseField>
-    <ResponseField name="expiry" type="string">取消時間戳（ISO 8601）。未設定過期時間時為 `null`。</ResponseField>
-    <ResponseField name="createdAt" type="string">ISO 8601 時間戳。</ResponseField>
+    <ResponseField name="expiry" type="string">取消時間戳記（ISO 8601）。未設定過期時間時為 `null`。</ResponseField>
+    <ResponseField name="createdAt" type="string">ISO 8601 時間戳記。</ResponseField>
     <ResponseField name="origin" type="string">`offer` 或 `wager`。</ResponseField>
     <ResponseField name="userReference" type="string">下單時保留的用戶端自定義識別碼。</ResponseField>
     <ResponseField name="wagerRequestID" type="string">伺服器生成的 ID，將原始下單請求產生的每一筆成交 / 掛單歸為一組。</ResponseField>

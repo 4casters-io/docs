@@ -16,7 +16,7 @@ description: '4casters API 中對用戶端可見的重要變更。'
 
 <Update label="2026-08-13" tags={["REST API", "訂單 API"]}>
   ### 新增
-  - **`fillOrKill` 訂單型別。** 全成或全撤的吃單：必須立即撮合全部 `bet`，否則整筆訂單被拒絕並回滾任何部分成交，因此你不會停留在部分成交狀態。REST 和 WebSocket 下單端點均支援。見 [訂單型別](/zh-Hant/pages/rest/orders/place-order#order-types)。
+  - **`fillOrKill` 訂單型別。** 全成或全撤的吃單：必須立即撮合全部 `bet`，否則整筆訂單被拒絕並復原任何部分成交，因此你不會停留在部分成交狀態。REST 和 WebSocket 下單端點均支援。見 [訂單型別](/zh-Hant/pages/rest/orders/place-order#order-types)。
 
   ### 修復
   - **更正了 `fillAndKill` 文件。** 原先描述為「按你的價格立即成交，否則拒絕」，讀起來像全成或全撤。`fillAndKill` 實際會成交當前可成交數量並取消剩餘部分 — **部分成交**即為成功結果，僅在完全沒有可撮合流動性時才會被拒絕。行為未變；只是文件有誤。若需要真正的全成或全撤執行，請使用新的 `fillOrKill`。

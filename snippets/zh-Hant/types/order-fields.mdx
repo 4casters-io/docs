@@ -35,7 +35,7 @@
   - `post`  — 保證為掛單方。若訂單會撮合已有掛單則拒絕（`rejected_order_type_rules`，例如 `"post order cannot have matches"`）。
   - `postArb` — 類似 `post`，但當你的美式賠率與掛單價格相差在 **1%** 以內時允許撮合。避免在普通成交中本應支付的吃單手續費。
   - `fillAndKill` — 保證為吃單方。按你的價格或更優價格撮合當前可成交數量，並取消剩餘部分；不會掛單。**部分成交**即為成功。僅在完全沒有可撮合流動性時才會被拒絕。
-  - `fillOrKill` — 全成或全撤的吃單。必須立即撮合全部 `bet`，否則整筆訂單被拒絕並回滾任何部分成交；不會掛單。
+  - `fillOrKill` — 全成或全撤的吃單。必須立即撮合全部 `bet`，否則整筆訂單被拒絕並復原任何部分成交；不會掛單。
 </ParamField>
 
 <ParamField body="expirationMinutes" type="integer">
