@@ -286,4 +286,4 @@ title: '取消订单'
 | `Failed to process cancelAll` | 处理 `cancelAll` 时发生意外错误。 |
 | `Failed to process cancelAllByGame` | 处理 `cancelAllByGame` 时发生意外错误。 |
 
-对于批量取消（`cancelMultiple`、`cancelAllByGame`、`cancelAll`），单笔失败会出现在 `data` 中，带有 `success: false` 以及解释原因的 `description` — 只有信封级的 `error` 才表示整个请求失败。
+对于批量取消（`cancelMultiple`、`cancelAllByGame`、`cancelAll`），单笔失败会出现在 `data` 中，带有 `success: false` 以及解释原因的 `description` — 只有结构级的 `error` 才表示整个请求失败。

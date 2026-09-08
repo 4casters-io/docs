@@ -286,4 +286,4 @@ title: '取消訂單'
 | `Failed to process cancelAll` | 處理 `cancelAll` 時發生意外錯誤。 |
 | `Failed to process cancelAllByGame` | 處理 `cancelAllByGame` 時發生意外錯誤。 |
 
-對於批次取消（`cancelMultiple`、`cancelAllByGame`、`cancelAll`），單筆失敗會出現在 `data` 中，帶有 `success: false` 以及解釋原因的 `description` — 只有信封級的 `error` 才表示整個請求失敗。
+對於批次取消（`cancelMultiple`、`cancelAllByGame`、`cancelAll`），單筆失敗會出現在 `data` 中，帶有 `success: false` 以及解釋原因的 `description` — 只有結構級的 `error` 才表示整個請求失敗。
