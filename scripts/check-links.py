@@ -23,7 +23,9 @@ EXTERNAL_PREFIXES = ('api-reference', 'sources')
 # real navigation and 404 just as loudly as a markdown link.
 LINK = re.compile(r"""\]\(([^)\s]+)\)|href=["']([^"']+)["']""")
 ANCHOR = re.compile(r'\{#([A-Za-z0-9_-]+)\}')
-HEADING = re.compile(r'^#{1,6}\s+(.*?)\s*$', re.M)
+# indent-tolerant: headings nested inside JSX children (e.g. <Update>) are
+# still headings to the MDX renderer, so they are to this checker too.
+HEADING = re.compile(r'^\s{0,3}#{1,6}\s+(.*?)\s*$', re.M)
 
 
 def norm(p):
@@ -42,14 +44,23 @@ def slug(text):
 _anchor_cache = {}
 
 
+dup_anchor = []
+
+
 def anchors_of(path):
     if path in _anchor_cache:
         return _anchor_cache[path]
     t = open(path, encoding='utf-8').read()
     out = set()
+    explicit = collections.Counter()
     for h in HEADING.findall(t):
         m = ANCHOR.search(h)
+        if m:
+            explicit[m.group(1)] += 1
         out.add(m.group(1) if m else slug(h))
+    for a, n in explicit.items():
+        if n > 1:
+            dup_anchor.append((path, a, n))   # deep links land on the first only
     out |= set(ANCHOR.findall(t))
     _anchor_cache[path] = out
     return out
@@ -74,6 +85,7 @@ total = 0
 for key, path in sorted(mdx.items()):
     if key.split('/')[0] not in ROOTS:
         continue
+    anchors_of(path)          # populates dup_anchor for every page, linked or not
     for m in LINK.findall(open(path, encoding='utf-8').read()):
         link = m[0] or m[1]
         if link.startswith(('http://', 'https://', 'mailto:')):
@@ -163,11 +175,15 @@ for _code in ['en'] + LOCALES:
     if os.path.isdir(_dir) and _code not in _nav_codes and (_code != 'en' or 'en' not in _nav_codes):
         bad_nav.append((_code, '(no navigation.languages block)', 'locale tree exists on disk'))
 
+print('\n=== DUPLICATE EXPLICIT ANCHORS (%d) ===' % len(dup_anchor))
+for _p, _a, _n in dup_anchor[:25]:
+    print('  %s  {#%s} x%d' % (_p, _a, _n))
+
 print('\n=== NAV ENTRIES UNRESOLVED (%d) ===' % len(bad_nav))
 for _c, _p, _why in bad_nav[:25]:
     print('  [%s] %s  (%s)' % (_c, _p, _why))
 
-bad = len(bad_page) + len(bad_anchor) + len(bad_snippet) + len(bad_nav)
+bad = len(bad_page) + len(bad_anchor) + len(bad_snippet) + len(bad_nav) + len(dup_anchor)
 print('\n' + '=' * 60)
 print('GATE 1 LINKS: %s — %d unresolved' % ('PASS' if bad == 0 else 'FAIL', bad))
 sys.exit(1 if bad else 0)
