@@ -6,7 +6,7 @@ openapi: 'GET /user/getOrdersForGame'
 
 Para un id de juego de 4casters dado, devuelve las órdenes abiertas y las apuestas cruzadas (no liquidadas) de la cuenta autenticada en ese juego. Este endpoint no devuelve apuestas liquidadas: usa [Obtener apuestas liquidadas](/es/pages/rest/user/get-graded-wagers) para esas.
 
-## Solicitud
+## Solicitud {#request}
 
 `GET /user/getOrdersForGame`
 
@@ -28,7 +28,7 @@ curl "https://api.4casters.io/user/getOrdersForGame?gameID=688c0516fbc14da0c202d
   Array de apuestas cruzadas (no liquidadas) en el juego. Misma forma que [Obtener apuestas cruzadas](/es/pages/rest/user/get-matched-bets).
 </ResponseField>
 
-### Ejemplo
+### Ejemplo {#example}
 
 <CodeGroup>
 ```json JSON
@@ -41,7 +41,7 @@ curl "https://api.4casters.io/user/getOrdersForGame?gameID=688c0516fbc14da0c202d
 ```
 </CodeGroup>
 
-## Errores
+## Errores {#errors}
 
 | Estado | Significado |
 | ------ | ------- |

@@ -6,7 +6,7 @@ openapi: 'GET /user/getBetByID'
 
 Consulta una sola apuesta (cruzada, liquidada u oferta abierta) que pertenece a la cuenta autenticada. Pasa **o** `id` **o** `txID`, no ambos.
 
-## Solicitud
+## Solicitud {#request}
 
 `GET /user/getBetByID`
 
@@ -41,7 +41,7 @@ La forma de `bet` depende del estado actual de la apuesta:
 
 Ten en cuenta que, a diferencia de la mayoría de los endpoints, este devuelve la apuesta en el **nivel superior** (no bajo `data`).
 
-### Ejemplo
+### Ejemplo {#example}
 
 <CodeGroup>
 ```json JSON (open offer)
@@ -69,7 +69,7 @@ Ten en cuenta que, a diferencia de la mayoría de los endpoints, este devuelve l
 ```
 </CodeGroup>
 
-## Errores
+## Errores {#errors}
 
 | Estado | Significado |
 | ------ | ------- |

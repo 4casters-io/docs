@@ -3,7 +3,7 @@ title: 'Enlaces directos'
 description: 'Lleva a un jugador directo a una apuesta concreta, con tu referido adjunto'
 ---
 
-Un enlace directo abre la página de inicio de 4casters con el modal de tomar apuesta ya abierto en el evento, el mercado y el lado que elegiste. Añade tu código de referido y cualquier jugador que se registre tras llegar por el enlace queda atribuido a ti.
+Un enlace directo abre la página de inicio de 4casters con el modal para tomar la apuesta ya abierto en el juego, el mercado y el lado que elegiste. Añade tu código de referido y cualquier jugador que se registre tras llegar por el enlace queda atribuido a ti.
 
 ```
 https://4casters.io/?game={gameID}&market=spread&side=away&line=3.5&ref=YOUR_CODE
@@ -13,13 +13,13 @@ El enlace funciona tanto si el visitante ha iniciado sesión como si no. Un visi
 
 ## Construir un enlace {#building-a-link}
 
-Parte del id del evento, que puedes obtener de [`/exchange/getGames`](/es/pages/rest/markets/get-games) o de la barra de direcciones de cualquier página de evento (`/exchange-single/{gameID}`). Luego añade el mercado que quieres abrir.
+Parte del id del juego, que puedes obtener de [`/exchange/getGames`](/es/pages/rest/markets/get-games) o de la barra de direcciones de cualquier página de juego (`/exchange-single/{gameID}`). Luego añade el mercado que quieres abrir.
 
 <ParamField query="game" type="string" required>
-  El id del evento (24 caracteres hexadecimales).
+  El id del juego (24 caracteres hexadecimales).
 </ParamField>
 <ParamField query="market" type="string" required>
-  `moneyline`, `spread`, `total` o `1x2` (mercados de fútbol a tres bandas).
+  `moneyline`, `spread`, `total` o `1x2` (mercados de fútbol de tres vías).
 </ParamField>
 <ParamField query="side" type="string" required>
   `home` o `away` para moneyline, spread y 1x2. `over` o `under` para total. `draw` también se acepta para 1x2.
@@ -49,7 +49,7 @@ https://4casters.io/?game=6a84db9c5ddbd1134524a222&market=spread&side=home&line=
 https://4casters.io/?game=6a84db9c5ddbd1134524a222&market=total&side=under&ref=YOUR_CODE
 ```
 
-```text Empate, a tres bandas
+```text Empate, de tres vías
 https://4casters.io/?game=6a84db9c5ddbd1134524a222&market=1x2&side=draw&ref=YOUR_CODE
 ```
 </CodeGroup>
@@ -62,8 +62,8 @@ Si nadie está ofreciendo ese lado en ese momento, el modal pasa a crear una ofe
 
 ## Notas {#notes}
 
-- **Los eventos pasan a en vivo.** Cuando un evento comienza, su mercado previo al inicio se cierra y se abre un mercado en vivo aparte. Un enlace previo al inicio que se sigue después del comienzo abre el libro del mercado en vivo.
-- **Líneas desconocidas.** Si la línea del enlace no es una que tenga el evento (o se omite `line` y el evento aún no tiene una línea principal publicada), la página de inicio se abre sin modal. Nunca se mueve al jugador a otra línea en silencio.
+- **Los juegos pasan a en vivo.** Cuando un juego comienza, su mercado previo al inicio se cierra y se abre un mercado en vivo aparte. Un enlace previo al inicio que se sigue después del comienzo abre el libro del mercado en vivo.
+- **Líneas desconocidas.** Si la línea del enlace no es una que tenga el juego (o se omite `line` y el juego aún no tiene una línea principal publicada), la página de inicio se abre sin modal. Nunca se mueve al jugador a otra línea en silencio.
 - **Atribución de referidos.** El primer código de referido con el que llega un navegador es el que se conserva hasta que ese visitante se registra. Un visitante que ya tiene cuenta no se reatribuye.
-- **También en las páginas de evento.** Los mismos parámetros `market` / `side` / `line` / `ref` funcionan también en una página de evento (`/exchange-single/{gameID}?market=...`), y abren el modal sobre la página de ese evento en lugar de la página de inicio.
+- **También en las páginas de juego.** Los mismos parámetros `market` / `side` / `line` / `ref` funcionan también en una página de juego (`/exchange-single/{gameID}?market=...`), y abren el modal sobre la página de ese juego en lugar de la página de inicio.
 - **Los props y los mercados de jugador** todavía no se pueden direccionar con estos parámetros.

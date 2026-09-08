@@ -6,7 +6,7 @@ openapi: 'api-reference/openapi.json GET /user/getGradedWagers'
 
 Devuelve todas las **apuestas liquidadas** de la cuenta autenticada entre dos fechas, más un resumen de P&L y volumen. Las fechas corresponden a la **hora de inicio del juego** de la apuesta (así, `startDate=06-22-2022` devuelve apuestas de juegos que empiezan después del 06-21-2022 00:00 GMT).
 
-## Solicitud
+## Solicitud {#request}
 
 `GET /user/getGradedWagers`
 
@@ -67,7 +67,7 @@ curl "https://api.4casters.io/user/getGradedWagers?startDate=01-01-2024&endDate=
   </Expandable>
 </ResponseField>
 
-### Ejemplo
+### Ejemplo {#example}
 
 <CodeGroup>
 ```json JSON

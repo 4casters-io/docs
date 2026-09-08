@@ -7,13 +7,13 @@ La API de órdenes de 4casters permite colocar y cancelar órdenes en tiempo rea
 ## Endpoints
 - **API de órdenes**: `wss://orders-api.4casters.io/orders/ws`
 
-## Autenticación
+## Autenticación {#auth}
 
 La conexión se autentica con un token de 4Casters. Envía el token en el
 encabezado `Authorization` del handshake WebSocket. El servidor deriva el usuario
 a partir del token: **sin nombre de usuario en la URL**.
 
-### Obtener un token
+### Obtener un token {#get-a-token}
 
 No hay una clave de API aparte. Inicia sesión con tu nombre de usuario y contraseña
 de 4Casters llamando al endpoint `/user/login` de la API REST de 4Casters. La respuesta
@@ -22,7 +22,7 @@ para la vida útil y la rotación del token.
 
 Consulta [`POST /user/login` en la documentación de la API REST de 4Casters](/es/pages/rest/authentication).
 
-### Conectar
+### Conectar {#connect}
 
 <CodeGroup>
 ```javascript JavaScript
@@ -34,7 +34,7 @@ const ws = new WebSocket('wss://orders-api.4casters.io/orders/ws', {
 ```
 </CodeGroup>
 
-## Formato de mensajes
+## Formato de mensajes {#message-format}
 
 Cada solicitud del cliente es una 2-tupla `[messageType, payload]`. Cada payload debe incluir un `requestID` que tú generas; el servidor lo devuelve para que puedas correlacionar las respuestas.
 

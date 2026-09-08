@@ -10,7 +10,7 @@ openapi: 'POST /user/login'
 
 Para usar cualquier ruta autenticada necesitas un token de autenticación. Los tokens se obtienen al iniciar sesión y son válidos durante **30 días**, tras lo cual se requiere un nuevo inicio de sesión.
 
-## Iniciar sesión
+## Iniciar sesión {#log-in}
 
 `POST /user/login`
 
@@ -29,12 +29,12 @@ curl -X POST https://api.4casters.io/user/login \
 ```
 </CodeGroup>
 
-### Solicitud
+### Solicitud {#request}
 
 <ParamField body="username" type="string" required>Nombre de usuario de la cuenta (o email).</ParamField>
 <ParamField body="password" type="string" required>Contraseña de la cuenta.</ParamField>
 
-### Respuesta
+### Respuesta {#response}
 
 El token se devuelve tanto en `data.user.auth` **como** en una cookie `auth` firmada (`Set-Cookie`). En la mayoría de las integraciones de servidor querrás capturar `data.user.auth` y descartar la cookie.
 
@@ -61,7 +61,7 @@ El token se devuelve tanto en `data.user.auth` **como** en una cookie `auth` fir
 
 Consulta [`User`](/api-reference/openapi.json) en el esquema OpenAPI para todos los campos.
 
-### Respuestas de error
+### Respuestas de error {#error-responses}
 
 | Estado | Significado |
 | ------ | ------- |
@@ -70,7 +70,7 @@ Consulta [`User`](/api-reference/openapi.json) en el esquema OpenAPI para todos 
 | `403`  | Cuenta baneada, bloqueada o cerrada. |
 | `429`  | Se superó el límite de tasa de inicio de sesión. |
 
-## Autorizar solicitudes
+## Autorizar solicitudes {#authorizing-requests}
 
 Pasa el token de `data.user.auth` en cada solicitud posterior. Se aceptan tres formatos de encabezado / payload, en este orden de preferencia:
 
@@ -80,7 +80,7 @@ Pasa el token de `data.user.auth` en cada solicitud posterior. Se aceptan tres f
     curl https://api.4casters.io/user/getMe \
       -H "Authorization: Bearer 5cd551d6..."
     ```
-    El prefijo `Bearer ` es opcional: pasar el token desnudo también funciona.
+    El prefijo `Bearer ` es opcional: también puedes enviar el token sin prefijo.
   </Tab>
   <Tab title="Cookie">
     La cookie `auth` firmada que establece `/user/login` se honra automáticamente en cada endpoint cuando se reutiliza en el mismo cliente.
@@ -95,11 +95,11 @@ Pasa el token de `data.user.auth` en cada solicitud posterior. Se aceptan tres f
 
 Si no se proporciona token — o el token es desconocido / está expirado — el servidor responde con `401 InvalidCredentials`.
 
-## Rotación de token
+## Rotación de token {#token-rotation}
 
 Las solicitudes autenticadas con tokens de más de 30 días rotan automáticamente a un token nuevo. Cuando ocurre, el token nuevo se devuelve en el encabezado de respuesta `X-Auth-Token` (y como cookie `auth` firmada actualizada). El token antiguo deja de funcionar de inmediato; la solicitud que provocó la rotación sigue teniendo éxito, pero cada solicitud posterior con el valor antiguo devuelve `401`. Las integraciones de larga duración deben vigilar este encabezado y persistir el valor nuevo, o simplemente volver a iniciar sesión ante cualquier `401`.
 
-## Cerrar sesión
+## Cerrar sesión {#logging-out}
 
 `POST /user/logout` invalida el token usado para hacer la llamada. Las solicitudes posteriores con ese token devuelven `401`; los demás tokens de la misma cuenta no se ven afectados.
 

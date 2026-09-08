@@ -6,7 +6,7 @@ El heartbeat mantiene viva tu sesión. Envía un heartbeat con un `requestTimeou
 
 Normalmente envías heartbeats en un intervalo recurrente (p. ej. cada 5 s con un timeout de 10 s) durante toda la vida de la conexión.
 
-## Solicitud
+## Solicitud {#request}
 
 <CodeGroup>
 ```json JSON
@@ -54,7 +54,7 @@ El servidor responde con un `heartbeatAck` que incluye el reloj del servidor y e
   Eco del `requestTimeout` que enviaste.
 </ResponseField>
 
-## Errores
+## Errores {#errors}
 
 Si `requestTimeout` falta o es `<= 0`, el servidor devuelve:
 

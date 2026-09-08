@@ -6,7 +6,7 @@ openapi: 'POST /session/cancelMultiple'
 
 Cancela un lote de órdenes por id. El resultado es posicional respecto al array de entrada `sessionIDs` y puede contener una mezcla de cancelaciones exitosas y fallos por orden.
 
-## Solicitud
+## Solicitud {#request}
 
 `POST /session/cancelMultiple`
 
@@ -34,7 +34,7 @@ curl -X POST https://api.4casters.io/session/cancelMultiple \
   Resultados de cancelación por orden. Misma forma que [Cancelar una orden](/es/pages/rest/orders/cancel-order#response). En caso de fallo, las entradas incluyen `{ success: false, reason: "..." }` (sin campo `sessionID` en rechazos por id inválido / no encontrado / no es tuya).
 </ResponseField>
 
-### Ejemplo
+### Ejemplo {#example}
 
 <CodeGroup>
 ```json JSON
@@ -55,7 +55,7 @@ curl -X POST https://api.4casters.io/session/cancelMultiple \
 ```
 </CodeGroup>
 
-## Errores
+## Errores {#errors}
 
 | Estado | Significado |
 | ------ | ------- |

@@ -40,8 +40,8 @@ curl "https://api.4casters.io/exchange/v2/getOrderbook?gameID=688c0516fbc14da0c2
   每个 `game` 为标准 [Game](/zh-Hans/pages/rest/markets/get-games#response) 形态，并带有以下按市场数组：
 
   <Expandable title="单场订单簿字段">
-    <ResponseField name="awayMoneylines"    type="array">支持客队的挂单单胜盘订单。按最优价格优先排序。</ResponseField>
-    <ResponseField name="homeMoneylines"    type="array">支持主队的挂单单胜盘订单。</ResponseField>
+    <ResponseField name="awayMoneylines"    type="array">支持客队的独赢挂单。按最优价格优先排序。</ResponseField>
+    <ResponseField name="homeMoneylines"    type="array">支持主队的独赢挂单。</ResponseField>
     <ResponseField name="awaySpreads"       type="array">客队一侧的挂单让分订单，跨让分数扁平化。</ResponseField>
     <ResponseField name="homeSpreads"       type="array">主队一侧的挂单让分订单。</ResponseField>
     <ResponseField name="over"              type="array">挂单 `over` 订单，跨大小分扁平化。</ResponseField>

@@ -4,7 +4,7 @@ description: '你邀請的玩家向你支付的佣金'
 openapi: 'GET /affiliate/getAffiliateCommission'
 ---
 
-回傳呼叫方所邀請玩家向其支付的佣金，按玩家使用者名稱分組。不帶引數時回傳終身收益；帶 `fromDate` / `toDate` 時限定範圍。
+回傳呼叫方所邀請玩家向其支付的佣金，按玩家使用者名稱分組。不帶參數時回傳終身收益；帶 `fromDate` / `toDate` 時限定範圍。
 
 <Note>
 與大多數端點不同，此端點在**頂層**以 `commissionPaid` 回傳結果（不在 `data` 下）。
@@ -36,7 +36,7 @@ curl https://api.4casters.io/affiliate/getAffiliateCommission \
 ## 回應 {#response}
 
 <ResponseField name="commissionPaid" type="array">
-  每條記錄是單鍵物件，將玩家使用者名稱對映為該玩家在請求範圍內支付的佣金總額。
+  每條記錄是單鍵物件，將玩家使用者名稱對應為該玩家在請求範圍內支付的佣金總額。
 </ResponseField>
 
 ### 示例 {#example}

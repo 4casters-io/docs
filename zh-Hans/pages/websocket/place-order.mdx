@@ -478,7 +478,7 @@ title: '下单'
 - `error` 未标准化；它是描述性字符串，可能会变化。
 - `error_type` 是可用于程序化处理的枚举：
     - `validation_error` — 载荷或状态未通过校验（例如缺少字段、赔率/盘口数值无效、方向无效、赛事未激活）。
-    - `rejected_liability` — 用户/账户/责任约束阻止了挂单或执行。
+    - `rejected_liability` — 用户/账户/负债约束阻止了挂单或执行。
     - `rejected_order_type_rules` — 订单类型规则禁止执行（例如 `fillAndKill` 找不到可执行流动性，因此无法成交并被拒绝；`fillOrKill` 无法全部成交；`post` 发现成交但该类型不允许成交；或 `postArb` 因你的美式赔率与将被成交的挂单相差**超过 1%** 而被拒绝）。
     - `system_error` — 瞬时/内部错误；重试可能成功。
 

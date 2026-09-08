@@ -4,7 +4,7 @@ description: '异步取消某联赛中的每一笔未成交订单'
 openapi: 'POST /session/cancelAllForLeague'
 ---
 
-安排取消某联赛中的每一笔未成交订单。此端点**异步派发** — 立即以 `{ ordersReceived: true }` 确认，取消在后台进行。
+安排取消某联赛中的每一笔未成交订单。此端点**异步处理** — 立即以 `{ ordersReceived: true }` 确认，取消在后台进行。
 
 若需要知道哪些订单被取消，请随后调用 [获取未撮合订单](/zh-Hans/pages/rest/user/get-unmatched-orders)，或订阅 [WebSocket 推送 API](/zh-Hans/pages/streaming/user-feed) 上的用户推送。
 

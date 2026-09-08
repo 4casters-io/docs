@@ -42,12 +42,12 @@ curl "https://api.4casters.io/exchange/getOddsForAveragePrice?leagueRequested=NB
     <ResponseField name="mainAwaySpread"  type="number" />
     <ResponseField name="mainTotal"       type="string" />
     <ResponseField name="odds" type="object">
-      胜负盘、让分盘和大小分盘的最优 / 均价以及最大投注额。
+      独赢、让分和大小分的最优 / 均价以及最大投注额。
       <Expandable title="odds">
         <ResponseField name="averageHomeMoneyline"            type="integer" />
         <ResponseField name="bestHomeMoneyline"               type="integer" />
         <ResponseField name="bestHomeMoneylineWithCommission" type="integer" />
-        <ResponseField name="bestHomeMoneylinePriceLimit"     type="integer">主胜单胜盘最优价下的最大投注额。</ResponseField>
+        <ResponseField name="bestHomeMoneylinePriceLimit"     type="integer">主队独赢最优价下的最大投注额。</ResponseField>
         <ResponseField name="averageAwayMoneyline"            type="integer" />
         <ResponseField name="bestAwayMoneyline"               type="integer" />
         <ResponseField name="bestAwayMoneylineWithCommission" type="integer" />

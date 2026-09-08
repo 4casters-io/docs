@@ -35,7 +35,7 @@ const ws = new WebSocket('wss://orders-api.4casters.io/orders/ws', {
 
 ## 訊息格式 {#message-format}
 
-每個客戶端請求都是二元組 `[messageType, payload]`。每個酬載都應包含你生成的 `requestID`；伺服器會原樣回傳，以便你關聯回應。
+每個用戶端請求都是二元組 `[messageType, payload]`。每個酬載都應包含你生成的 `requestID`；伺服器會原樣回傳，以便你關聯回應。
 
 <CodeGroup>
 ```json 請求

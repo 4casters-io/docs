@@ -6,7 +6,7 @@ openapi: 'POST /session/cancelByReference'
 
 Cancela todas las órdenes abiertas del juego indicado cuyo `userReference` coincida con una de las referencias suministradas. Útil cuando has etiquetado órdenes con tus propios ids y quieres cancelar por esos en lugar de rastrear ids de orden de 4casters.
 
-## Solicitud
+## Solicitud {#request}
 
 `POST /session/cancelByReference`
 
@@ -35,7 +35,7 @@ curl -X POST https://api.4casters.io/session/cancelByReference \
   Resultados de cancelación por orden. Misma forma que [Cancelar una orden](/es/pages/rest/orders/cancel-order#response).
 </ResponseField>
 
-## Errores
+## Errores {#errors}
 
 | Estado | Significado |
 | ------ | ------- |

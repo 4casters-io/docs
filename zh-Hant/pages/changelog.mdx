@@ -1,6 +1,6 @@
 ---
 title: '更新日誌'
-description: '4casters API 中對客戶端可見的重要變更。'
+description: '4casters API 中對用戶端可見的重要變更。'
 ---
 
 本更新日誌記錄對整合方可觀察的 4casters 公開 API 變更。內部重構、不改變行為的效能修復，以及基礎設施變更有意省略。
@@ -34,9 +34,9 @@ description: '4casters API 中對客戶端可見的重要變更。'
 
 <Update label="2026-04-28" tags={["推送 API", "行情推送"]}>
   ### 新增
-  - **行情推送可按 `gameID`、`league` 或 `sport` 訂閱。** 連線到 `wss://streaming-api.4casters.io/price-stream` 的客戶端現在可以傳送 JSON 的 `subscribe`、`unsubscribe` 和 `subscribeAll` 命令，將推送收窄到特定賽事、聯賽或運動專案。完整命令形態與路由語義見 [訂閱](/zh-Hant/pages/streaming/price-feed#subscriptions)。
-  - **`parentGameID` 扇出。** 訂閱父級 `gameID` 的客戶端也會收到 `parentGameID` 匹配的子賽事更新（例如 F5-MLB 衍生盤會到達父賽事的訂閱者）。
+  - **行情推送可按 `gameID`、`league` 或 `sport` 訂閱。** 連線到 `wss://streaming-api.4casters.io/price-stream` 的用戶端現在可以傳送 JSON 的 `subscribe`、`unsubscribe` 和 `subscribeAll` 命令，將推送收窄到特定賽事、聯賽或運動項目。完整命令形態與路由語義見 [訂閱](/zh-Hant/pages/streaming/price-feed#subscriptions)。
+  - **`parentGameID` 扇出。** 訂閱父級 `gameID` 的用戶端也會收到 `parentGameID` 匹配的子賽事更新（例如 F5-MLB 衍生盤會到達父賽事的訂閱者）。
 
   ### 變更
-  - **向後相容。** 從不傳送 subscribe 命令的客戶端保持廣播全部模式，並像以前一樣接收每條更新 — 無需更改整合。
+  - **向後相容。** 從不傳送 subscribe 命令的用戶端保持廣播全部模式，並像以前一樣接收每條更新 — 無需更改整合。
 </Update>

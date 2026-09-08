@@ -29,8 +29,8 @@ curl "https://api.4casters.io/exchange/getSingleOrderbook?gameID=65b674505031802
   帶巢狀訂單簿欄位的賽事物件。適用標準 `Game` 欄位（見 [獲取賽事](/zh-Hant/pages/rest/markets/get-games#response)），此外還有：
 
   <Expandable title="單場訂單簿欄位">
-    <ResponseField name="awayMoneylines" type="array">客勝一側的掛單單勝盤訂單。按最優價格優先排序。</ResponseField>
-    <ResponseField name="homeMoneylines" type="array">主勝一側的掛單單勝盤訂單。</ResponseField>
+    <ResponseField name="awayMoneylines" type="array">客勝一側的獨贏掛單。按最優價格優先排序。</ResponseField>
+    <ResponseField name="homeMoneylines" type="array">主勝一側的獨贏掛單。</ResponseField>
     <ResponseField name="awaySpreads"    type="object">以讓分數為鍵的物件（例如 `"-3.5"`）。每個值為訂單陣列。</ResponseField>
     <ResponseField name="homeSpreads"    type="object">以讓分數為鍵的物件。</ResponseField>
     <ResponseField name="over"           type="object">以大小分數為鍵的物件（例如 `"220.5"`）。每個值為訂單陣列。</ResponseField>

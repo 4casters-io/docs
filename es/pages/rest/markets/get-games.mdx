@@ -6,7 +6,7 @@ openapi: 'GET /exchange/v2/getGames'
 
 Devuelve todos los juegos activos de una liga. La respuesta **no** incluye el libro de órdenes ni ningún precio: llama a [Obtener libro de órdenes](/es/pages/rest/markets/get-orderbook) para eso.
 
-## Solicitud
+## Solicitud {#request}
 
 `GET /exchange/v2/getGames`
 
@@ -45,7 +45,7 @@ curl "https://api.4casters.io/exchange/v2/getGames?league=NBA" \
   </Expandable>
 </ResponseField>
 
-### Ejemplo
+### Ejemplo {#example}
 
 <CodeGroup>
 ```json JSON
@@ -73,7 +73,7 @@ curl "https://api.4casters.io/exchange/v2/getGames?league=NBA" \
 ```
 </CodeGroup>
 
-## Errores
+## Errores {#errors}
 
 | Estado | Significado |
 | ------ | ------- |

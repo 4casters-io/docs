@@ -8,7 +8,7 @@ Devuelve cada liga con mercados activos en el intercambio. Usa los códigos de l
 
 Si la respuesta contiene un nombre de liga con `LIVE` (aparte de las ligas en vivo por deporte `NFL-LIVE`, `NBA-LIVE`, `NCAAF-LIVE`, `NCAAB-LIVE`), se agrega el valor `"LIVE"` como alias de "todos los juegos en curso".
 
-## Solicitud
+## Solicitud {#request}
 
 `GET /exchange/getLeagues`
 
@@ -29,7 +29,7 @@ curl https://api.4casters.io/exchange/getLeagues \
   Array de códigos de liga.
 </ResponseField>
 
-### Ejemplo
+### Ejemplo {#example}
 
 <CodeGroup>
 ```json JSON

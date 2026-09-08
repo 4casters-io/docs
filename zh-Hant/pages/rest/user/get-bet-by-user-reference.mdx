@@ -1,10 +1,10 @@
 ---
 title: '按使用者引用獲取投注'
-description: '查詢與客戶端自定義識別碼關聯的全部投注'
+description: '查詢與用戶端自定義識別碼關聯的全部投注'
 openapi: 'GET /user/getBetByUserReference'
 ---
 
-查詢與 `userReference` 關聯的全部投注。`userReference` 是可選的客戶端自定義字串，可在下單時附加到訂單以便在你這邊跟蹤 — 此端點是對應的讀取介面。
+查詢與 `userReference` 關聯的全部投注。`userReference` 是可選的用戶端自定義字串，可在下單時附加到訂單以便在你這邊跟蹤 — 此端點是對應的讀取介面。
 
 回應將結果分為三個桶：
 
@@ -17,7 +17,7 @@ openapi: 'GET /user/getBetByUserReference'
 `GET /user/getBetByUserReference`
 
 <ParamField query="userReference" type="string" required>
-  下單時傳入的客戶端自定義引用。
+  下單時傳入的用戶端自定義引用。
 </ParamField>
 <ParamField query="gameID" type="string" required>
   將查詢限定到單場賽事。

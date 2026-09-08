@@ -8,7 +8,7 @@ Programa la cancelación de todas las órdenes abiertas de una liga. Este endpoi
 
 Si necesitas saber qué órdenes se cancelaron, sigue con [Obtener órdenes no cruzadas](/es/pages/rest/user/get-unmatched-orders) o suscríbete al feed de usuario en la [API de streaming WebSocket](/es/pages/streaming/user-feed).
 
-## Solicitud
+## Solicitud {#request}
 
 `POST /session/cancelAllForLeague`
 
@@ -31,7 +31,7 @@ curl -X POST https://api.4casters.io/session/cancelAllForLeague \
   Siempre `true` en éxito. Las cancelaciones se procesan de forma asíncrona.
 </ResponseField>
 
-### Ejemplo
+### Ejemplo {#example}
 
 <CodeGroup>
 ```json JSON
@@ -39,7 +39,7 @@ curl -X POST https://api.4casters.io/session/cancelAllForLeague \
 ```
 </CodeGroup>
 
-## Errores
+## Errores {#errors}
 
 | Estado | Significado |
 | ------ | ------- |

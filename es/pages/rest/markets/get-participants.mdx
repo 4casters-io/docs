@@ -6,7 +6,7 @@ openapi: 'GET /exchange/getParticipants'
 
 Devuelve una lista deduplicada de participantes — equipos, jugadores, lados de futuros — en todo el intercambio. Usa los valores `participantID` de este endpoint como campo `side` al colocar órdenes `moneyline` o `spread`.
 
-## Solicitud
+## Solicitud {#request}
 
 `GET /exchange/getParticipants`
 
@@ -33,7 +33,7 @@ curl "https://api.4casters.io/exchange/getParticipants?active=true" \
   </Expandable>
 </ResponseField>
 
-### Ejemplo
+### Ejemplo {#example}
 
 <CodeGroup>
 ```json JSON

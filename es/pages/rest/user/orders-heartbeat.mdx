@@ -8,7 +8,7 @@ Un mecanismo de seguridad: envía un heartbeat con un `timeout` (en segundos). S
 
 Usa este endpoint en cualquier cliente que coloque órdenes en espera: si tu proceso se cae o pierde conectividad, el heartbeat asegura que las órdenes obsoletas se retiren en lugar de quedarse en el libro.
 
-## Solicitud
+## Solicitud {#request}
 
 `POST /user/ordersHeartbeat`
 
@@ -37,7 +37,7 @@ La respuesta se reenvía desde el servicio de órdenes:
 { "data": { /* heartbeat ack payload */ } }
 ```
 
-## Errores
+## Errores {#errors}
 
 | Estado | Significado |
 | ------ | ------- |

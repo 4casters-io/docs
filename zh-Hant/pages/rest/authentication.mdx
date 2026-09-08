@@ -31,7 +31,7 @@ curl -X POST https://api.4casters.io/user/login \
 
 ### 請求 {#request}
 
-<ParamField body="username" type="string" required>帳戶使用者名稱（或郵箱）。</ParamField>
+<ParamField body="username" type="string" required>帳戶使用者名稱（或電子郵件）。</ParamField>
 <ParamField body="password" type="string" required>帳戶密碼。</ParamField>
 
 ### 回應 {#response}
@@ -80,16 +80,16 @@ curl -X POST https://api.4casters.io/user/login \
     curl https://api.4casters.io/user/getMe \
       -H "Authorization: Bearer 5cd551d6..."
     ```
-    `Bearer ` 字首是可選的 — 直接傳遞裸令牌也可以。
+    `Bearer ` 前綴是可選的 — 直接傳遞裸令牌也可以。
   </Tab>
   <Tab title="Cookie">
-    `/user/login` 設定的簽名 `auth` Cookie 在同一客戶端複用時，會在每個端點上自動生效。
+    `/user/login` 設定的簽名 `auth` Cookie 在同一用戶端重複使用時，會在每個端點上自動生效。
   </Tab>
   <Tab title="請求主體欄位（僅 POST）">
     ```json
     { "token": "5cd551d6...", "...": "..." }
     ```
-    作為無法方便設定自定義請求標頭的客戶端（例如某些 webhook 傳送方）的回退方案。
+    作為無法方便設定自定義請求標頭的用戶端（例如某些 webhook 傳送方）的回退方案。
   </Tab>
 </Tabs>
 
@@ -105,4 +105,4 @@ curl -X POST https://api.4casters.io/user/login \
 
 ## 雙重認證 {#two-factor-authentication}
 
-雙重認證保護的是提現，而不是登入。無論帳戶的 2FA 設定如何，`POST /user/login` 都不會要求驗證碼。
+雙重認證保護的是提款，而不是登入。無論帳戶的 2FA 設定如何，`POST /user/login` 都不會要求驗證碼。

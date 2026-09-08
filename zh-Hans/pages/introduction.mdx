@@ -42,7 +42,7 @@ description: '以编程方式访问 4casters 点对点博彩交易所'
 
 - **传输**：仅 HTTPS / WSS。
 - **编码**：一律使用 JSON。
-- **响应信封（REST）**：成功时为 `{ "data": <payload> }`；HTTP 错误时为 `{ "error": "<message>" }`。
+- **响应结构（REST）**：成功时为 `{ "data": <payload> }`；HTTP 错误时为 `{ "error": "<message>" }`。
 - **标识符**：赛事 ID、参赛方 ID 和订单 ID 均为 MongoDB `ObjectID` 字符串（24 位十六进制）。
 - **赔率**：美式格式（热门为负，冷门为正），除非另有说明。
 - **时间**：带 `Z` 的 ISO 8601（UTC）。
@@ -51,7 +51,7 @@ description: '以编程方式访问 4casters 点对点博彩交易所'
 
 大多数非平凡客户端会组合使用全部三套接口：
 
-1. **REST** — 调用一次 `POST /user/login`，缓存令牌，然后调用 `GET /user/getMe` 和 `GET /games/v2/leagues` 以引导状态。
+1. **REST** — 调用一次 `POST /user/login`，缓存令牌，然后调用 `GET /user/getMe` 和 `GET /games/v2/leagues` 以初始化状态。
 2. **推送 WebSocket** — 打开你关心的市场价格推送，以及用户推送以响应你自己的成交 / 结算。
 3. **订单 WebSocket** — 打开持久连接，以低延迟下单 / 取消，并通过 `requestID` 关联响应。
 4. **REST** — 回退到 `POST /myBets/getMatchedBets`、`/myBets/getOrdersForGame` 等，用于历史记录和对账。

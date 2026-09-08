@@ -10,7 +10,7 @@ Devuelve la comisión pagada a la cuenta autenticada por los jugadores que ha in
 A diferencia de la mayoría de los endpoints, este devuelve el resultado en el **nivel superior** como `commissionPaid` (no bajo `data`).
 </Note>
 
-## Solicitud
+## Solicitud {#request}
 
 `GET /affiliate/getAffiliateCommission`
 
@@ -39,7 +39,7 @@ curl https://api.4casters.io/affiliate/getAffiliateCommission \
   Cada entrada es un objeto de una sola clave que mapea el nombre de usuario de un jugador a la comisión total pagada por ese jugador en el rango solicitado.
 </ResponseField>
 
-### Ejemplo
+### Ejemplo {#example}
 
 <CodeGroup>
 ```json JSON
@@ -53,7 +53,7 @@ curl https://api.4casters.io/affiliate/getAffiliateCommission \
 ```
 </CodeGroup>
 
-## Errores
+## Errores {#errors}
 
 | Estado | Significado |
 | ------ | ------- |

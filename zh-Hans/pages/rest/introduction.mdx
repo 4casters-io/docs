@@ -17,7 +17,7 @@ https://api.4casters.io
 
 - **传输**：仅 HTTPS。
 - **编码**：JSON。凡带请求体的请求均发送 `Content-Type: application/json`。
-- **响应信封**：除少数明确标注的例外（`/affiliate/getAffiliateCommission`、`/exchange/getOddsForAveragePrice`）外，每个成功响应都包装为：`{ "data": <payload> }`。
+- **响应结构**：除少数明确标注的例外（`/affiliate/getAffiliateCommission`、`/exchange/getOddsForAveragePrice`）外，每个成功响应都包装为：`{ "data": <payload> }`。
 - **标识符**：赛事 ID、参赛方 ID 和订单 ID 均为 MongoDB `ObjectID` 字符串（24 位十六进制）。
 - **赔率**：所有赔率均为美式格式（热门为负，冷门为正），除非另有说明。
 - **时间**：所有时间戳均为带 `Z` 的 ISO 8601（UTC）。
@@ -30,7 +30,7 @@ https://api.4casters.io
 
 「下单」和「改单」端点接受批次并返回按单结果。HTTP `200` 成功响应仍可能在 `data.createdSessions[i]` 中包含单笔订单失败。各端点页面上有单笔订单的错误形态。
 
-HTTP 级错误（`4xx`、`5xx`）以 `{ "error": "<message>" }` 返回。
+HTTP 级别的错误（`4xx`、`5xx`）以 `{ "error": "<message>" }` 返回。
 
 ## 速率限制 {#rate-limiting}
 

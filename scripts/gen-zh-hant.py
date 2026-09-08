@@ -38,6 +38,27 @@ POST = [
     ('載荷', '酬載'),
     ('釋出', '發布'),      # s2twp turns 发布 (publish) into 釋出 (a software release)
     ('平臺', '平台'),
+    # Taiwan register (review pass 2026-09-07; Microsoft zh-TW and the app catalog agree):
+    ('程式設計方式', '程式化方式'),   # programmatic
+    ('程式碼', '代碼'),          # league code / short code, not source code
+    ('運動專案', '運動項目'),      # 專案 is a project
+    ('十六進位制', '十六進位'),
+    ('全域性', '全域'),
+    ('反規範化', '反正規化'),      # denormalized
+    ('速率限制', '速率限制'),
+    ('限流', '速率限制'),
+    ('客戶端', '用戶端'),
+    ('引數', '參數'),
+    ('指令碼', '腳本'),
+    ('字首', '前綴'),
+    ('映象', '鏡像'),
+    ('對映', '對應'),
+    ('後臺', '後台'),
+    ('郵箱', '電子郵件'),
+    ('提現', '提款'),
+    ('複用', '重複使用'),
+    ('訪問', '存取'),
+    ('按產品規則', '依產品規則'),
 ]
 
 INLINE = re.compile(r'`[^`\n]+`')

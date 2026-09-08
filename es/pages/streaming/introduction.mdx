@@ -10,13 +10,13 @@ La API de streaming de 4casters entrega actualizaciones de usuario y de mercado 
 
 El feed de precios difunde todas las actualizaciones de mercado por defecto. Los clientes pueden acotar el stream a juegos, ligas o deportes concretos: consulta [Suscripciones](/es/pages/streaming/price-feed#subscriptions).
 
-## Autenticación
+## Autenticación {#auth}
 
 Ambos feeds se autentican con un token de 4Casters. Envía el token en el
 encabezado `Authorization` del handshake WebSocket. El servidor deriva el usuario
 a partir del token: **sin nombre de usuario en la URL**.
 
-### Obtener un token
+### Obtener un token {#get-a-token}
 
 No hay una clave de API aparte. Inicia sesión con tu nombre de usuario y contraseña
 de 4Casters llamando al endpoint `/user/login` de la API REST de 4Casters. La respuesta
@@ -25,7 +25,7 @@ para la vida útil y la rotación del token.
 
 Consulta [`POST /user/login` en la documentación de la API REST de 4Casters](/es/pages/rest/authentication).
 
-### Conectar
+### Conectar {#connect}
 
 <CodeGroup>
 ```javascript JavaScript

@@ -13,10 +13,10 @@ openapi: 'GET /exchange/v2/getOrderbook'
 `GET /exchange/v2/getOrderbook`
 
 <ParamField query="league" type="string">
-  聯賽程式碼，例如 `NBA`（不區分大小寫）。未提供 `gameID` 時必填。
+  聯賽代碼，例如 `NBA`（不區分大小寫）。未提供 `gameID` 時必填。
 </ParamField>
 <ParamField query="sport" type="string">
-  運動專案名稱，例如 `basketball`（不區分大小寫）。設定 `league` 時的可選過濾。
+  運動項目名稱，例如 `basketball`（不區分大小寫）。設定 `league` 時的可選過濾。
 </ParamField>
 <ParamField query="gameID" type="string">
   單場賽事 ID。提供時會忽略 `league` 和 `sport`。
@@ -40,8 +40,8 @@ curl "https://api.4casters.io/exchange/v2/getOrderbook?gameID=688c0516fbc14da0c2
   每個 `game` 為標準 [Game](/zh-Hant/pages/rest/markets/get-games#response) 形態，並帶有以下按市場陣列：
 
   <Expandable title="單場訂單簿欄位">
-    <ResponseField name="awayMoneylines"    type="array">支援客隊的掛單單勝盤訂單。按最優價格優先排序。</ResponseField>
-    <ResponseField name="homeMoneylines"    type="array">支援主隊的掛單單勝盤訂單。</ResponseField>
+    <ResponseField name="awayMoneylines"    type="array">支援客隊的獨贏掛單。按最優價格優先排序。</ResponseField>
+    <ResponseField name="homeMoneylines"    type="array">支援主隊的獨贏掛單。</ResponseField>
     <ResponseField name="awaySpreads"       type="array">客隊一側的掛單讓分訂單，跨讓分數扁平化。</ResponseField>
     <ResponseField name="homeSpreads"       type="array">主隊一側的掛單讓分訂單。</ResponseField>
     <ResponseField name="over"              type="array">掛單 `over` 訂單，跨大小分扁平化。</ResponseField>

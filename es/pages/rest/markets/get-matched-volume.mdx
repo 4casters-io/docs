@@ -6,7 +6,7 @@ openapi: 'GET /exchange/getMatchedVolume'
 
 Devuelve el volumen cruzado total del sitio para un rango inclusivo de **días de calendario del Este de EE. UU. (ET)**.
 
-## Cómo se calcula el volumen
+## Cómo se calcula el volumen {#how-volume-is-calculated}
 
 Cada apuesta cruzada aporta las apuestas de **ambos lados** del cruce:
 
@@ -19,11 +19,11 @@ De forma equivalente, desde la perspectiva de cualquiera de las partes cada apue
 El volumen usa las apuestas brutas antes de comisión. Los campos `risk` / `win` de [Obtener apuestas cruzadas](/es/pages/rest/user/get-matched-bets) ya incluyen comisión, así que sumarlos diferirá ligeramente de este endpoint.
 </Note>
 
-## Actualidad
+## Actualidad {#freshness}
 
 Los días ET finalizados se leen de un archivo diario cerrado. Si el rango termina hoy (un `endDate` posterior a hoy se recorta a hoy), se suma un agregado en vivo de los cruces de hoy, de modo que la porción del día actual se actualiza en tiempo real a medida que se cruzan apuestas.
 
-## Solicitud
+## Solicitud {#request}
 
 `GET /exchange/getMatchedVolume`
 
@@ -62,11 +62,11 @@ curl "https://api.4casters.io/exchange/getMatchedVolume?startDate=2026-08-10&end
 }
 ```
 
-## Límites de tasa
+## Límites de tasa {#rate-limits}
 
 No hay un límite específico del endpoint: solo aplica el [límite global por IP](/es/pages/rest/introduction#rate-limiting) (3,000 solicitudes por minuto móvil). Para dashboards, consultar una vez cada pocos segundos es más que suficiente; ten en cuenta que los días finalizados nunca cambian, así que solo los rangos que incluyen hoy se benefician de volver a consultar.
 
-## Errores
+## Errores {#errors}
 
 | Estado | Significado |
 |---|---|

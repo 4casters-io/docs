@@ -8,7 +8,7 @@ Calcula la **exposición financiera en el peor caso** de la cuenta autenticada p
 
 El valor siempre es `<= 0`: incluso un libro totalmente cubierto puede incurrir en pérdida por cancelaciones por lluvia, suspensiones o descalificaciones.
 
-## Solicitud
+## Solicitud {#request}
 
 `GET /user/getGameLiability`
 
@@ -27,7 +27,7 @@ curl "https://api.4casters.io/user/getGameLiability?gameID=657f8ea1ea0ce6f62c1fe
   La pérdida en el peor caso, en la moneda de la cuenta. Siempre `<= 0`. Devuelve `0` cuando la cuenta autenticada no tiene apuestas en el juego.
 </ResponseField>
 
-### Ejemplo
+### Ejemplo {#example}
 
 <CodeGroup>
 ```json JSON

@@ -29,8 +29,8 @@ curl "https://api.4casters.io/exchange/getSingleOrderbook?gameID=65b674505031802
   带嵌套订单簿字段的赛事对象。适用标准 `Game` 字段（见 [获取赛事](/zh-Hans/pages/rest/markets/get-games#response)），此外还有：
 
   <Expandable title="单场订单簿字段">
-    <ResponseField name="awayMoneylines" type="array">客胜一侧的挂单单胜盘订单。按最优价格优先排序。</ResponseField>
-    <ResponseField name="homeMoneylines" type="array">主胜一侧的挂单单胜盘订单。</ResponseField>
+    <ResponseField name="awayMoneylines" type="array">客胜一侧的独赢挂单。按最优价格优先排序。</ResponseField>
+    <ResponseField name="homeMoneylines" type="array">主胜一侧的独赢挂单。</ResponseField>
     <ResponseField name="awaySpreads"    type="object">以让分数为键的对象（例如 `"-3.5"`）。每个值为订单数组。</ResponseField>
     <ResponseField name="homeSpreads"    type="object">以让分数为键的对象。</ResponseField>
     <ResponseField name="over"           type="object">以大小分数为键的对象（例如 `"220.5"`）。每个值为订单数组。</ResponseField>

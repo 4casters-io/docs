@@ -4,7 +4,7 @@ description: '非同步取消某聯賽中的每一筆未成交訂單'
 openapi: 'POST /session/cancelAllForLeague'
 ---
 
-安排取消某聯賽中的每一筆未成交訂單。此端點**非同步派發** — 立即以 `{ ordersReceived: true }` 確認，取消在後臺進行。
+安排取消某聯賽中的每一筆未成交訂單。此端點**非同步處理** — 立即以 `{ ordersReceived: true }` 確認，取消在後台進行。
 
 若需要知道哪些訂單被取消，請隨後呼叫 [獲取未撮合訂單](/zh-Hant/pages/rest/user/get-unmatched-orders)，或訂閱 [WebSocket 推送 API](/zh-Hant/pages/streaming/user-feed) 上的使用者推送。
 
@@ -13,7 +13,7 @@ openapi: 'POST /session/cancelAllForLeague'
 `POST /session/cancelAllForLeague`
 
 <ParamField body="league" type="string" required>
-  聯賽程式碼。列表可從 `GET /exchange/getLeagues` 獲取。不區分大小寫。
+  聯賽代碼。列表可從 `GET /exchange/getLeagues` 獲取。不區分大小寫。
 </ParamField>
 
 <CodeGroup>

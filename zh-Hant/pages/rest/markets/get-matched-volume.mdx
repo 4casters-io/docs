@@ -64,7 +64,7 @@ curl "https://api.4casters.io/exchange/getMatchedVolume?startDate=2026-08-10&end
 
 ## 速率限制 {#rate-limits}
 
-沒有端點級限制 — 僅適用 [全域性每 IP 限制](/zh-Hant/pages/rest/introduction#rate-limiting)（滾動每分鐘 3,000 次請求）。對於儀表盤，每隔幾秒輪詢一次完全足夠；注意已最終確定的日期不會再變化，因此只有包含今天的範圍才有必要重新輪詢。
+沒有端點級限制 — 僅適用 [全域每 IP 限制](/zh-Hant/pages/rest/introduction#rate-limiting)（滾動每分鐘 3,000 次請求）。對於儀表盤，每隔幾秒輪詢一次完全足夠；注意已最終確定的日期不會再變化，因此只有包含今天的範圍才有必要重新輪詢。
 
 ## 錯誤 {#errors}
 
@@ -72,5 +72,5 @@ curl "https://api.4casters.io/exchange/getMatchedVolume?startDate=2026-08-10&end
 |---|---|
 | `400` | `startDate` / `endDate` 缺失或格式錯誤（必須為 `YYYY-MM-DD`），或 `startDate` 晚於 `endDate`。 |
 | `401` | 認證令牌缺失或無效。 |
-| `429` | 超出全域性每 IP 速率限制。請遵守 `Retry-After` 回應標頭。 |
+| `429` | 超出全域每 IP 速率限制。請遵守 `Retry-After` 回應標頭。 |
 | `503` | 觸發了服務端 15 秒超時。可以安全重試。 |

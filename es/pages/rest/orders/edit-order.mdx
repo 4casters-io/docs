@@ -12,7 +12,7 @@ En órdenes parcialmente cruzadas, 4casters cancela la orden existente y envía 
 Existe una variante gRPC más reciente en `POST /session/v4/editOrder`. Acepta el mismo cuerpo de solicitud y además devuelve `errorType` en fallos de validación. Prefiérela en integraciones nuevas cuando hayas confirmado que la forma te funciona.
 </Note>
 
-## Solicitud
+## Solicitud {#request}
 
 `POST /session/editOrder`
 
@@ -76,7 +76,7 @@ El resultado refleja la forma de respuesta de [colocar orden](/es/pages/rest/ord
   Oferta en espera del resto no cruzado de la nueva orden.
 </ResponseField>
 
-## Errores
+## Errores {#errors}
 
 | Estado | Significado |
 | ------ | ------- |

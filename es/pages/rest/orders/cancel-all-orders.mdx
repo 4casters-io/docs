@@ -8,7 +8,7 @@ Cancela **todas** las órdenes abiertas de la cuenta autenticada en todos los ju
 
 Como alternativa menos destructiva que te permite reanudar órdenes más adelante, consulta `POST /session/pauseOrders` (endpoint hermano que cancela y recuerda; se combina con `resumeOrders`).
 
-## Solicitud
+## Solicitud {#request}
 
 `POST /session/cancelAllOrders`
 
@@ -27,7 +27,7 @@ curl -X POST https://api.4casters.io/session/cancelAllOrders \
   Resultados de cancelación por orden. Misma forma que [Cancelar una orden](/es/pages/rest/orders/cancel-order#response).
 </ResponseField>
 
-### Ejemplo
+### Ejemplo {#example}
 
 <CodeGroup>
 ```json JSON

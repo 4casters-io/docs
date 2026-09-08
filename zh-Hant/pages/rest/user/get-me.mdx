@@ -4,13 +4,13 @@ description: '讀取已認證帳戶'
 openapi: 'GET /user/getMe'
 ---
 
-回傳當前已認證使用者的帳戶資訊，包括餘額、信用額度、當前負債、預設賠率格式和訪問標誌。
+回傳當前已認證使用者的帳戶資訊，包括餘額、信用額度、當前負債（風險敞口）、預設賠率格式和存取標誌。
 
 ## 請求 {#request}
 
 `GET /user/getMe`
 
-此端點不接受引數。需要認證（見 [認證](/zh-Hant/pages/rest/authentication)）。
+此端點不接受參數。需要認證（見 [認證](/zh-Hant/pages/rest/authentication)）。
 
 <CodeGroup>
 ```bash curl
@@ -52,7 +52,7 @@ curl https://api.4casters.io/user/getMe \
         <ResponseField name="accessCode" type="string">帳戶上的註冊碼。</ResponseField>
         <ResponseField name="p2pCode" type="string">若為 P2P 代理帳戶，其推薦使用者註冊時使用的邀請碼。</ResponseField>
         <ResponseField name="createdAt" type="string">ISO 8601 帳戶建立時間戳。</ResponseField>
-        <ResponseField name="emailConfirmation" type="boolean">帳戶郵箱是否已確認。</ResponseField>
+        <ResponseField name="emailConfirmation" type="boolean">帳戶電子郵件是否已確認。</ResponseField>
       </Expandable>
     </ResponseField>
   </Expandable>

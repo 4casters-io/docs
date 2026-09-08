@@ -48,9 +48,9 @@ connectUserFeed();
 
 ## 消息 {#messages}
 
-用户推送将每条更新作为**裸 JSON 对象**发送（无元组信封）。所有更新共用同一信封；动作由 `unmatched` / `matched` 哪个被填充以及 `origin` 决定。
+用户推送将每条更新作为**裸 JSON 对象**发送（无元组包装）。所有更新共用同一结构；动作由 `unmatched` / `matched` 哪个被填充以及 `origin` 决定。
 
-### 公共信封 {#common-envelope}
+### 通用结构 {#common-envelope}
 
 <CodeGroup>
 ```typescript Schema

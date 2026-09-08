@@ -63,13 +63,13 @@ connectPriceFeed();
 
 ## 訂閱 {#subscriptions}
 
-預設情況下，已連線的客戶端會收到所有運動專案和聯賽的全部市場更新。若要收窄全量推送，可在套接字進入 `open` 之後，以 JSON 文字幀傳送下列命令之一。命令在該連線的生命週期內生效。
+預設情況下，已連線的用戶端會收到所有運動項目和聯賽的全部市場更新。若要收窄全量推送，可在套接字進入 `open` 之後，以 JSON 文字幀傳送下列命令之一。命令在該連線的生命週期內生效。
 
-從未傳送過訂閱命令的客戶端保持全量廣播模式，因此現有整合無需改動即可繼續工作。
+從未傳送過訂閱命令的用戶端保持全量廣播模式，因此現有整合無需改動即可繼續工作。
 
-### 按 gameID、聯賽或運動專案訂閱 {#subscribe-by-gameid-league-or-sport}
+### 按 gameID、聯賽或運動項目訂閱 {#subscribe-by-gameid-league-or-sport}
 
-安裝過濾器。`gameIDs` 為 24 位 Mongo ObjectID 十六進位制字串；`leagueIDs` 為短程式碼，如 `NBA` / `MLB` / `EPL`；`sportIDs` 為小寫識別碼，如 `basketball` / `baseball` / `soccer`。
+安裝過濾器。`gameIDs` 為 24 位 Mongo ObjectID 十六進位字串；`leagueIDs` 為短代碼，如 `NBA` / `MLB` / `EPL`；`sportIDs` 為小寫識別碼，如 `basketball` / `baseball` / `soccer`。
 
 <CodeGroup>
 ```json 替換（推薦）
@@ -126,9 +126,9 @@ connectPriceFeed();
 
 - 訂閱某個 `gameID` 時，也會收到 `parentGameID` 匹配的子賽事更新（例如 F5-MLB 衍生盤會送達父賽事的訂閱者）。
 - 聯賽 ID 不區分大小寫 — `mlb` 與 `MLB` 等價。
-- 運動專案 ID 不區分大小寫 — `baseball` 與 `Baseball` 等價。
+- 運動項目 ID 不區分大小寫 — `baseball` 與 `Baseball` 等價。
 - 陣列中的空字串會被忽略。
-- `subscribe` 在 `replace: false` **且** 陣列全部為空時為無操作（有缺陷的客戶端不會因傳送空的追加訂閱而意外把自己訂空）。
+- `subscribe` 在 `replace: false` **且** 陣列全部為空時為無操作（有缺陷的用戶端不會因傳送空的追加訂閱而意外把自己訂空）。
 - `subscribe` 在 `replace: true` **且** 陣列全部為空時，是合法的「清除我的全部訂閱」路徑 — 連線進入過濾模式且訂閱為零，在你再次訂閱或傳送 `subscribeAll` 之前不會收到任何訊息。
 
 ## 訊息 {#messages}
@@ -191,7 +191,7 @@ connectPriceFeed();
 
 對於 `moneyline1x2`（足球三項盤：主勝 / 平局 / 客勝），投注物件由 **`market` + `side` 組合**識別，而不是 `participantID` / `OU`：
 
-- `market` — 該盤口所針對的結果：參賽者 ObjectID 十六進位制（主隊或客隊），或字面字串 `"draw"`。
+- `market` — 該盤口所針對的結果：參賽者 ObjectID 十六進位（主隊或客隊），或字面字串 `"draw"`。
 - `side` — 對該結果的 `"yes"` 或 `"no"`。
 - `OU`、`total` 和 `spread` 不出現，`participantID` 為空 — 請使用 `market` + `side`。
 

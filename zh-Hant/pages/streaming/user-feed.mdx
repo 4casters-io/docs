@@ -48,9 +48,9 @@ connectUserFeed();
 
 ## 訊息 {#messages}
 
-使用者推送將每條更新作為**裸 JSON 物件**傳送（無元組信封）。所有更新共用同一信封；動作由 `unmatched` / `matched` 哪個被填充以及 `origin` 決定。
+使用者推送將每條更新作為**裸 JSON 物件**傳送（無元組包裝）。所有更新共用同一結構；動作由 `unmatched` / `matched` 哪個被填充以及 `origin` 決定。
 
-### 公共信封 {#common-envelope}
+### 通用結構 {#common-envelope}
 
 <CodeGroup>
 ```typescript Schema
@@ -147,10 +147,10 @@ connectUserFeed();
 
 | `type` | `side` | `number` | `market` |
 |---|---|---|---|
-| `moneyline` | 參賽者 ObjectID 十六進位制 | — | — |
-| `spread` | 參賽者 ObjectID 十六進位制 | 讓分盤口（例如 `6.5`） | — |
+| `moneyline` | 參賽者 ObjectID 十六進位 | — | — |
+| `spread` | 參賽者 ObjectID 十六進位 | 讓分盤口（例如 `6.5`） | — |
 | `total` | `"over"` / `"under"` | 大小球盤口（例如 `209.5`） | — |
-| `moneyline1x2` | `"yes"` / `"no"` | — | 參賽者 ObjectID 十六進位制（主隊或客隊）或 `"draw"` |
+| `moneyline1x2` | `"yes"` / `"no"` | — | 參賽者 ObjectID 十六進位（主隊或客隊）或 `"draw"` |
 
 `market` 僅出現在 `moneyline1x2` 更新中：它指明該盤口所針對的三項結果（主隊、客隊或平局），`side` 則表示對該結果是 yes 還是 no。所有欄位都從**你的**視角出發 — 作為 maker 你看到自己掛出的方向；作為 taker 你看到自己吃到的方向。
 
@@ -306,7 +306,7 @@ connectUserFeed();
 
 ### 動作：訂單成交（moneyline1x2） {#action-order-matched-moneyline1x2}
 
-足球三項盤上的成交攜帶上文所述的 **`market` + `side` 組合**，而不是參賽者十六進位制 `side`。此處使用者以 +120 吃了主隊的 "yes"（投注阿森納獲勝）：
+足球三項盤上的成交攜帶上文所述的 **`market` + `side` 組合**，而不是參賽者十六進位 `side`。此處使用者以 +120 吃了主隊的 "yes"（投注阿森納獲勝）：
 
 <CodeGroup>
 ```json JSON（吃單）
@@ -391,9 +391,9 @@ v2 使用者推送支援**連線中斷後的缺口恢復**。每條訊息都帶�
 GET https://streaming-api.4casters.io/v2/user/messages?afterID=<messageID>&beforeID=<messageID>
 ```
 
-鑑權方式與 WebSocket 相同：在 `Authorization` 請求標頭、`Auth` 請求標頭或 `token` 查詢引數中攜帶 token。僅回傳屬於已鑑權使用者的訊息。
+鑑權方式與 WebSocket 相同：在 `Authorization` 請求標頭、`Auth` 請求標頭或 `token` 查詢參數中攜帶 token。僅回傳屬於已鑑權使用者的訊息。
 
-| 引數 | 是否必填 | 含義 |
+| 參數 | 是否必填 | 含義 |
 |---|---|---|
 | `afterID` | 是 | 斷開前**你處理的最後一條訊息**的 `messageID`。結果從嚴格晚於它的位置開始。 |
 | `beforeID` | 否 | 不包含的上界。省略則讀到保留歷史的末尾。 |
@@ -428,9 +428,9 @@ GET https://streaming-api.4casters.io/v2/user/messages?afterID=<messageID>&befor
 
 `availableMessages` 是仍被保留的內容，最舊的在前。超出保留視窗的更早訊息無法透過回放恢復 — 請及時重連，而不要依賴過長的回看。
 
-### 示例：帶回放的重連客戶端 {#example-reconnecting-client-with-replay}
+### 示例：帶回放的重連用戶端 {#example-reconnecting-client-with-replay}
 
-完整的 Node.js 客戶端（為簡潔起見省略 keepalive ping/pong — 參見本頁頂部的快速入門）。正確性依賴兩點：每條訊息 — 即時、緩衝或回放 — 都經過同一套只向前推進的遊標檢查；回放失敗時重連，而不是帶著缺口進入即時。
+完整的 Node.js 用戶端（為簡潔起見省略 keepalive ping/pong — 參見本頁頂部的快速入門）。正確性依賴兩點：每條訊息 — 即時、緩衝或回放 — 都經過同一套只向前推進的遊標檢查；回放失敗時重連，而不是帶著缺口進入即時。
 
 <CodeGroup>
 ```javascript JavaScript

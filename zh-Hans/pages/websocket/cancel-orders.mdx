@@ -2,7 +2,7 @@
 title: '取消订单'
 ---
 
-支持四种取消方式。它们都使用相同的响应信封：`{ requestID, data: [ ...CancelResponsePayload ] }`。
+支持四种取消方式。它们都使用相同的响应结构：`{ requestID, data: [ ...CancelResponsePayload ] }`。
 
 ## 取消响应载荷 {#cancel-response-payload}
 
@@ -107,7 +107,7 @@ title: '取消订单'
 
 按 ID 取消一组指定订单。
 
-### 请求
+### 请求 {#request}
 
 <CodeGroup>
 ```json JSON
@@ -125,7 +125,7 @@ title: '取消订单'
 ```
 </CodeGroup>
 
-### 响应
+### 响应 {#response}
 
 `data` 中每个订单 ID 对应一条记录；请检查每条的 `success` 标志。
 
@@ -161,7 +161,7 @@ title: '取消订单'
 
 取消你在单场赛事上的全部未成交订单。可选择传入 `type`、`side` 和/或 `market`，将取消范围限定到特定盘口。
 
-### 请求
+### 请求 {#request}
 
 <CodeGroup>
 ```json JSON
@@ -191,7 +191,7 @@ title: '取消订单'
   可选 — 盘口标识符（例如 `main`）。
 </ResponseField>
 
-### 响应
+### 响应 {#response}
 
 <CodeGroup>
 ```json JSON
@@ -220,7 +220,7 @@ title: '取消订单'
 
 取消账户上的全部未成交订单。
 
-### 请求
+### 请求 {#request}
 
 <CodeGroup>
 ```json JSON
@@ -233,7 +233,7 @@ title: '取消订单'
 ```
 </CodeGroup>
 
-### 响应
+### 响应 {#response}
 
 <CodeGroup>
 ```json JSON
@@ -260,7 +260,7 @@ title: '取消订单'
 
 ## 错误 {#errors}
 
-当取消无法处理时，服务器返回标准错误信封（无 `data` 字段）：
+当取消无法处理时，服务器返回标准错误结构（无 `data` 字段）：
 
 <CodeGroup>
 ```json JSON

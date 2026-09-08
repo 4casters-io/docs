@@ -7,7 +7,7 @@ openapi: 'POST /exchange/getOrderbook'
 <Warning>
 **已棄用。** 更簡單、推薦的扁平格式請使用 [`GET /exchange/v2/getOrderbook`](/zh-Hant/pages/rest/markets/get-orderbook)。
 
-此端點僅為與舊客戶端向後相容而保留。
+此端點僅為與舊用戶端向後相容而保留。
 </Warning>
 
 以**巢狀**形式回傳整個聯賽的訂單簿，按讓分 / 大小分數鍵控。單場形態與 [獲取單場訂單簿](/zh-Hant/pages/rest/markets/get-single-orderbook) 相同，但覆蓋該聯賽的每一場賽事。
@@ -17,7 +17,7 @@ openapi: 'POST /exchange/getOrderbook'
 `POST /exchange/getOrderbook`
 
 <ParamField body="leagueRequested" type="string" required>
-  聯賽程式碼（不區分大小寫）。
+  聯賽代碼（不區分大小寫）。
 </ParamField>
 
 <CodeGroup>

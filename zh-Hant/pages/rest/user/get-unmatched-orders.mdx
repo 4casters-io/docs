@@ -10,7 +10,7 @@ openapi: 'GET /user/getUnmatched'
 
 `GET /user/getUnmatched`
 
-不接受引數。
+不接受參數。
 
 <CodeGroup>
 ```bash curl
@@ -40,7 +40,7 @@ curl https://api.4casters.io/user/getUnmatched \
     <ResponseField name="expiry" type="string">取消時間戳（ISO 8601）。未設定過期時間時為 `null`。</ResponseField>
     <ResponseField name="createdAt" type="string">ISO 8601 時間戳。</ResponseField>
     <ResponseField name="origin" type="string">`offer` 或 `wager`。</ResponseField>
-    <ResponseField name="userReference" type="string">下單時保留的客戶端自定義識別碼。</ResponseField>
+    <ResponseField name="userReference" type="string">下單時保留的用戶端自定義識別碼。</ResponseField>
     <ResponseField name="wagerRequestID" type="string">伺服器生成的 ID，將原始下單請求產生的每一筆成交 / 掛單歸為一組。</ResponseField>
     <ResponseField name="graded" type="boolean">始終為 `false`。</ResponseField>
     <ResponseField name="closed" type="boolean" />

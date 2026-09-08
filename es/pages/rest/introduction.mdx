@@ -5,7 +5,7 @@ description: 'API REST pública del intercambio de apuestas peer-to-peer de 4cas
 
 La API REST de 4casters te permite iniciar sesión, consultar juegos y el libro de órdenes, colocar / editar / cancelar órdenes y leer tu historial de apuestas de forma programática. Es la misma API que impulsa la aplicación web de 4casters.
 
-## URL base
+## URL base {#base-url}
 
 Todos los endpoints de esta sección tienen como raíz:
 
@@ -13,7 +13,7 @@ Todos los endpoints de esta sección tienen como raíz:
 https://api.4casters.io
 ```
 
-## Convenciones
+## Convenciones {#conventions}
 
 - **Transporte**: solo HTTPS.
 - **Codificación**: JSON. Envía `Content-Type: application/json` en cada solicitud que tenga cuerpo.
@@ -22,11 +22,11 @@ https://api.4casters.io
 - **Cuotas**: todas las cuotas están en formato americano (negativas para favoritos, positivas para no favoritos) salvo que se indique lo contrario.
 - **Tiempo**: todas las marcas de tiempo son ISO 8601 con `Z` (UTC).
 
-## Autenticación
+## Autenticación {#authentication}
 
 Casi todos los endpoints requieren autenticación. Inicia sesión una vez con [POST `/user/login`](/es/pages/rest/authentication) y luego envía el token de autenticación devuelto en cada solicitud: consulta [Autenticación](/es/pages/rest/authentication) para más detalles.
 
-## Errores por orden frente a errores HTTP
+## Errores por orden frente a errores HTTP {#per-order-errors-vs-http-errors}
 
 Los endpoints de "colocar" y "editar" aceptan lotes y devuelven resultados por orden. Una respuesta HTTP `200` exitosa puede contener fallos individuales de órdenes dentro de `data.createdSessions[i]`. Consulta la forma de error por orden en la página de cada endpoint.
 
@@ -42,15 +42,15 @@ Aplican tres capas de limitación de tasa:
 
 Los endpoints de lectura no tienen límite por cuenta: solo aplica el techo global por IP.
 
-## Tiempos de espera
+## Tiempos de espera {#timeouts}
 
 Las solicitudes que tardan más de **15 segundos** en el servidor se abortan y devuelven `503` con el cuerpo `{ "error": { "message": "Network Error", "code": 503 } }`.
 
-## Actualizaciones en tiempo real
+## Actualizaciones en tiempo real {#real-time-updates}
 
 La API REST se complementa con la [API de streaming WebSocket](/es/pages/streaming/introduction) para ticks del libro de órdenes en tiempo real y eventos de cruce / liquidación por cuenta. El token de autenticación que devuelve `/user/login` sirve para ambas.
 
-## Índice de endpoints
+## Índice de endpoints {#endpoint-index}
 
 <CardGroup cols={2}>
   <Card title="Autenticación" href="/es/pages/rest/authentication">Inicia sesión y obtén un token de autenticación.</Card>
@@ -60,7 +60,7 @@ La API REST se complementa con la [API de streaming WebSocket](/es/pages/streami
   <Card title="Afiliados"      href="/es/pages/rest/affiliate/get-affiliate-commission">Comisión de afiliado.</Card>
 </CardGroup>
 
-## Colección heredada de Postman
+## Colección heredada de Postman {#legacy-postman-collection}
 
 La documentación previa vivía como una colección de Postman. Se conserva como referencia, pero estas docs de Mintlify son ahora la fuente de verdad: la colección de Postman puede quedar atrás en endpoints, parámetros o formas de respuesta nuevos.
 

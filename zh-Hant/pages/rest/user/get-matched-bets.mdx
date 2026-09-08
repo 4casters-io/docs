@@ -10,7 +10,7 @@ openapi: 'GET /user/getMatchedBets'
 
 `GET /user/getMatchedBets`
 
-不接受引數。
+不接受參數。
 
 <CodeGroup>
 ```bash curl
@@ -35,7 +35,7 @@ curl https://api.4casters.io/user/getMatchedBets \
     <ResponseField name="participantID" type="string">出現在 `moneyline` 和 `spread` 上。</ResponseField>
     <ResponseField name="market" type="string">出現在 `moneyline1x2` 上。</ResponseField>
     <ResponseField name="side" type="string">用於 `moneyline1x2` — `yes` 或 `no`。</ResponseField>
-    <ResponseField name="userReference" type="string">下單時傳入的可選客戶端自定義識別碼。</ResponseField>
+    <ResponseField name="userReference" type="string">下單時傳入的可選用戶端自定義識別碼。</ResponseField>
     <ResponseField name="createdAt" type="string">ISO 8601 時間戳。</ResponseField>
     <ResponseField name="matchedTime" type="string">成交發生的 ISO 8601 時間戳。</ResponseField>
     <ResponseField name="origin" type="string">`offer`（你掛單，吃單方成交了你）或 `wager`（你吃掉了已有流動性）。</ResponseField>
