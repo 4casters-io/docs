@@ -1,0 +1,68 @@
+---
+title: '取消一笔订单'
+description: '取消单笔未成交订单'
+openapi: 'POST /session/cancel'
+---
+
+按 ID 取消单笔未成交订单。返回取消时的未成交额和已成交额。
+
+## 请求 {#request}
+
+`POST /session/cancel`
+
+<ParamField body="sessionID" type="string" required>
+  要取消的订单 ID。
+</ParamField>
+
+<CodeGroup>
+```bash curl
+curl -X POST https://api.4casters.io/session/cancel \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"sessionID": "65b036dfb31407c2b6bc1cfe"}'
+```
+</CodeGroup>
+
+## 响应 {#response}
+
+<ResponseField name="data" type="object">
+  <Expandable title="CancelResult">
+    <ResponseField name="success"      type="boolean" />
+    <ResponseField name="sessionID"    type="string">被取消的订单 ID。</ResponseField>
+    <ResponseField name="description"  type="string">可读的订单描述（例如 `Lakers -3.5 -110`）。</ResponseField>
+    <ResponseField name="odds"         type="integer">被取消订单的美式赔率。</ResponseField>
+    <ResponseField name="filled"       type="number">取消时已被撮合的风险额。</ResponseField>
+    <ResponseField name="offered"      type="number" />
+    <ResponseField name="remaining"    type="number">当时仍未撮合、现已退回的风险额。</ResponseField>
+    <ResponseField name="gameID"       type="string" />
+    <ResponseField name="userReference" type="string" />
+  </Expandable>
+</ResponseField>
+
+### 示例 {#example}
+
+<CodeGroup>
+```json JSON
+{
+  "data": {
+    "success": true,
+    "sessionID": "65b036dfb31407c2b6bc1cfe",
+    "description": "Lakers ML +125",
+    "odds": 125,
+    "filled": 0,
+    "offered": 0,
+    "remaining": 100,
+    "gameID": "65f0c3c24ef07d0008abc123",
+    "userReference": "my-order-1"
+  }
+}
+```
+</CodeGroup>
+
+## 错误 {#errors}
+
+| 状态 | 含义 |
+| ------ | ------- |
+| `400`  | 无效的订单 ID。 |
+| `403`  | 不是你的订单。 |
+| `409`  | 订单无法取消（例如已全部成交）。 |

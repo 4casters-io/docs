@@ -1,0 +1,46 @@
+---
+title: 'Cancelar todas las órdenes de una liga'
+description: 'Cancela de forma asíncrona todas las órdenes abiertas de una liga'
+openapi: 'POST /session/cancelAllForLeague'
+---
+
+Programa la cancelación de todas las órdenes abiertas de una liga. Este endpoint **se despacha de forma asíncrona**: confirma de inmediato con `{ ordersReceived: true }` y las cancelaciones ocurren en segundo plano.
+
+Si necesitas saber qué órdenes se cancelaron, sigue con [Obtener órdenes no cruzadas](/es/pages/rest/user/get-unmatched-orders) o suscríbete al feed de usuario en la [API de streaming WebSocket](/es/pages/streaming/user-feed).
+
+## Solicitud {#request}
+
+`POST /session/cancelAllForLeague`
+
+<ParamField body="league" type="string" required>
+  Código de liga. Obtén la lista con `GET /exchange/getLeagues`. No distingue mayúsculas.
+</ParamField>
+
+<CodeGroup>
+```bash curl
+curl -X POST https://api.4casters.io/session/cancelAllForLeague \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{ "league": "NBA" }'
+```
+</CodeGroup>
+
+## Respuesta {#response}
+
+<ResponseField name="data.ordersReceived" type="boolean">
+  Siempre `true` en éxito. Las cancelaciones se procesan de forma asíncrona.
+</ResponseField>
+
+### Ejemplo {#example}
+
+<CodeGroup>
+```json JSON
+{ "data": { "ordersReceived": true } }
+```
+</CodeGroup>
+
+## Errores {#errors}
+
+| Estado | Significado |
+| ------ | ------- |
+| `400`  | Falta `league`, no es una cadena o es desconocida. |

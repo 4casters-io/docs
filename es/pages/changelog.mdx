@@ -1,0 +1,42 @@
+---
+title: 'Registro de cambios'
+description: 'Cambios notables y observables por el cliente en las APIs de 4casters.'
+---
+
+Este registro documenta los cambios de las APIs públicas de 4casters que son visibles para los integradores. Se omiten a propósito las refactorizaciones internas, las correcciones de rendimiento que no cambian el comportamiento y los cambios de infraestructura.
+
+Convenciones:
+
+- Las entradas más recientes primero. Las fechas son ISO `YYYY-MM-DD`.
+- Cada entrada se etiqueta con la superficie de API afectada.
+- Los cambios se agrupan bajo `Añadido`, `Cambiado`, `Corregido`, `Obsoleto` o `Eliminado` (se omiten las secciones que no aplican).
+- Los cambios incompatibles se etiquetan `Breaking`.
+
+---
+
+<Update label="2026-08-13" tags={["API REST", "API de órdenes"]}>
+  ### Añadido
+  - **Tipo de orden `fillOrKill`.** Orden taker de todo o nada: todo el `bet` debe cruzarse de inmediato o se rechaza la orden completa y se revierten los cruces parciales, de modo que nunca quedas parcialmente cruzado. Compatible tanto en el endpoint REST como en el WebSocket de colocación. Consulta [Tipos de orden](/es/pages/rest/orders/place-order#order-types).
+
+  ### Corregido
+  - **Documentación de `fillAndKill` corregida.** Se describía como "cruzar de inmediato a tu precio o rechazar", lo que sonaba a todo o nada. En realidad `fillAndKill` cruza el tamaño disponible y cancela el resto: un cruce **parcial** es un resultado exitoso, y la orden solo se rechaza cuando no hay liquidez cruzable. El comportamiento no cambió; solo la documentación era incorrecta. Usa el nuevo `fillOrKill` si necesitas una ejecución real de todo o nada.
+</Update>
+
+<Update label="2026-07-30" tags={["API REST"]}>
+  ### Añadido
+  - **`GET /exchange/getMatchedVolume`.** Nuevo endpoint que devuelve el volumen cruzado total del sitio para un rango inclusivo de días de calendario ET. Cada apuesta cruzada cuenta las apuestas de ambos lados (riesgo + ganancia, antes de comisión); los rangos que terminan hoy incluyen un agregado en vivo del día actual. Consulta [Obtener volumen cruzado](/es/pages/rest/markets/get-matched-volume).
+</Update>
+
+<Update label="2026-07-15" tags={["API de streaming", "Feed de usuario"]}>
+  ### Corregido
+  - **La reproducción de `GET /v2/user/messages` ahora devuelve mensajes.** El endpoint de reproducción del feed de usuario v2 antes devolvía siempre listas vacías, así que la recuperación de huecos tras una conexión caída no hacía nada en silencio. Los mensajes reproducidos llegan exactamente con la forma que entrega el WebSocket. Consulta [Reproducir mensajes perdidos](/es/pages/streaming/user-feed#replaying-missed-messages).
+</Update>
+
+<Update label="2026-04-28" tags={["API de streaming", "Feed de precios"]}>
+  ### Añadido
+  - **Suscripción por `gameID`, `league` o `sport` en el feed de precios.** Los clientes conectados a `wss://streaming-api.4casters.io/price-stream` ahora pueden enviar comandos JSON `subscribe`, `unsubscribe` y `subscribeAll` para acotar el feed a juegos, ligas o deportes concretos. Consulta [Suscripciones](/es/pages/streaming/price-feed#subscriptions) para la forma completa de los comandos y la semántica de enrutamiento.
+  - **Fanout de `parentGameID`.** Los suscriptores de un `gameID` padre también reciben actualizaciones de los juegos hijos cuyo `parentGameID` coincide (p. ej. los derivados F5-MLB llegan a los suscriptores del juego padre).
+
+  ### Cambiado
+  - **Compatible hacia atrás.** Los clientes que nunca envían un comando de suscripción permanecen en modo de difusión total y reciben cada actualización como antes: no se requieren cambios de integración.
+</Update>

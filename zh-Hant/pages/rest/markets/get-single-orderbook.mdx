@@ -1,0 +1,66 @@
+---
+title: '獲取單場訂單簿'
+description: '讀取單場賽事的巢狀訂單簿，以及子市場'
+openapi: 'GET /exchange/getSingleOrderbook'
+---
+
+回傳單場賽事的**巢狀**訂單簿 — 讓分和大小分是按盤口數字鍵控的物件，而不是扁平陣列。同時回傳任何子賽事（附加盤、分段盤）以及呼叫方在該聯賽上自己掛單的 `orderSummary`。
+
+若需要更簡單的扁平形態，請優先使用 [獲取訂單簿](/zh-Hant/pages/rest/markets/get-orderbook)。
+
+## 請求 {#request}
+
+`GET /exchange/getSingleOrderbook`
+
+<ParamField query="gameID" type="string" required>
+  賽事 ID。
+</ParamField>
+
+<CodeGroup>
+```bash curl
+curl "https://api.4casters.io/exchange/getSingleOrderbook?gameID=65b67450503180295ade9216" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+</CodeGroup>
+
+## 回應 {#response}
+
+<ResponseField name="data.game" type="object">
+  帶巢狀訂單簿欄位的賽事物件。適用標準 `Game` 欄位（見 [獲取賽事](/zh-Hant/pages/rest/markets/get-games#response)），此外還有：
+
+  <Expandable title="單場訂單簿欄位">
+    <ResponseField name="awayMoneylines" type="array">客勝一側的獨贏掛單。按最優價格優先排序。</ResponseField>
+    <ResponseField name="homeMoneylines" type="array">主勝一側的獨贏掛單。</ResponseField>
+    <ResponseField name="awaySpreads"    type="object">以讓分數為鍵的物件（例如 `"-3.5"`）。每個值為訂單陣列。</ResponseField>
+    <ResponseField name="homeSpreads"    type="object">以讓分數為鍵的物件。</ResponseField>
+    <ResponseField name="over"           type="object">以大小分數為鍵的物件（例如 `"220.5"`）。每個值為訂單陣列。</ResponseField>
+    <ResponseField name="under"          type="object" />
+    <ResponseField name="homeMoneylines1x2" type="object">**僅足球。** 包含 `homeYes` / `homeNo` 陣列的物件。</ResponseField>
+    <ResponseField name="awayMoneylines1x2" type="object">**僅足球。** 包含 `awayYes` / `awayNo` 陣列的物件。</ResponseField>
+    <ResponseField name="draw1x2"           type="object">**僅足球。** 包含 `drawYes` / `drawNo` 陣列的物件。</ResponseField>
+    <ResponseField name="mainHomeSpread"  type="string">當前展示的主隊主盤讓分（共識盤口）。</ResponseField>
+    <ResponseField name="mainAwaySpread"  type="number" />
+    <ResponseField name="mainTotal"       type="string" />
+    <ResponseField name="openInterest"    type="number" />
+    <ResponseField name="matchedVolume"   type="number" />
+  </Expandable>
+</ResponseField>
+<ResponseField name="data.orderSummary" type="array">
+  呼叫方在整個聯賽上自己的掛單（不限於本場賽事）。用於在 UI 中渲染「你的掛單」標記。
+</ResponseField>
+<ResponseField name="data.childGames" type="array">
+  所請求賽事的子賽事（分段盤等）。形態與 `data.game` 相同。
+</ResponseField>
+<ResponseField name="data.propGames" type="array">
+  與所請求賽事關聯的附加盤賽事。
+</ResponseField>
+
+每筆單獨訂單具有標準訂單形態：
+
+<Snippet file="zh-Hant/types/orderbook-order.mdx" />
+
+## 錯誤 {#errors}
+
+| 狀態 | 含義 |
+| ------ | ------- |
+| `400`  | `gameID` 缺失。 |

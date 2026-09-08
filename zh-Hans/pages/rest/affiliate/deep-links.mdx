@@ -1,0 +1,69 @@
+---
+title: '深度链接'
+description: '把玩家直接带到指定投注，并附带你的推荐码'
+---
+
+深度链接会打开 4casters 首页，并直接弹出你所选赛事、市场和方向的吃单窗口。加上你的推荐码，通过该链接进入并注册的玩家都会归属于你。
+
+```
+https://4casters.io/?game={gameID}&market=spread&side=away&line=3.5&ref=YOUR_CODE
+```
+
+无论访客是否登录，链接都有效。未登录的访客会看到该投注以及登录 / 注册提示；推荐码会记在其浏览器中，并在注册页面的表单里自动填入。
+
+## 构建链接 {#building-a-link}
+
+从赛事 id 开始，它可以从 [`/exchange/getGames`](/zh-Hans/pages/rest/markets/get-games) 获取，也可以从任意赛事页面的地址栏获取（`/exchange-single/{gameID}`）。然后加上你想打开的市场。
+
+<ParamField query="game" type="string" required>
+  赛事 id（24 位十六进制）。
+</ParamField>
+<ParamField query="market" type="string" required>
+  `moneyline`、`spread`、`total` 或 `1x2`（足球三项市场）。
+</ParamField>
+<ParamField query="side" type="string" required>
+  moneyline、spread 和 1x2 用 `home` 或 `away`。total 用 `over` 或 `under`。1x2 也接受 `draw`。
+</ParamField>
+<ParamField query="line" type="number">
+  让分或大小分数值，以所选方向的视角书写。客队 +3.5 是 `side=away&line=3.5`；主队 -3.5 是 `side=home&line=-3.5`。省略则打开主线。
+</ParamField>
+<ParamField query="pick" type="string">
+  仅限 1x2：`yes`（默认）或 `no`。
+</ParamField>
+<ParamField query="ref" type="string">
+  你的推荐码，与 `/sign-up/{code}` 链接中使用的相同。
+</ParamField>
+
+## 示例 {#examples}
+
+<CodeGroup>
+```text 客队 moneyline
+https://4casters.io/?game=6a84db9c5ddbd1134524a222&market=moneyline&side=away&ref=YOUR_CODE
+```
+
+```text 主队 -3.5
+https://4casters.io/?game=6a84db9c5ddbd1134524a222&market=spread&side=home&line=-3.5&ref=YOUR_CODE
+```
+
+```text 主线大小分，under
+https://4casters.io/?game=6a84db9c5ddbd1134524a222&market=total&side=under&ref=YOUR_CODE
+```
+
+```text 平局，三项
+https://4casters.io/?game=6a84db9c5ddbd1134524a222&market=1x2&side=draw&ref=YOUR_CODE
+```
+</CodeGroup>
+
+## 玩家看到什么 {#what-the-player-sees}
+
+链接指向的是一个市场，而不是某一笔订单。页面打开时，窗口显示该方向当前挂单中的最佳价格，以及其余可选价格。价格会变动，所以玩家看到的数字可能与你构建链接时看到的不同；窗口始终显示实时订单簿，玩家在下注前确认价格。
+
+如果当前没有人在该方向报价，窗口会转为在该线位创建报价而不是吃单，和在交易所点击空白单元格的行为一致。
+
+## 说明 {#notes}
+
+- **赛事会进入滚球。**比赛开始后，赛前市场关闭，另一个滚球市场开启。开赛后再打开的赛前链接会转而打开滚球市场的订单簿。
+- **未知线位。**如果链接中的线位不是该赛事拥有的（或省略了 `line` 而赛事尚未发布主线），首页会打开但不弹出窗口。绝不会悄悄把玩家换到另一条线。
+- **推荐归属。**浏览器首次携带的推荐码会一直保留到该访客注册为止。已有账户的访客不会被重新归属。
+- **赛事页面同样适用。**同一组 `market` / `side` / `line` / `ref` 参数在赛事页面（`/exchange-single/{gameID}?market=...`）上也有效，会在该赛事的页面上弹出窗口，而不是在首页。
+- **特项和球员市场**目前还不能用这些参数定位。

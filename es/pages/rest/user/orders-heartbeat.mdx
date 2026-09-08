@@ -1,0 +1,45 @@
+---
+title: 'Heartbeat de órdenes'
+description: 'Autocancela tus órdenes si tu cliente se desconecta'
+openapi: 'POST /user/ordersHeartbeat'
+---
+
+Un mecanismo de seguridad: envía un heartbeat con un `timeout` (en segundos). Si el siguiente heartbeat no se recibe en `timeout` segundos, **se cancelan todas tus órdenes abiertas**.
+
+Usa este endpoint en cualquier cliente que coloque órdenes en espera: si tu proceso se cae o pierde conectividad, el heartbeat asegura que las órdenes obsoletas se retiren en lugar de quedarse en el libro.
+
+## Solicitud {#request}
+
+`POST /user/ordersHeartbeat`
+
+<ParamField body="timeout" type="integer" required>
+  Timeout de cancelación, en segundos. Debe ser mayor que `5`.
+</ParamField>
+
+<CodeGroup>
+```bash curl
+curl -X POST https://api.4casters.io/user/ordersHeartbeat \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"timeout": 30}'
+```
+
+```json JSON body
+{ "timeout": 30 }
+```
+</CodeGroup>
+
+## Respuesta {#response}
+
+La respuesta se reenvía desde el servicio de órdenes:
+
+```json
+{ "data": { /* heartbeat ack payload */ } }
+```
+
+## Errores {#errors}
+
+| Estado | Significado |
+| ------ | ------- |
+| `400`  | `timeout` falta, no es un número o es `<= 5`. |
+| `503`  | El servicio de órdenes no está disponible. |

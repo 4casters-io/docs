@@ -1,0 +1,17 @@
+當伺服器在下單、改單或按單取消的批次中使某一筆訂單失敗時，**該筆訂單**的條目會以如下形式回傳：
+
+```json
+{
+  "error": "<human-readable message>",
+  "errorType": "validation_error | rejected_liability | rejected_order_type_rules | system_error"
+}
+```
+
+錯誤按**位置**回傳在結果陣列中，與輸入訂單的下標對應。如果某筆訂單收到錯誤，該訂單未被處理，可以安全重試。
+
+- `error` 未標準化 — 它是描述性字串，可能會變化。
+- `errorType` 是穩定的列舉，可用於程式化處理：
+  - `validation_error` — 酬載或狀態未透過校驗（缺少欄位、賠率/盤口無效、方向無效、賽事未啟用）。
+  - `rejected_liability` — 使用者 / 帳戶 / 負債約束阻止了掛單或成交。
+  - `rejected_order_type_rules` — 訂單型別規則禁止執行。例如：`fillAndKill` 沒有可成交流動性，`fillOrKill` 無法全部成交，`post` 會撮合已有掛單，或 `postArb` 與可撮合價格相差超過 1%。
+  - `system_error` — 瞬時內部錯誤；重試可能會成功。

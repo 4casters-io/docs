@@ -1,0 +1,15 @@
+<ResponseField name="game" type="object">
+  該注單所屬賽事的反正規化快照。
+  <Expandable title="game">
+    <ResponseField name="id" type="string">賽事 ID。</ResponseField>
+    <ResponseField name="league" type="string">聯賽代碼（例如 `NBA`、`PREMIER-LEAGUE`）。</ResponseField>
+    <ResponseField name="sport" type="string">運動項目（例如 `basketball`、`soccer`）。</ResponseField>
+    <ResponseField name="start" type="string">ISO 8601 開賽時間。</ResponseField>
+    <ResponseField name="ended" type="boolean">賽事是否已結束。</ResponseField>
+    <ResponseField name="eventName" type="string">可讀的對陣名稱（部分聯賽可能為 `null`）。</ResponseField>
+    <ResponseField name="isFutures" type="boolean">期貨盤及類似特殊盤為 `true`。</ResponseField>
+    <ResponseField name="participants" type="array">
+      二元陣列：`[away, home]`。每個參賽方包含 `id`、`longName`、`shortName`、`homeAway`、`mainPitcher`、`rotationNumber`、`futuresSide`，以及（已結束賽事）`score`。
+    </ResponseField>
+  </Expandable>
+</ResponseField>

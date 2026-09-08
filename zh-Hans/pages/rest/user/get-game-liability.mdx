@@ -1,0 +1,38 @@
+---
+title: '获取赛事负债'
+description: '单场赛事的最坏情况亏损'
+openapi: 'GET /user/getGameLiability'
+---
+
+计算调用方在单场赛事上的**最坏情况下的财务负债**（最大风险敞口），计入该赛事每个市场上的每一笔投注。
+
+该值始终 `<= 0` — 即使完全对冲的持仓也可能因雨取消、中止或取消资格而产生亏损。
+
+## 请求 {#request}
+
+`GET /user/getGameLiability`
+
+<ParamField query="gameID" type="string" required>要计算负债的赛事 ID。</ParamField>
+
+<CodeGroup>
+```bash curl
+curl "https://api.4casters.io/user/getGameLiability?gameID=657f8ea1ea0ce6f62c1fe37d" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+</CodeGroup>
+
+## 响应 {#response}
+
+<ResponseField name="data.liability" type="number">
+  账户货币计的最坏情况亏损。始终 `<= 0`。调用方在该赛事上没有投注时返回 `0`。
+</ResponseField>
+
+### 示例 {#example}
+
+<CodeGroup>
+```json JSON
+{
+  "data": { "liability": -125.50 }
+}
+```
+</CodeGroup>

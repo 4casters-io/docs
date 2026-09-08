@@ -1,0 +1,152 @@
+---
+title: '认证'
+description: '没有 API 密钥。你的 4casters 登录就是你的 API 凭据。'
+---
+
+<Warning>
+**4casters 目前不发放 API 密钥。**你使用在 [4casters.io](https://4casters.io) 登录时的同一组用户名和密码，对所有 4casters API 进行认证。无需在账户设置中申请、生成或复制任何东西。
+
+专用 API 密钥已在路线图中。发布时会在 [更新日志](/zh-Hans/pages/changelog) 中公告，本页也会随之更新。在此之前，你的登录就是凭据。
+</Warning>
+
+## 工作原理 {#how-it-works}
+
+1. 通过 REST API 的 `POST /user/login`，使用账户的用户名（或邮箱）和密码**登录**。
+2. 在响应中**收到一个令牌**。它是一个 256 个字符的十六进制字符串。
+3. 在每个 REST 请求和每次 WebSocket 握手中**发送该令牌**。三套 API 接受同一个令牌。
+
+API 访问没有单独的注册流程。只要能在网站上登录，就能使用 API。
+
+## 1. 登录 {#1-log-in}
+
+`POST https://api.4casters.io/user/login`
+
+<CodeGroup>
+```bash curl
+curl -X POST https://api.4casters.io/user/login \
+  -H "Content-Type: application/json" \
+  -d '{"username": "your_username", "password": "your_password"}'
+```
+
+```javascript JavaScript
+const res = await fetch('https://api.4casters.io/user/login', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    username: process.env.FOURCASTERS_USERNAME,
+    password: process.env.FOURCASTERS_PASSWORD,
+  }),
+});
+const { data } = await res.json();
+const token = data.user.auth;
+```
+
+```python Python
+import os, requests
+
+res = requests.post(
+    "https://api.4casters.io/user/login",
+    json={
+        "username": os.environ["FOURCASTERS_USERNAME"],
+        "password": os.environ["FOURCASTERS_PASSWORD"],
+    },
+    headers={"User-Agent": "my-bot/1.0"},
+)
+token = res.json()["data"]["user"]["auth"]
+```
+</CodeGroup>
+
+`username` 字段既可以填用户名，也可以填账户的邮箱。
+
+令牌位于响应体的 `data.user.auth`。同一值也会被设为签名的 `auth` Cookie；服务端集成应读取 `data.user.auth` 并忽略该 Cookie。
+
+```json
+{
+  "data": {
+    "user": {
+      "id": "5fe37acbb5a23600123662c1",
+      "username": "your_username",
+      "auth": "5cd551d6...",
+      "...": "..."
+    }
+  }
+}
+```
+
+完整的响应结构见 [REST 认证页面](/zh-Hans/pages/rest/authentication)。
+
+<Tip>
+**只登录一次**，然后复用令牌。登录按 IP 和按账户限流，且每次成功登录都会签发一个新令牌。再次登录不会使你已持有的令牌失效。
+</Tip>
+
+## 2. 发送令牌 {#2-send-the-token}
+
+<Tabs>
+  <Tab title="REST API">
+    在 `Authorization` 请求头中传递令牌。`Bearer ` 前缀可选。
+
+    ```bash
+    curl https://api.4casters.io/user/getMe \
+      -H "Authorization: Bearer 5cd551d6..."
+    ```
+
+    令牌缺失、未知或已过期时返回 `401`，响应体为 `{ "error": { "message": "InvalidCredentials", "code": 401 } }`。
+  </Tab>
+  <Tab title="订单 WebSocket">
+    在握手的 `Authorization` 请求头中传递令牌。服务器从令牌推导你的账户。
+
+    ```javascript
+    const ws = new WebSocket('wss://orders-api.4casters.io/orders/ws', {
+      headers: { Authorization: token },
+    });
+    ```
+
+    见 [订单 API](/zh-Hans/pages/websocket/introduction)。
+  </Tab>
+  <Tab title="推送 WebSocket">
+    相同的请求头、相同的令牌，用户推送和价格推送都适用。
+
+    ```javascript
+    const ws = new WebSocket('wss://streaming-api.4casters.io/v2/user', {
+      headers: { Authorization: token },
+    });
+    ```
+
+    见 [推送 API](/zh-Hans/pages/streaming/introduction)。
+  </Tab>
+</Tabs>
+
+## 令牌有效期 {#token-lifetime}
+
+| | |
+| --- | --- |
+| **有效期** | 自登录起 30 天。 |
+| **30 天之后** | 下一个已认证的 REST 请求会就地轮换令牌：旧值立即失效，替换值在 `X-Auth-Token` 响应头中返回。 |
+| **登出** | `POST /user/logout` 会使发起该调用所用的令牌失效。该账户的其他令牌不受影响。 |
+
+对于长期运行的集成，请选择以下做法之一：
+
+- **遇到任何 `401` 就重新登录。**最简单也最稳健。把 `401` 当作「去获取新令牌」，而不是致命错误。
+- **监听 `X-Auth-Token`。**只要响应中出现该请求头，就持久化其值并从此使用它。
+
+一个只登录一次、保存令牌、从不查看响应头的脚本，会恰好运行 30 天，然后每个请求都以 `401` 失败。
+
+## 双重认证 {#two-factor-authentication}
+
+4casters 的双重认证保护的是**提现**，而不是登录。在账户上启用它不会改变你对 API 的认证方式。`POST /user/login` 从不要求验证码。
+
+## 登录错误 {#login-errors}
+
+| 状态码 | 含义 | 处理方式 |
+| --- | --- | --- |
+| `400` | 请求体缺少 `username` 或 `password`。 | 以 JSON 同时发送两者。 |
+| `401` | 用户名或密码不正确。 | 检查凭据。无论账户是否存在，消息都相同。 |
+| `403` | 账户已被封禁、关闭或冻结。 | 联系支持。 |
+| `428` | `CHALLENGE_REQUIRED`。仅在平台正在主动抵御撞库攻击时返回；此时要求完成人机验证。 | 继续使用已持有的令牌，或稍后重试。脚本客户端无法完成该验证。 |
+| `429` | 超出登录限流。 | 按 `Retry-After` 指定的秒数退避，并复用现有令牌而不是重新登录。 |
+
+## 保护凭据安全 {#keeping-credentials-safe}
+
+- 把用户名和密码存放在环境变量或密钥管理器中，绝不要放进源代码仓库。
+- 像对待密码一样对待令牌。持有它的任何人都能下单并读取你的账户。
+- 考虑为自动化交易使用专用账户，这样泄露的机器人凭据不会危及你的主余额。开设方式与任何用户账户相同。

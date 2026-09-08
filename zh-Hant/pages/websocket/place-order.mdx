@@ -1,0 +1,529 @@
+---
+title: '下單'
+---
+
+要透過 WebSocket 連線下一筆或多筆訂單，傳送 `placeV3` 訊息。單次請求可包含一批訂單；每筆結果在 `data` 陣列中回傳，並與你的 `orders` 陣列按位置對應。
+
+<CodeGroup>
+```json JSON
+[
+  "placeV3",
+  {
+    "requestID": "YOUR_UNIQUE_REQUEST_ID",
+    "orders": [
+      {
+        "gameId": "4CASTER_GAME_ID",
+        "bet": 100,
+        "type": "moneyline | spread | total | moneyline1x2",
+        "side": "PARTICIPANT_ID | over | under | yes | no",
+        "orderType": "post",
+        "odds": -110,
+        "number": 3.5,
+        "market": "PARTICIPANT_ID | draw",
+        "userReference": "OPTIONAL_CLIENT_SIDE_IDENTIFIER"
+      }
+    ]
+  }
+]
+```
+</CodeGroup>
+
+每個**訂單物件**包含：
+
+<ResponseField name="gameId" type="string" required>
+  賽事的唯一 ID。
+</ResponseField>
+<ResponseField name="bet" type="number" required>
+  本筆投注願意承擔的本金。
+</ResponseField>
+<ResponseField name="type" type="string" required>
+  盤口型別 — `moneyline`、`spread`、`total` 或 `moneyline1x2` 之一。`moneyline1x2` **僅用於足球**（三項獨贏：主勝 / 客勝 / 平局）。
+</ResponseField>
+<ResponseField name="side" type="string" required>
+  取決於 `type`：
+  - `moneyline`、`spread` — 你支援的參賽者 ID。
+  - `total` — `"over"` 或 `"under"`。
+  - `moneyline1x2` — 對 `market` 所指定結果的 `"yes"` 或 `"no"`。
+</ResponseField>
+<ResponseField name="market" type="string">
+  僅 `moneyline1x2` 時必填。為 `"draw"` 或參賽者 ID — 指定你按是/否投注的結果。例如，`side: "yes"` + `market: "draw"` 表示*比賽以平局結束*；`side: "no"` + `market: "<homeTeamId>"` 表示*主隊不勝*。
+</ResponseField>
+<ResponseField name="orderType" type="string" required>
+  `limit`、`post`、`postArb`、`fillAndKill` 或 `fillOrKill` 之一。參見下方[訂單型別](#order-types)。
+</ResponseField>
+<ResponseField name="odds" type="number" required>
+  美式賠率（例如 +150 或 -110）。
+</ResponseField>
+<ResponseField name="number" type="number">
+  讓分或大小球盤口數值。`spread` 和 `total` 必填；`moneyline` 和 `moneyline1x2` 不使用。
+</ResponseField>
+<ResponseField name="userReference" type="string">
+  用戶端自定義識別符號，便於你在己方追蹤該訂單。
+</ResponseField>
+
+## 訂單型別 {#order-types}
+
+### `limit` {#limit}
+
+預設訂單型別。作為 taker（收取 taker 佣金）按你的價格或更優價格吃掉任何可匹配流動性，未成交部分作為 maker 留在訂單簿上。`limit` 訂單最終可以是全部成交、全部掛單，或部分成交、剩餘掛單。
+
+### `post` {#post}
+
+建立一筆掛單。如果下單時該訂單**會與**已有流動性成交，伺服器會拒絕它（通常為 `rejected_order_type_rules`，例如 `"post order cannot have matches"`）。
+
+### `postArb` {#postarb}
+
+行為類似 `post`，但**即使訂單會成交也可以掛單**，**前提是**你的**美式賠率**與將被成交的掛單賠率相差不超過 **1%**。若價差**超過 1%**，下單會被拒絕。
+
+示例：
+
+- 最優報價 **+100**，你掛 **+100** — `post` 會被拒絕（會成交）；`postArb` 可以允許。
+- 最優報價 **+200** — 以 **+190** 提交的 `postArb` 會被拒絕（距離 **+200** 過遠）。約 **+198** 處於相對 **+200** 的 1% 區間邊緣。
+- 最優訂單 **−200** — 負向一側區間大約延伸到 **−202**（同一條 1% 規則）。
+- 訂單簿上有 **+100** 時，對側的 1% 容差參考限價為 **−101**（依產品規則）。
+
+`postArb` 可避免普通成交中的 **taker 手續費** — 走該流程時，不會像作為 taker 主動吃掉或撞擊掛單流動性那樣被收取 taker 手續費。
+
+以 `postArb` 下的訂單，會在其[使用者推送](/zh-Hant/pages/streaming/user-feed)和[行情推送](/zh-Hant/pages/streaming/price-feed)更新中帶有 `isPostArb: true`；其他訂單型別會省略該欄位。下單回應本身不包含該標誌。
+
+### `fillAndKill` {#fillandkill}
+
+立即作為 taker 按你的價格或更優價格吃掉當前可成交數量，並取消剩餘部分。`fillAndKill` 永遠不會留在訂單簿上。
+
+**部分成交**也是成功結果：向 $400 可匹配流動性傳送 `bet: 1000`，將成交 $400，剩餘 $600 被取消——這是成功，而非錯誤。僅當完全沒有可匹配流動性時，訂單才會被拒絕（`"fill and kill has no matches"`）。參見下方[示例](#examples)中的 Fill And Kill 場景。
+
+### `fillOrKill` {#fillorkill}
+
+全成或全撤。你的**整筆** `bet` 必須立即按你的價格或更優價格成交，否則整筆訂單被拒絕——包括途中已發生的成交，都會復原。`fillOrKill` 永遠不會留在訂單簿上，也不會留下部分倉位。
+
+適用於部分倉位還不如沒有倉位的情形，例如該訂單是一筆必須整筆執行的對沖腿。
+
+拒絕時 `errorType: rejected_order_type_rules`，並帶有以下兩條訊息之一，用於區分「完全沒有流動性」和「流動性不足」：
+
+- `"fill or kill has no matches"` — 你的價格上沒有任何可匹配流動性。
+- `"fill or kill matched but not fully"` — 有部分流動性成交，但未達到你的全部數量。這些成交已被復原。
+
+<Note>
+  剩餘量 **$10 及以下** 視為已完成：一筆 $1,000 的 `fillOrKill` 若成交 $992 即算成功，因為未能成交的 $8 低於訂單簿上可掛單的最小數量。剩餘量大於 $10 則會拒絕該訂單。
+</Note>
+
+## 回應 {#response}
+
+伺服器會回傳你的 `requestID` 以及每筆訂單的結果列表。
+
+<CodeGroup>
+```json JSON
+{
+  "data": [
+    {
+      "number": null,
+      "odds": 245,
+      "offered": "122.000000",
+      "orderID": "67f45377c18c6697c172afa4",
+      "side": "6259a766452fb85a6cdd17f6",
+      "type": "moneyline",
+      "userReference": "YOUR_USER_REFERENCE",
+      "wagerRequestID": "67f45377c18c6697c172af9d"
+    }
+  ],
+  "requestID": "YOUR_REQUEST_ID"
+}
+```
+</CodeGroup>
+
+## 示例 {#examples}
+
+### 場景 1：訂單全部成交、無剩餘掛單 {#scenario-1-match-orders-with-no-leftover-liquidity}
+
+下 3 筆訂單，均立即與可用流動性成交。
+
+<CodeGroup>
+```json JSON
+[
+  "placeV3",
+  {
+    "requestID": "post-triplet-001",
+    "orders": [
+      {
+        "gameId": "688c0516fbc14da0c202d426",
+        "type": "moneyline",
+        "side": "5c12bc1ce0daba000f47ba8b",
+        "odds": -175,
+        "bet": 100,
+        "orderType": "post",
+        "userReference": "docs-post-triplet-moneyline"
+      },
+      {
+        "gameId": "688c0516fbc14da0c202d426",
+        "type": "spread",
+        "side": "5c12bc1ce0daba000f47ba8b",
+        "odds": -110,
+        "bet": 100,
+        "orderType": "post",
+        "number": 3.5,
+        "userReference": "docs-post-triplet-spread"
+      },
+      {
+        "gameId": "688c0516fbc14da0c202d426",
+        "type": "total",
+        "side": "over",
+        "odds": -104,
+        "bet": 100,
+        "orderType": "post",
+        "number": 50,
+        "userReference": "docs-post-triplet-total"
+      }
+    ]
+  }
+]
+```
+</CodeGroup>
+
+回應：
+
+<CodeGroup>
+```json JSON
+{
+  "requestID": "match-triplet-1758736259482",
+  "responses": [
+    {
+      "data": [
+        {
+          "matched": [
+            {
+              "amount": 50,
+              "odds": -175,
+              "orderID": "68d42f82cfebf0b249a2c26e",
+              "risk": 50.285714285714285,
+              "side": "5d48bd5198366d41ec7238da",
+              "txID": "68d42f83cfebf0b249a2c279",
+              "type": "moneyline",
+              "userReference": "docs-match-triplet-moneyline",
+              "wagerRequestID": "68d42f83cfebf0b249a2c278",
+              "win": 28.285714285714285,
+              "winWithoutCommission": 28.57142857142857
+            }
+          ],
+          "unmatched": {}
+        },
+        {
+          "matched": [
+            {
+              "amount": 50,
+              "number": -3.5,
+              "odds": -110,
+              "orderID": "68d42f82cfebf0b249a2c272",
+              "risk": 50.45454545454545,
+              "side": "5d48bd5198366d41ec7238da",
+              "txID": "68d42f84cfebf0b249a2c27b",
+              "type": "spread",
+              "userReference": "docs-match-triplet-spread",
+              "wagerRequestID": "68d42f84cfebf0b249a2c27a",
+              "win": 45,
+              "winWithoutCommission": 45.45454545454545
+            }
+          ],
+          "unmatched": {}
+        },
+        {
+          "matched": [
+            {
+              "amount": 50,
+              "number": 50,
+              "odds": -104,
+              "orderID": "68d42f82cfebf0b249a2c276",
+              "risk": 50.48076923076923,
+              "side": "under",
+              "txID": "68d42f84cfebf0b249a2c27d",
+              "type": "total",
+              "userReference": "docs-match-triplet-total",
+              "wagerRequestID": "68d42f84cfebf0b249a2c27c",
+              "win": 47.59615384615385,
+              "winWithoutCommission": 48.07692307692308
+            }
+          ],
+          "unmatched": {}
+        }
+      ],
+      "requestID": "match-triplet-1758736259482"
+    }
+  ]
+}
+```
+</CodeGroup>
+
+### 場景 2：限價單有剩餘掛單 {#scenario-2-limit-order-with-leftover-liquidity}
+
+下一筆數量為 300 的訂單，立即部分成交，剩餘流動性掛在訂單簿上。回應會同時給出已成交部分和未成交部分。
+
+<CodeGroup>
+```json JSON
+{
+  "data": [
+    {
+      "matched": [
+        {
+          "amount": 185,
+          "odds": -185,
+          "orderID": "68d43574cfebf0b249a2c28d",
+          "risk": 186,
+          "side": "5d48bd5198366d41ec7238da",
+          "txID": "68d43574cfebf0b249a2c290",
+          "type": "moneyline",
+          "userReference": "match-ref",
+          "wagerRequestID": "68d43574cfebf0b249a2c28f",
+          "win": 99,
+          "winWithoutCommission": 100
+        }
+      ],
+      "unmatched": {
+        "number": null,
+        "odds": -185,
+        "offered": 115,
+        "orderID": "68d43575cfebf0b249a2c292",
+        "side": "5d48bd5198366d41ec7238da",
+        "type": "moneyline",
+        "userReference": "match-ref",
+        "wagerRequestID": "68d43574cfebf0b249a2c28f"
+      }
+    }
+  ],
+  "requestID": "match-1758737780621"
+}
+```
+</CodeGroup>
+
+### 場景 3：Fill and Kill 訂單有成交 {#scenario-3-fill-and-kill-order-with-match}
+
+一筆全部成交的 fill-and-kill 訂單。
+
+<CodeGroup>
+```json JSON
+{
+  "data": [
+    {
+      "matched": [
+        {
+          "amount": 100,
+          "odds": -186,
+          "orderID": "68d4368acfebf0b249a2c298",
+          "risk": 100.53763440860214,
+          "side": "5d48bd5198366d41ec7238da",
+          "txID": "68d436bacfebf0b249a2c29b",
+          "type": "moneyline",
+          "userReference": "docs-fillandkill-match",
+          "wagerRequestID": "68d436bacfebf0b249a2c29a",
+          "win": 53.2258064516129,
+          "winWithoutCommission": 53.76344086021505
+        }
+      ],
+      "unmatched": {}
+    }
+  ],
+  "requestID": "fillandkill-match-1758738106842"
+}
+```
+</CodeGroup>
+
+### 場景 4：Fill and Kill 訂單無成交 {#scenario-4-fill-and-kill-order-with-no-match}
+
+一筆沒有成交的 fill-and-kill 訂單。伺服器回傳 `error` 和 `error_type`。
+
+<CodeGroup>
+```json JSON
+{
+  "data": [
+    {
+      "error": "fill and kill has no matches",
+      "error_type": "rejected_order_type_rules"
+    }
+  ],
+  "requestID": "fillandkill-1758737972423"
+}
+```
+</CodeGroup>
+
+### 場景 5：無法全部成交的 Fill or Kill 訂單 {#scenario-5-fill-or-kill-order-that-cannot-be-filled-in-full}
+
+`fillOrKill` 是 `fillAndKill` 的全成或全撤對應物。一筆 $1,000 的 `fillAndKill` 面對 $400 流動性會成交 $400 並取消剩餘；而 `fillOrKill` 會拒絕整筆訂單並復原那 $400——你不會留下部分倉位。
+
+<CodeGroup>
+```json JSON
+[
+  "placeV3",
+  {
+    "orders": [
+      {
+        "gameID": "688c0516fbc14da0c202d426",
+        "type": "moneyline",
+        "side": "5c12bc1ce0daba000f47ba8b",
+        "odds": -110,
+        "bet": 1000,
+        "orderType": "fillOrKill",
+        "userReference": "docs-fillorkill-partial"
+      }
+    ],
+    "requestID": "fillorkill-1758738106999"
+  }
+]
+```
+
+```json JSON
+{
+  "data": [
+    {
+      "error": "fill or kill matched but not fully",
+      "error_type": "rejected_order_type_rules"
+    }
+  ],
+  "requestID": "fillorkill-1758738106999"
+}
+```
+</CodeGroup>
+
+若完全沒有可匹配流動性，同一筆訂單會改為以 `"fill or kill has no matches"` 被拒絕。
+
+### 場景 6：訂單簿會成交時的 postArb 與 post {#scenario-6-postarb-vs-post-when-the-book-would-match}
+
+`post` 會拒絕將與掛單流動性成交的訂單（例如最優報價 **+100**，你嘗試掛 **+100**）。當你的賠率與將被成交訂單相差不超過 **1%** 時，`postArb` 允許這種情況——因此同樣掛 **+100** 可以作為 `postArb` 成功，並**避免**作為 taker 吃掉該流動性時在普通成交中需支付的 **taker 手續費**。若你的價格距離掛單報價過遠（例如最優報價 **+200** 但你傳送 **+190**），`postArb` 會被拒絕；相對 **+200**，約 **+198** 接近限價。在訂單物件中使用 `"orderType": "postArb"`，方式與 `limit`、`post`、`fillAndKill` 或 `fillOrKill` 相同。
+
+<CodeGroup>
+```json JSON
+[
+  "placeV3",
+  {
+    "requestID": "postarb-example-001",
+    "orders": [
+      {
+        "gameId": "688c0516fbc14da0c202d426",
+        "type": "moneyline",
+        "side": "5c12bc1ce0daba000f47ba8b",
+        "odds": 100,
+        "bet": 50,
+        "orderType": "postArb",
+        "userReference": "docs-postarb-same-line-as-offer"
+      }
+    ]
+  }
+]
+```
+</CodeGroup>
+
+### 場景 7：`moneyline1x2`（足球三項盤） {#scenario-7-moneyline1x2-soccer-three-way}
+
+`moneyline1x2` 是足球三項盤——主勝 / 客勝 / 平局——以 `market` 所指定結果的是/否投注形式下單。以下為平局 **yes**，賠率 +250。
+
+<CodeGroup>
+```json JSON
+[
+  "placeV3",
+  {
+    "requestID": "ml1x2-draw-001",
+    "orders": [
+      {
+        "gameId": "65f0c3...",
+        "type": "moneyline1x2",
+        "side": "yes",
+        "market": "draw",
+        "odds": 250,
+        "bet": 50,
+        "orderType": "post",
+        "userReference": "docs-ml1x2-yes-draw"
+      }
+    ]
+  }
+]
+```
+</CodeGroup>
+
+若要投注**主隊不勝**，傳送 `side: "no"`，並將 `market` 設為主隊參賽者 ID。
+
+## 滾球延遲 {#live-delay}
+
+在標記為滾球的賽事上下單時，遵循以下規則：
+
+1. 若訂單不與任何已有流動性成交，則立即掛單。
+2. 若訂單會與已有流動性成交，則在執行前會有一段延遲。
+3. 不同聯賽的滾球延遲不同：
+    - NFL、UFCMMA、NCAAF — 3 秒。
+    - NCAAB、NBA — 5 秒。
+    - ATP、WTA — 8 秒。
+    - 預設 — 10 秒。
+4. 延遲結束後，訂單嘗試執行：
+    - 若賠率變得更優，則立即成交。
+    - 若賠率變差，則不成交。
+
+## 錯誤回應 {#error-responses}
+
+當伺服器未能下一筆單獨訂單時，`data[]` 中對應的**單筆**條目會以下列形態回傳：
+
+<CodeGroup>
+```json JSON
+{
+  "data": [
+    {
+      "error": "<human-readable message>",
+      "error_type": "<one of: validation_error | rejected_liability | rejected_order_type_rules | system_error>"
+    }
+  ],
+  "requestID": "YOUR_REQUEST_ID"
+}
+```
+</CodeGroup>
+
+如果收到錯誤訊息，該訂單尚未被處理，可以安全地再次提交。
+
+錯誤按位置回傳在 `data` 陣列中，與輸入 `orders` 陣列中對應訂單的下標一致。
+
+- `error` 未標準化；它是描述性字串，可能會變化。
+- `error_type` 是可用於程式化處理的列舉：
+    - `validation_error` — 酬載或狀態未透過校驗（例如缺少欄位、賠率/盤口數值無效、方向無效、賽事未啟用）。
+    - `rejected_liability` — 使用者/帳戶/負債約束阻止了掛單或執行。
+    - `rejected_order_type_rules` — 訂單型別規則禁止執行（例如 `fillAndKill` 找不到可執行流動性，因此無法成交併被拒絕；`fillOrKill` 無法全部成交；`post` 發現成交但該型別不允許成交；或 `postArb` 因你的美式賠率與將被成交的掛單相差**超過 1%** 而被拒絕）。
+    - `system_error` — 瞬時/內部錯誤；重試可能成功。
+
+多筆下單、部分回傳錯誤回應的示例：
+
+<CodeGroup>
+```json JSON
+{
+  "data": [
+    {
+      "matched": [
+        {
+          "amount": 25,
+          "odds": 185,
+          "orderID": "68d43575cfebf0b249a2c292",
+          "risk": 25.25,
+          "side": "5d49b340e5bd9d0008b69169",
+          "txID": "68d43d96cfebf0b249a2c2a2",
+          "type": "moneyline",
+          "userReference": "ok-success",
+          "wagerRequestID": "68d43d96cfebf0b249a2c2a1",
+          "win": 45.7875,
+          "winWithoutCommission": 46.25
+        }
+      ],
+      "unmatched": {}
+    },
+    {
+      "error": "game not found: invalid gameID: the provided hex string is not a valid ObjectID",
+      "error_type": "validation_error"
+    },
+    {
+      "error": "Insufficient balance. You have $92639.91 available for betting. Balance is $59.50, credit limit is $-100000.00, current liability is $-7419.59.",
+      "error_type": "rejected_liability"
+    },
+    {
+      "error": "post order cannot have matches",
+      "error_type": "rejected_order_type_rules"
+    },
+    {
+      "error": "failed to interact with database",
+      "error_type": "system_error"
+    }
+  ],
+  "requestID": "error-demo-1758739862301"
+}
+```
+</CodeGroup>

@@ -1,0 +1,85 @@
+---
+title: 'Obtener usuario actual'
+description: 'Consultar la cuenta autenticada'
+openapi: 'GET /user/getMe'
+---
+
+Devuelve la información de la cuenta del usuario autenticado, incluyendo saldo, límite de crédito, exposición actual, formato de cuotas por defecto y flags de acceso.
+
+## Solicitud {#request}
+
+`GET /user/getMe`
+
+Este endpoint no recibe parámetros. Se requiere autenticación (consulta [Autenticación](/es/pages/rest/authentication)).
+
+<CodeGroup>
+```bash curl
+curl https://api.4casters.io/user/getMe \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+</CodeGroup>
+
+## Respuesta {#response}
+
+<ResponseField name="data" type="object">
+  <Expandable title="data">
+    <ResponseField name="user" type="object">
+      <Expandable title="user">
+        <ResponseField name="id" type="string">Id de usuario.</ResponseField>
+        <ResponseField name="username" type="string">Nombre de usuario de la cuenta.</ResponseField>
+        <ResponseField name="type" type="string">Tipo de cuenta — `free`, `p2p`, `marketmaker` o `agent`.</ResponseField>
+        <ResponseField name="oddsFormat" type="string">Formato de cuotas por defecto. `american` o `decimal`.</ResponseField>
+        <ResponseField name="displayBalance" type="number">Saldo actual (valor de visualización).</ResponseField>
+        <ResponseField name="creditLimit" type="number">Límite de crédito (negativo en cuentas de crédito).</ResponseField>
+        <ResponseField name="liability" type="number">Exposición abierta actual en todos los juegos.</ResponseField>
+        <ResponseField name="commissionCharged" type="number">Tasa de comisión cobrada a esta cuenta.</ResponseField>
+        <ResponseField name="maxLiability" type="number">Tope de exposición a nivel de cuenta.</ResponseField>
+        <ResponseField name="hasMarketMakerAccess" type="boolean">Si la cuenta puede acceder a funciones de market-maker.</ResponseField>
+        <ResponseField name="isAdmin" type="boolean" />
+        <ResponseField name="isPro" type="boolean" />
+        <ResponseField name="isDeposit" type="boolean" />
+        <ResponseField name="isAlphaUser" type="boolean" />
+        <ResponseField name="defaultExpiry" type="integer">Expiración de orden por defecto, en minutos. `null` para "sin valor por defecto".</ResponseField>
+        <ResponseField name="defaultOffer" type="number">Tamaño de oferta por defecto al colocar órdenes.</ResponseField>
+        <ResponseField name="sportsbookDefault" type="boolean" />
+        <ResponseField name="sportsbookMinimumDisplay" type="number" />
+        <ResponseField name="defaultRotationNumbers" type="boolean" />
+        <ResponseField name="displayRotationNumbers" type="boolean" />
+        <ResponseField name="viewOddsWithCommission" type="boolean" />
+        <ResponseField name="defaultSendOrderMessage" type="boolean" />
+        <ResponseField name="showChatLastMessage" type="boolean" />
+        <ResponseField name="yesNoSummary" type="boolean" />
+        <ResponseField name="accessCode" type="string">Código de registro de la cuenta.</ResponseField>
+        <ResponseField name="p2pCode" type="string">Si es una cuenta de agente P2P, el código que usan sus referidos al registrarse.</ResponseField>
+        <ResponseField name="createdAt" type="string">Marca de tiempo ISO 8601 de creación de la cuenta.</ResponseField>
+        <ResponseField name="emailConfirmation" type="boolean">Si el email de la cuenta está confirmado.</ResponseField>
+      </Expandable>
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+### Ejemplo {#example}
+
+<CodeGroup>
+```json JSON
+{
+  "data": {
+    "user": {
+      "id": "5fe37acbb5a23600123662c1",
+      "username": "your_username",
+      "type": "p2p",
+      "oddsFormat": "american",
+      "displayBalance": 1250.50,
+      "creditLimit": 500,
+      "liability": -125.00,
+      "commissionCharged": 0.01,
+      "hasMarketMakerAccess": false,
+      "isAdmin": false,
+      "isPro": false,
+      "createdAt": "2020-12-23T17:14:09.000Z",
+      "emailConfirmation": true
+    }
+  }
+}
+```
+</CodeGroup>

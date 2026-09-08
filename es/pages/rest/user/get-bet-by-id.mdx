@@ -1,0 +1,76 @@
+---
+title: 'Obtener apuesta por ID'
+description: 'Consulta una sola apuesta por id o id de transacción'
+openapi: 'GET /user/getBetByID'
+---
+
+Consulta una sola apuesta (cruzada, liquidada u oferta abierta) que pertenece a la cuenta autenticada. Pasa **o** `id` **o** `txID`, no ambos.
+
+## Solicitud {#request}
+
+`GET /user/getBetByID`
+
+<ParamField query="id" type="string">
+  `id` de la apuesta de un endpoint de listado como `/user/getMatchedBets`.
+</ParamField>
+<ParamField query="txID" type="string">
+  Id de transacción, p. ej. el `wagerRequestID` o `txID` que devuelve `/session/v3/place`.
+</ParamField>
+
+Debes pasar exactamente uno de `id` o `txID`.
+
+<CodeGroup>
+```bash curl (by txID)
+curl "https://api.4casters.io/user/getBetByID?txID=64824b329556daa319747e31" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+
+```bash curl (by id)
+curl "https://api.4casters.io/user/getBetByID?id=6494ca85c9346058f35b2b1e" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+</CodeGroup>
+
+## Respuesta {#response}
+
+La forma de `bet` depende del estado actual de la apuesta:
+
+- Una apuesta **liquidada** devuelve la forma [GradedWager](/es/pages/rest/user/get-graded-wagers#response), incluyendo `risk`, `win`, `fee` y `result`.
+- Una apuesta **cruzada** devuelve la forma [MatchedBet](/es/pages/rest/user/get-matched-bets#response).
+- Una **oferta abierta** devuelve la forma [UnmatchedOrder](/es/pages/rest/user/get-unmatched-orders#response).
+
+Ten en cuenta que, a diferencia de la mayoría de los endpoints, este devuelve la apuesta en el **nivel superior** (no bajo `data`).
+
+### Ejemplo {#example}
+
+<CodeGroup>
+```json JSON (open offer)
+{
+  "bet": {
+    "id": "667c1e870c0d22ec36ccb438",
+    "txID": "667c1e870c0d22ec36ccb439",
+    "type": "moneyline",
+    "bet": 222,
+    "graded": false,
+    "closed": false,
+    "createdAt": "2024-06-26T13:58:31.224Z",
+    "origin": "offer",
+    "wagerRequestID": "667c1e870c...",
+    "game": {
+      "id": "6679ee8c9f05a804e064b6ed",
+      "league": "FED-EX-500",
+      "sport": "golf",
+      "start": "2024-06-27T10:45:00.000Z",
+      "ended": false,
+      "participants": [/* ... */]
+    }
+  }
+}
+```
+</CodeGroup>
+
+## Errores {#errors}
+
+| Estado | Significado |
+| ------ | ------- |
+| `400`  | Faltan tanto `id` como `txID`, o no se encontró ninguna apuesta para el identificador indicado. |

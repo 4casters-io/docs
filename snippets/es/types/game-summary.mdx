@@ -1,0 +1,15 @@
+<ResponseField name="game" type="object">
+  Instantánea desnormalizada del juego al que pertenece esta apuesta.
+  <Expandable title="game">
+    <ResponseField name="id" type="string">Id del juego.</ResponseField>
+    <ResponseField name="league" type="string">Código de liga (p. ej. `NBA`, `PREMIER-LEAGUE`).</ResponseField>
+    <ResponseField name="sport" type="string">Deporte (p. ej. `basketball`, `soccer`).</ResponseField>
+    <ResponseField name="start" type="string">Hora de inicio del juego en ISO 8601.</ResponseField>
+    <ResponseField name="ended" type="boolean">Si el juego ha terminado.</ResponseField>
+    <ResponseField name="eventName" type="string">Nombre legible del enfrentamiento (puede ser `null` en algunas ligas).</ResponseField>
+    <ResponseField name="isFutures" type="boolean">`true` en mercados de futuros y especiales similares.</ResponseField>
+    <ResponseField name="participants" type="array">
+      Array de dos elementos: `[away, home]`. Cada participante incluye `id`, `longName`, `shortName`, `homeAway`, `mainPitcher`, `rotationNumber`, `futuresSide` y (en juegos terminados) `score`.
+    </ResponseField>
+  </Expandable>
+</ResponseField>

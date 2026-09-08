@@ -1,0 +1,18 @@
+<ResponseField name="id" type="string">订单 ID。</ResponseField>
+<ResponseField name="type" type="string">`moneyline`、`spread`、`total` 或 `moneyline1x2`。</ResponseField>
+<ResponseField name="createdBy" type="string">**仅当**该订单属于调用方时才出现。用于从订单簿中过滤掉你自己的挂单。</ResponseField>
+<ResponseField name="sumUntaken" type="number">该订单上仍可成交的可赢金额 — 吃单方按所列 `odds` 支付风险额以获取该金额。</ResponseField>
+<ResponseField name="bet" type="number">挂单方最初提交的 `bet`（风险额）。</ResponseField>
+<ResponseField name="odds" type="integer">美式赔率（热门为负，冷门为正）。</ResponseField>
+<ResponseField name="gameID" type="string">该订单所属的赛事 ID。</ResponseField>
+<ResponseField name="takenRatio" type="number">订单已撮合的比例，介于 `0` 和 `1` 之间。</ResponseField>
+<ResponseField name="expiry" type="string">取消时间戳（ISO 8601）。未设置过期时间时为 `null`。</ResponseField>
+<ResponseField name="createdAt" type="string">下单时间戳。</ResponseField>
+<ResponseField name="gameStartExpiry" type="boolean">为 `true` 时，订单会在开赛时自动取消。</ResponseField>
+<ResponseField name="isPostArb" type="boolean">仅当订单以 `orderType: postArb` 下达时出现。</ResponseField>
+<ResponseField name="participantID" type="string">出现在 `moneyline` 和 `spread` 上 — 所支持的参赛方。</ResponseField>
+<ResponseField name="spread" type="number">出现在 `spread` 上。</ResponseField>
+<ResponseField name="total" type="number">出现在 `total` 上。</ResponseField>
+<ResponseField name="OU" type="string">`over` 或 `under`。出现在 `total` 上。</ResponseField>
+<ResponseField name="market" type="string">出现在 `moneyline1x2` 上 — 结果名称（`"draw"` 或参赛方 ID）。</ResponseField>
+<ResponseField name="side" type="string">用于 `moneyline1x2` — `yes` 或 `no`。</ResponseField>

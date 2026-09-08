@@ -1,0 +1,94 @@
+---
+title: '获取未撮合订单'
+description: '列出你在交易所上挂着的未成交订单'
+openapi: 'GET /user/getUnmatched'
+---
+
+返回调用方当前挂在交易所上、可供撮合的全部**未成交订单**。
+
+## 请求 {#request}
+
+`GET /user/getUnmatched`
+
+不接受参数。
+
+<CodeGroup>
+```bash curl
+curl https://api.4casters.io/user/getUnmatched \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+</CodeGroup>
+
+## 响应 {#response}
+
+<ResponseField name="data.unmatched" type="array">
+  未成交订单数组，按开赛时间升序排列。
+  <Expandable title="UnmatchedOrder">
+    <ResponseField name="id" type="string">订单 ID。</ResponseField>
+    <ResponseField name="txID" type="string">订单创建的事务 ID。</ResponseField>
+    <ResponseField name="type" type="string">`moneyline`、`spread`、`total` 或 `moneyline1x2`。</ResponseField>
+    <ResponseField name="bet" type="number">原始 `bet`（风险额）。</ResponseField>
+    <ResponseField name="odds" type="integer">美式赔率。</ResponseField>
+    <ResponseField name="spread" type="number">出现在 `spread` 上。</ResponseField>
+    <ResponseField name="total" type="number">出现在 `total` 上。</ResponseField>
+    <ResponseField name="participantID" type="string">出现在 `moneyline` 和 `spread` 上 — 所支持的参赛方。</ResponseField>
+    <ResponseField name="otherParticipantID" type="string">对方参赛方 ID（被挂出的一侧）。</ResponseField>
+    <ResponseField name="filled" type="number">已被撮合的风险额。</ResponseField>
+    <ResponseField name="offered" type="number">原始挂单金额（已撮合 + 剩余）。</ResponseField>
+    <ResponseField name="remaining" type="number">该订单上仍可成交的可赢金额（吃单方支付风险额以获取）。</ResponseField>
+    <ResponseField name="takenRatio" type="number">订单已撮合的比例，介于 `0` 和 `1` 之间。</ResponseField>
+    <ResponseField name="expiry" type="string">取消时间戳（ISO 8601）。未设置过期时间时为 `null`。</ResponseField>
+    <ResponseField name="createdAt" type="string">ISO 8601 时间戳。</ResponseField>
+    <ResponseField name="origin" type="string">`offer` 或 `wager`。</ResponseField>
+    <ResponseField name="userReference" type="string">下单时保留的客户端自定义标识。</ResponseField>
+    <ResponseField name="wagerRequestID" type="string">服务器生成的 ID，将原始下单请求产生的每一笔成交 / 挂单归为一组。</ResponseField>
+    <ResponseField name="graded" type="boolean">始终为 `false`。</ResponseField>
+    <ResponseField name="closed" type="boolean" />
+    <ResponseField name="adminRefund" type="boolean" />
+    <Snippet file="zh-Hans/types/game-summary.mdx" />
+  </Expandable>
+</ResponseField>
+
+### 示例 {#example}
+
+<CodeGroup>
+```json JSON
+{
+  "data": {
+    "unmatched": [
+      {
+        "id": "62851e3bd54b74e52c39953c",
+        "txID": "62851e3bd54b74e52c39953b",
+        "type": "moneyline",
+        "bet": 100,
+        "odds": 165,
+        "spread": null,
+        "total": null,
+        "participantID": "6165e6e23c65e61a09bf1f73",
+        "otherParticipantID": "626dca8a83899580a06ba87e",
+        "filled": 0,
+        "offered": 100,
+        "remaining": 100,
+        "takenRatio": 0,
+        "expiry": "2022-05-18T23:08:00.000Z",
+        "createdAt": "2022-05-18T16:26:35.601Z",
+        "origin": "offer",
+        "graded": false,
+        "closed": false,
+        "adminRefund": false,
+        "game": {
+          "id": "62823d9d75d894042dfee218",
+          "league": "NHL",
+          "sport": "hockey",
+          "start": "2022-05-18T23:08:00.000Z",
+          "ended": false,
+          "eventName": "NEW YORK RANGERS VS CAROLINA HURRICANES",
+          "isFutures": false,
+          "participants": [/* ... */]
+        }
+      }
+    ]
+  }
+}
+```
+</CodeGroup>

@@ -1,0 +1,322 @@
+行情推送通过原始 WebSocket 连接以 JSON 消息投递市场/订单簿更新。
+
+<CodeGroup>
+```javascript JavaScript
+// price_feed_quickstart.js 
+const WebSocket = require('ws'); 
+const token = process.env.FOURCASTERS_TOKEN; 
+ 
+function connectPriceFeed() { 
+  const ws = new 
+  WebSocket('wss://streaming-api.4casters.io/price-stream', { 
+    headers: { Authorization: token }, 
+  }); 
+ 
+  let pingTimer; let lastPong = Date.now(); 
+ 
+  ws.on('open', () => { 
+    console.log('price stream connected'); 
+
+    // Optional: narrow the feed to specific games / leagues / sports.
+    // Omit this block to receive all market updates (default). 
+    ws.send(JSON.stringify({ 
+      type: 'subscribe', 
+      gameIDs: [], 
+      leagueIDs: ['NBA'], 
+      sportIDs: [], 
+      replace: true, 
+    })); 
+
+    pingTimer = setInterval(() => { 
+      if (ws.readyState === WebSocket.OPEN) ws.ping(); 
+      if (Date.now() - lastPong > 30000) { 
+        console.warn('price stream: missed pong >30s, closing'); 
+        ws.terminate(); 
+      } 
+    }, 10000); 
+  }); 
+ 
+  ws.on('pong', () => { lastPong = Date.now(); }); 
+ 
+  ws.on('message', (buf) => { 
+    try { 
+      const msg = JSON.parse(buf.toString()); 
+      console.log('price update:', JSON.stringify(msg, null, 2)); 
+    } catch { console.log('price update (raw):', buf.toString()); } 
+  }); 
+ 
+  ws.on('error', (e) => console.error('price stream error:', e.message)); 
+ 
+  ws.on('close', (code, reason) => { 
+    console.log(`price stream closed: ${code} ${reason}`); 
+    clearInterval(pingTimer); 
+    setTimeout(connectPriceFeed, 1000); 
+  }); 
+} 
+connectPriceFeed();
+```
+</CodeGroup>
+
+## Ping/Pong {#pingpong}
+
+两路推送都支持标准 WebSocket `ping/pong`。你可以按间隔主动调用 `ping()`，并通过跟踪 `pong` 来确认连接存活。
+
+## 订阅 {#subscriptions}
+
+默认情况下，已连接的客户端会收到所有运动项目和联赛的全部市场更新。若要收窄全量推送，可在套接字进入 `open` 之后，以 JSON 文本帧发送下列命令之一。命令在该连接的生命周期内生效。
+
+从未发送过订阅命令的客户端保持全量广播模式，因此现有集成无需改动即可继续工作。
+
+### 按 gameID、联赛或运动项目订阅 {#subscribe-by-gameid-league-or-sport}
+
+安装过滤器。`gameIDs` 为 24 位 Mongo ObjectID 十六进制字符串；`leagueIDs` 为短代码，如 `NBA` / `MLB` / `EPL`；`sportIDs` 为小写标识，如 `basketball` / `baseball` / `soccer`。
+
+<CodeGroup>
+```json 替换（推荐）
+{
+  "type": "subscribe",
+  "gameIDs": ["62619dce25e2fb049a71cc2e"],
+  "leagueIDs": ["NBA"],
+  "sportIDs": [],
+  "replace": true
+}
+```
+```json 追加
+{
+  "type": "subscribe",
+  "gameIDs": [],
+  "leagueIDs": ["MLB"],
+  "sportIDs": [],
+  "replace": false
+}
+```
+</CodeGroup>
+
+- `replace: true` 清除该连接上任何现有订阅，并安装新列表。将连接切换为过滤模式。
+- `replace: false` 将新键追加到该连接已订阅的集合中。
+
+若更新的 `gameID`、`parentGameID`、`league` 或 `sport` 与你的任一订阅匹配，你就会收到该更新。
+
+### 取消订阅 {#unsubscribe}
+
+移除指定键。连接保持当前模式（过滤或全量订阅）。
+
+<CodeGroup>
+```json JSON
+{
+  "type": "unsubscribe",
+  "gameIDs": [],
+  "leagueIDs": ["MLB"],
+  "sportIDs": []
+}
+```
+</CodeGroup>
+
+### 订阅全部 {#subscribe-to-everything}
+
+显式的全量订阅。适用于先前已通过 `subscribe` 收窄范围、现在想在不断开连接的情况下重新扩大范围。会清除该连接上所有按键订阅。
+
+<CodeGroup>
+```json JSON
+{ "type": "subscribeAll" }
+```
+</CodeGroup>
+
+### 路由语义 {#routing-semantics}
+
+- 订阅某个 `gameID` 时，也会收到 `parentGameID` 匹配的子赛事更新（例如 F5-MLB 衍生盘会送达父赛事的订阅者）。
+- 联赛 ID 不区分大小写 — `mlb` 与 `MLB` 等价。
+- 运动项目 ID 不区分大小写 — `baseball` 与 `Baseball` 等价。
+- 数组中的空字符串会被忽略。
+- `subscribe` 在 `replace: false` **且** 数组全部为空时为无操作（有缺陷的客户端不会因发送空的追加订阅而意外把自己订空）。
+- `subscribe` 在 `replace: true` **且** 数组全部为空时，是合法的「清除我的全部订阅」路径 — 连接进入过滤模式且订阅为零，在你再次订阅或发送 `subscribeAll` 之前不会收到任何消息。
+
+## 消息 {#messages}
+
+`/price-stream` 上的每条消息都以二元组 `[type, payload]` 到达。会广播三种消息类型。
+
+### `orderUpdate` {#orderupdate}
+
+任意市场中的订单发生变化时发出（新建、修改、成交或取消）。载荷仅包含接收用户有权看到的 `sideOrders`（自己的订单以及可成交的对手方）。
+
+以 `orderType: "postArb"` 下的订单，其 `sideOrders` 条目会包含 `isPostArb: true`；否则省略该字段。
+
+<CodeGroup>
+```json JSON
+[
+  "orderUpdate",
+  {
+    "epoch": 1234567,
+    "gameID": "62619dce25e2fb049a71cc2e",
+    "parentGameID": null,
+    "sport": "basketball",
+    "league": "NBA",
+    "live": false,
+    "type": "total",
+    "participantID": null,
+    "market": "main",
+    "side": "under",
+    "OU": "under",
+    "total": 8.5,
+    "spread": null,
+    "mainHomeSpread": -6.5,
+    "mainAwaySpread": 6.5,
+    "mainTotal": 209.5,
+    "sideOrders": [
+      {
+        "id": "62619e6a40e36d0494600f48",
+        "type": "total",
+        "sumUntaken": 255,
+        "odds": 104,
+        "bet": 265.2,
+        "gameID": "62619dce25e2fb049a71cc2e",
+        "takenRatio": 0,
+        "participantID": null,
+        "market": "main",
+        "side": "under",
+        "OU": "under",
+        "total": 8.5,
+        "spread": null,
+        "gameStartExpiry": false,
+        "expiry": "2022-04-21T23:40:12.000Z",
+        "createdAt": "2022-04-21T18:11:54.614Z"
+      }
+    ]
+  }
+]
+```
+</CodeGroup>
+
+#### moneyline1x2 盘口的 `orderUpdate` {#orderupdate-for-moneyline1x2-markets}
+
+对于 `moneyline1x2`（足球三项盘：主胜 / 平局 / 客胜），投注对象由 **`market` + `side` 组合**标识，而不是 `participantID` / `OU`：
+
+- `market` — 该盘口所针对的结果：参赛者 ObjectID 十六进制（主队或客队），或字面字符串 `"draw"`。
+- `side` — 对该结果的 `"yes"` 或 `"no"`。
+- `OU`、`total` 和 `spread` 不出现，`participantID` 为空 — 请使用 `market` + `side`。
+
+这两个字段既出现在更新层级（标识哪一侧订单簿发生了变化），也出现在 `sideOrders` 的每一条记录上。
+
+<CodeGroup>
+```json JSON
+[
+  "orderUpdate",
+  {
+    "epoch": 1234567,
+    "gameID": "685e21aa0be1b7d5a3f9c4d2",
+    "sport": "soccer",
+    "league": "EPL",
+    "live": false,
+    "type": "moneyline1x2",
+    "participantID": "",
+    "market": "607349dc22a237cf46b021fb",
+    "side": "yes",
+    "sideOrders": [
+      {
+        "id": "685e2f1c40e36d0494601a22",
+        "type": "moneyline1x2",
+        "sumUntaken": 500,
+        "odds": 120,
+        "bet": 600,
+        "gameID": "685e21aa0be1b7d5a3f9c4d2",
+        "takenRatio": 0,
+        "participantID": "",
+        "market": "607349dc22a237cf46b021fb",
+        "side": "yes",
+        "gameStartExpiry": true,
+        "expiry": "2026-07-04T18:55:00.000Z",
+        "createdAt": "2026-07-03T14:20:11.204Z"
+      }
+    ]
+  }
+]
+```
+```json JSON（平局盘口）
+[
+  "orderUpdate",
+  {
+    "epoch": 1234567,
+    "gameID": "685e21aa0be1b7d5a3f9c4d2",
+    "sport": "soccer",
+    "league": "EPL",
+    "live": false,
+    "type": "moneyline1x2",
+    "participantID": "",
+    "market": "draw",
+    "side": "no",
+    "sideOrders": [
+      {
+        "id": "685e301b40e36d0494601a9f",
+        "type": "moneyline1x2",
+        "sumUntaken": 250,
+        "odds": -145,
+        "bet": 250,
+        "gameID": "685e21aa0be1b7d5a3f9c4d2",
+        "takenRatio": 0,
+        "participantID": "",
+        "market": "draw",
+        "side": "no",
+        "gameStartExpiry": true,
+        "expiry": "2026-07-04T18:55:00.000Z",
+        "createdAt": "2026-07-03T14:22:47.910Z"
+      }
+    ]
+  }
+]
+```
+</CodeGroup>
+
+### `gameUpdate` {#gameupdate}
+
+赛事被创建或其状态发生变化时发出（盘口开盘、收盘、开赛时间更新）。载荷为完整渲染后的赛事对象。
+
+<CodeGroup>
+```json JSON
+[
+  "gameUpdate",
+  {
+    "id": "625ecb5f269b7ff13619ca7c",
+    "parentGameID": null,
+    "league": "NBA",
+    "sport": "basketball",
+    "start": "2022-04-22T01:00:00.000Z",
+    "ended": false,
+    "messageType": "marketOpen",
+    "participants": [
+      { "id": "607349dc22a237cf46b021fb", "longName": "Dallas Mavericks", "shortName": "DAL", "homeAway": "away", "rotationNumber": "571" },
+      { "id": "60747bcde3b0844e56d2e7e8", "longName": "Utah Jazz",        "shortName": "UTA", "homeAway": "home", "rotationNumber": "572" }
+    ],
+    "awayMoneylines": [],
+    "homeMoneylines": [],
+    "awaySpreads": {},
+    "homeSpreads": {},
+    "over": {},
+    "under": {},
+    "mainHomeSpread": -6.5,
+    "mainAwaySpread": 6.5,
+    "mainTotal": 209.5
+  }
+]
+```
+</CodeGroup>
+
+已知的 `messageType` 值：`marketOpen`、`marketClosed`。将该字段视为可扩展，并忽略未知值。
+
+### `matchedVolumeUpdate` {#matchedvolumeupdate}
+
+某场赛事的总成交量发生变化时发出。
+
+<CodeGroup>
+```json JSON
+[
+  "matchedVolumeUpdate",
+  {
+    "gameID": "625ecb5f269b7ff13619ca7c",
+    "parentGameID": null,
+    "league": "NBA",
+    "sport": "basketball",
+    "matchedVolume": 12450.75
+  }
+]
+```
+</CodeGroup>

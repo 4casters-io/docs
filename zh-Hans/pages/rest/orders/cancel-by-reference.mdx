@@ -1,0 +1,42 @@
+---
+title: '按用户引用取消'
+description: '按客户端自定义引用取消订单'
+openapi: 'POST /session/cancelByReference'
+---
+
+取消指定赛事中 `userReference` 匹配所提供引用之一的每一笔未成交订单。适用于你用自己的 ID 标记了订单、并希望按这些 ID 取消而不是跟踪 4casters 订单 ID 的情况。
+
+## 请求 {#request}
+
+`POST /session/cancelByReference`
+
+<ParamField body="gameID" type="string" required>
+  将搜索限定到单场赛事。
+</ParamField>
+<ParamField body="userReferences" type="array" required>
+  `userReference` 字符串数组。`gameID` 中 `userReference` 属于该数组的每一笔未成交订单都会被取消。
+</ParamField>
+
+<CodeGroup>
+```bash curl
+curl -X POST https://api.4casters.io/session/cancelByReference \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "gameID": "6924f82640a7e89c3d3acc41",
+    "userReferences": ["my-order-1", "my-order-2"]
+  }'
+```
+</CodeGroup>
+
+## 响应 {#response}
+
+<ResponseField name="data" type="array">
+  按单取消结果。形态与 [取消一笔订单](/zh-Hans/pages/rest/orders/cancel-order#response) 相同。
+</ResponseField>
+
+## 错误 {#errors}
+
+| 状态 | 含义 |
+| ------ | ------- |
+| `400`  | `userReferences` 缺失或不是数组。 |

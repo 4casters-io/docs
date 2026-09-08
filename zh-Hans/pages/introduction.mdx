@@ -1,0 +1,65 @@
+---
+title: '4casters API'
+description: '以编程方式访问 4casters 点对点博彩交易所'
+---
+
+4casters 提供三套 API，共用同一认证令牌以及同一套底层账户 / 订单簿 / 结算引擎。按你要构建的功能选择其一，也可以组合使用 — 大多数集成用 REST 完成初始化与历史查询，用 WebSocket 进行实时交易。
+
+## 选择 API {#choose-your-api}
+
+<CardGroup cols={3}>
+  <Card title="REST API" icon="globe" href="/zh-Hans/pages/rest/introduction">
+    基于 HTTPS 的请求 / 响应。用于登录、账户状态、历史记录、市场查询，以及批量下单 / 改单 / 取消。
+  </Card>
+  <Card title="订单 WebSocket" icon="bolt" href="/zh-Hans/pages/websocket/introduction">
+    用于下单和取消订单的持久低延迟通道。在你关心往返延迟时使用。
+  </Card>
+  <Card title="推送 WebSocket" icon="signal-stream" href="/zh-Hans/pages/streaming/introduction">
+    订单簿行情以及按账户的成交 / 结算推送。用于在不轮询的情况下保持状态同步。
+  </Card>
+</CardGroup>
+
+## 何时使用哪种 {#when-to-use-which}
+
+| 接口 | 适用于 | 不适用于 |
+| --- | --- | --- |
+| **REST** (`https://api.4casters.io`) | 登录、账户信息、投注历史、查询、市场浏览、批量下单 / 改单 / 取消，以及任何你会从脚本或后端任务运行的操作。 | 往返延迟很关键的紧凑内循环。 |
+| **订单 WebSocket** (`wss://orders-api.4casters.io/orders/ws`) | 实时交易：带持久会话和 `requestID` 关联的低延迟下单 + 取消。 | 读取状态 — 这是写入/命令通道，不是查询 API。 |
+| **推送 WebSocket** (`wss://streaming-api.4casters.io/...`) | 实时订单簿行情（价格推送）以及按账户的成交 / 结算事件（用户推送）。 | 一次性读取 — 请用 REST，而不是打开推送连接。 |
+
+## 认证 {#authentication}
+
+**没有 API 密钥。**你使用在 4casters.io 登录时的同一组用户名和密码进行认证，三套 API 共用登录返回的同一个令牌。API 密钥已在规划中；当前状态见 [认证](/zh-Hans/pages/authentication)。
+
+1. 在 REST API 上使用用户名和密码调用 [`POST /user/login`](/zh-Hans/pages/rest/authentication)。
+2. 在后续每个请求中发送返回的令牌：
+   - **REST**：`Authorization: Bearer <token>` 请求头。
+   - **WebSockets**：握手时使用 `Authorization: <token>` 请求头。
+
+令牌有效期为 30 天，之后会自动轮换。令牌有效期、错误处理和凭据建议见 [认证](/zh-Hans/pages/authentication)，完整的响应结构见 [REST 登录参考](/zh-Hans/pages/rest/authentication)。
+
+## 约定 {#conventions}
+
+- **传输**：仅 HTTPS / WSS。
+- **编码**：一律使用 JSON。
+- **响应结构（REST）**：成功时为 `{ "data": <payload> }`；HTTP 错误时为 `{ "error": "<message>" }`。
+- **标识符**：赛事 ID、参赛方 ID 和订单 ID 均为 MongoDB `ObjectID` 字符串（24 位十六进制）。
+- **赔率**：美式格式（热门为负，冷门为正），除非另有说明。
+- **时间**：带 `Z` 的 ISO 8601（UTC）。
+
+## 典型集成方式 {#a-typical-integration}
+
+大多数非平凡客户端会组合使用全部三套接口：
+
+1. **REST** — 调用一次 `POST /user/login`，缓存令牌，然后调用 `GET /user/getMe` 和 `GET /games/v2/leagues` 以初始化状态。
+2. **推送 WebSocket** — 打开你关心的市场价格推送，以及用户推送以响应你自己的成交 / 结算。
+3. **订单 WebSocket** — 打开持久连接，以低延迟下单 / 取消，并通过 `requestID` 关联响应。
+4. **REST** — 回退到 `POST /myBets/getMatchedBets`、`/myBets/getOrdersForGame` 等，用于历史记录和对账。
+
+## 需要旧版文档？ {#need-the-old-docs}
+
+先前的文档以 Postman 集合形式存在。它仍保留作参考，但这些 Mintlify 文档现为权威来源 — Postman 集合在新端点、参数或响应形态上可能滞后。
+
+<Card title="4Casters API — Postman 集合" icon="link" href="https://documenter.getpostman.com/view/6710109/U16gNmHG">
+  查看旧版 Postman 文档
+</Card>

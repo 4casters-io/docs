@@ -1,0 +1,54 @@
+---
+title: '获取参赛方'
+description: '列出球队、球员和期货盘方向'
+openapi: 'GET /exchange/getParticipants'
+---
+
+返回交易所范围内去重后的参赛方列表 — 球队、球员、期货盘方向。下 `moneyline` 或 `spread` 订单时，将此端点的 `participantID` 值用作 `side` 字段。
+
+## 请求 {#request}
+
+`GET /exchange/getParticipants`
+
+<ParamField query="active" type="string">
+  当 `active=true` 时，将响应限定为未来开赛赛事的参赛方。当 `active=false`（或省略）时，返回所有赛事的参赛方。
+</ParamField>
+
+<CodeGroup>
+```bash curl
+curl "https://api.4casters.io/exchange/getParticipants?active=true" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+</CodeGroup>
+
+## 响应 {#response}
+
+<ResponseField name="data.participants" type="array">
+  <Expandable title="Participant">
+    <ResponseField name="participantID" type="string">参赛方 ID。下独赢或让分订单时用作 `side`。</ResponseField>
+    <ResponseField name="longName"      type="string" />
+    <ResponseField name="shortName"     type="string" />
+    <ResponseField name="league"        type="string" />
+    <ResponseField name="sport"         type="string" />
+  </Expandable>
+</ResponseField>
+
+### 示例 {#example}
+
+<CodeGroup>
+```json JSON
+{
+  "data": {
+    "participants": [
+      {
+        "participantID": "6021801d14a2fe0012fa0c62",
+        "longName":      "Harold Varner III",
+        "shortName":     "Varner",
+        "league":        "PGA",
+        "sport":         "golf"
+      }
+    ]
+  }
+}
+```
+</CodeGroup>

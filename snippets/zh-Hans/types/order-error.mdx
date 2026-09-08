@@ -1,0 +1,17 @@
+当服务器在下单、改单或按单取消的批次中使某一笔订单失败时，**该笔订单**的条目会以如下形式返回：
+
+```json
+{
+  "error": "<human-readable message>",
+  "errorType": "validation_error | rejected_liability | rejected_order_type_rules | system_error"
+}
+```
+
+错误按**位置**返回在结果数组中，与输入订单的下标对应。如果某笔订单收到错误，该订单未被处理，可以安全重试。
+
+- `error` 未标准化 — 它是描述性字符串，可能会变化。
+- `errorType` 是稳定的枚举，可用于程序化处理：
+  - `validation_error` — 载荷或状态未通过校验（缺少字段、赔率/盘口无效、方向无效、赛事未激活）。
+  - `rejected_liability` — 用户 / 账户 / 负债约束阻止了挂单或成交。
+  - `rejected_order_type_rules` — 订单类型规则禁止执行。例如：`fillAndKill` 没有可成交流动性，`fillOrKill` 无法全部成交，`post` 会撮合已有挂单，或 `postArb` 与可撮合价格相差超过 1%。
+  - `system_error` — 瞬时内部错误；重试可能会成功。
