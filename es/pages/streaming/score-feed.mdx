@@ -135,7 +135,7 @@ Comodín explícito. Borra las suscripciones por clave de la conexión.
 
 ### Semántica de enrutado {#routing-semantics}
 
-- Una suscripción por `gameID` también recibe actualizaciones de los juegos hijo cuyo `parentGameID` coincida, así que suscribirse a un juego previo al inicio también sigue su mercado en vivo.
+- Una suscripción por `gameID` también recibe actualizaciones de cualquier juego cuyo `parentGameID` coincida con él. Hoy ningún mercado hijo publica estado propio, así que esto no cambia nada en la práctica — consulta [Mercados hijo](#child-markets) — pero significa que una suscripción por `gameID` no habrá que revisarla si algún día lo hace.
 - Los IDs de liga no distinguen mayúsculas — `mlb` y `MLB` son equivalentes.
 - Los IDs de deporte no distinguen mayúsculas — `baseball` y `Baseball` son equivalentes.
 - Las cadenas vacías dentro de los arrays se ignoran.
@@ -178,7 +178,7 @@ Se emite cada vez que cambia el estado observado de un juego. Un mensaje por jue
 | Campo | Tipo | Notas |
 | --- | --- | --- |
 | `gameID` | string | hex ObjectID de 24 caracteres |
-| `parentGameID` | string o null | presente en un juego hijo en vivo; **admite null** |
+| `parentGameID` | string o null | reservado para mercados hijo; **hoy llega como `null` en todos los mensajes** |
 | `league` | string | código corto, p. ej. `NBA` |
 | `sport` | string | token en minúsculas, p. ej. `basketball` |
 | `status` | string | ver más abajo |
@@ -280,13 +280,23 @@ Un mensaje lleva como máximo un bloque por deporte, y solo el del deporte al qu
 
 `yardLine` se mide desde la línea de gol del equipo local. Usa `possessionHome` para deducir en qué dirección avanza el equipo que tiene la posesión.
 
+## Mercados hijo {#child-markets}
+
+El mercado en vivo de un juego, su primera mitad y su segunda mitad son juegos distintos en nuestro sistema, cada uno con su propio `gameID` y su propio ID de liga — `NBA-LIVE`, `NFL-1H`, `NBA-2H`. **Ninguno de ellos publica estado en este feed.** El estado se produce solo para los juegos padre, así que suscribirse al `gameID` de un mercado hijo o a un ID de liga con sufijo no recibe nada en absoluto — y "nada" es exactamente el aspecto que tiene un juego en calma.
+
+Para mostrar un marcador junto a un mercado hijo, suscríbete al `gameID` de su **padre**, o a la liga padre (`NBA`, no `NBA-LIVE`). El marcador, el reloj y el periodo de un mercado en vivo o de segunda mitad son los del juego padre; no existe un estado aparte que consultar.
+
+<Warning>
+Suscribirse a `NBA-LIVE`, `NFL-1H` o a cualquier otro ID de liga con sufijo se acepta en silencio y no entrega ningún mensaje. Usa el ID de la liga padre.
+</Warning>
+
 ## Errores comunes {#pitfalls}
 
 **Ausente significa desconocido, nunca cero.** Un campo que el feed no ha podido determinar se omite o llega como null; nunca se envía como `0`. Esto importa sobre todo en la cuenta de béisbol: `balls`, `strikes` y `outs` llegan juntos o no llegan en absoluto, así que una cuenta ausente no debe mostrarse como «0-0, 0 outs». Trata `null` y la ausencia del campo de la misma manera.
 
 **Un juego tranquilo no es un feed muerto.** El feed publica cambios. Una interrupción por lluvia, el descanso o una parada de juego no produce ningún mensaje, a veces durante muchos minutos. No uses «hace rato que no llega ningún mensaje» como comprobación de vida de un juego: usa `ping`/`pong` para la conexión y `status` para el juego.
 
-**`parentGameID` admite null.** Un juego previo al inicio no lo lleva. El enrutado de juegos hijo depende de él, así que gestiona el caso nulo de forma explícita.
+**`parentGameID` hoy es siempre `null`.** Solo los juegos padre publican estado (consulta [Mercados hijo](#child-markets)), así que todos los mensajes llevan `null` aquí. El campo forma parte de la forma para que el enrutado de juegos hijo no sea un cambio incompatible más adelante; no construyas nada sobre la base de que lleve un valor.
 
 **Los marcadores son enteros, no cadenas.** A diferencia de algunos campos del feed de precios, `homeScore` y `awayScore` son números JSON.
 

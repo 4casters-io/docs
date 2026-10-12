@@ -135,7 +135,7 @@ connectScoreFeed();
 
 ### 路由語義 {#routing-semantics}
 
-- 訂閱某個 `gameID` 時，也會收到 `parentGameID` 匹配的子賽事更新，因此訂閱一場賽前賽事也會跟隨其滾球市場。
+- 訂閱某個 `gameID` 時，也會收到任何 `parentGameID` 與之匹配的賽事更新。目前沒有任何子市場會發布自己的狀態，因此這在實務上不會有任何影響 —— 參見[子市場](#child-markets) —— 但這意味著如果將來有子市場開始發布狀態，按 `gameID` 的訂閱無需改動。
 - 聯賽 ID 不區分大小寫 — `mlb` 與 `MLB` 等價。
 - 運動項目 ID 不區分大小寫 — `baseball` 與 `Baseball` 等價。
 - 陣列中的空字串會被忽略。
@@ -178,7 +178,7 @@ connectScoreFeed();
 | 欄位 | 型別 | 說明 |
 | --- | --- | --- |
 | `gameID` | string | 24 位 ObjectID 十六進位 |
-| `parentGameID` | string 或 null | 在滾球子賽事上設定；**可為 null** |
+| `parentGameID` | string 或 null | 為子市場保留；**目前每則訊息中都是 `null`** |
 | `league` | string | 短代碼，如 `NBA` |
 | `sport` | string | 小寫識別碼，如 `basketball` |
 | `status` | string | 見下文 |
@@ -280,13 +280,23 @@ connectScoreFeed();
 
 `yardLine` 自主隊的球門線起算。請用 `possessionHome` 判斷持球一方的推進方向。
 
+## 子市場 {#child-markets}
+
+一場賽事的滾球市場、上半場和下半場在我們的系統中是各自獨立的賽事，各有自己的 `gameID` 和自己的聯賽 ID —— `NBA-LIVE`、`NFL-1H`、`NBA-2H`。**它們都不會在本 feed 上發布狀態。**狀態只為父賽事產生，因此訂閱子市場的 `gameID` 或帶後綴的聯賽 ID 將完全收不到任何訊息 —— 而「收不到任何訊息」正是一場平靜賽事的表現。
+
+要在子市場旁顯示比分，請訂閱其**父賽事**的 `gameID`，或訂閱父聯賽（`NBA`，而不是 `NBA-LIVE`）。滾球或下半場市場的比分、時鐘和節次就是父賽事的；沒有另外的狀態可供取得。
+
+<Warning>
+訂閱 `NBA-LIVE`、`NFL-1H` 或任何其他帶後綴的聯賽 ID 都會被靜默接受，但不會收到任何訊息。請使用父聯賽 ID。
+</Warning>
+
 ## 常見陷阱 {#pitfalls}
 
 **缺失意味著未知，絕不等於零。**推送無法確定的欄位會被省略或為 null — 絕不會以 `0` 的形式下發。這一點在棒球的球數上最為關鍵：`balls`、`strikes` 和 `outs` 要麼一起到達，要麼都不到達，因此缺失的球數絕不能渲染成 `"0-0, 0 out"`。請把 `null` 與欄位缺失同等對待。
 
 **安靜的賽事不等於推送已死。**該推送發布的是變化。雨天延誤、中場休息或比賽中斷期間完全不會產生訊息，有時會持續好幾分鐘。不要把「最近沒有訊息」當作某場賽事的存活判據 — 連線用 `ping`/`pong` 判斷，賽事用 `status` 判斷。
 
-**`parentGameID` 可為 null。**賽前賽事沒有父賽事。子賽事路由依賴該欄位，因此請顯式處理 null 的情況。
+**`parentGameID` 目前始終為 `null`。**只有父賽事會發布狀態（參見[子市場](#child-markets)），因此每則訊息在此處都是 `null`。保留該欄位是為了讓日後的子賽事路由不會成為破壞性變更；請不要依賴它會帶有值。
 
 **比分是整數，不是字串。**與行情推送上的某些欄位不同，`homeScore` 和 `awayScore` 是 JSON 數字。
 

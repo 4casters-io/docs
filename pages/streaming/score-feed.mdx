@@ -135,7 +135,7 @@ Explicit catch-all. Clears any per-key subscriptions on the connection.
 
 ### Routing semantics
 
-- A `gameID` subscription also receives updates for child games whose `parentGameID` matches, so subscribing to a pre-match game also follows its live market.
+- A `gameID` subscription also receives updates for any game whose `parentGameID` matches it. Today no child market publishes state of its own, so this changes nothing in practice — see [Child markets](#child-markets) — but it means a `gameID` subscription will not need revisiting if one ever does.
 - League IDs are case-insensitive — `mlb` and `MLB` are equivalent.
 - Sport IDs are case-insensitive — `baseball` and `Baseball` are equivalent.
 - Empty strings inside the arrays are ignored.
@@ -178,7 +178,7 @@ Emitted whenever a game's observed state changes. One message per game per chang
 | Field | Type | Notes |
 | --- | --- | --- |
 | `gameID` | string | 24-character ObjectID hex |
-| `parentGameID` | string or null | set on a live child game; **nullable** |
+| `parentGameID` | string or null | reserved for child markets; **`null` on every message today** |
 | `league` | string | short code, e.g. `NBA` |
 | `sport` | string | lowercase token, e.g. `basketball` |
 | `status` | string | see below |
@@ -280,13 +280,23 @@ A message carries at most one sport block, and only for the sport it applies to.
 
 `yardLine` is measured from the home team's goal line. Use `possessionHome` to work out which direction the team in possession is moving.
 
+## Child markets
+
+A game's live market, first half and second half are separate games in our system, each with its own `gameID` and its own league ID — `NBA-LIVE`, `NFL-1H`, `NBA-2H`. **None of them publishes state on this feed.** State is produced for parent games only, so a subscription to a child market's `gameID` or to a suffixed league ID receives nothing at all — and nothing is exactly what a quiet game looks like.
+
+To show a score beside a child market, subscribe to its **parent's** `gameID`, or to the parent league (`NBA`, not `NBA-LIVE`). The score, clock and period of a live or second-half market are the parent game's; there is no separate state to fetch.
+
+<Warning>
+Subscribing to `NBA-LIVE`, `NFL-1H` or any other suffixed league ID is silently accepted and delivers no messages. Use the parent league ID.
+</Warning>
+
 ## Pitfalls
 
 **Absent means unknown, never zero.** A field the feed could not determine is omitted or null — it is never sent as `0`. This matters most for the baseball count: `balls`, `strikes` and `outs` arrive together or not at all, so a missing count must not be rendered as "0-0, 0 out". Treat `null` and absent identically.
 
 **A quiet game is not a dead feed.** The feed publishes changes. A rain delay, a half-time break or a stoppage produces no messages at all, sometimes for many minutes. Do not use "no message recently" as a liveness check for a game — use `ping`/`pong` for the connection, and `status` for the game.
 
-**`parentGameID` is nullable.** A pre-match game has none. Child-game routing depends on it, so handle the null case explicitly.
+**`parentGameID` is always `null` today.** Only parent games publish state (see [Child markets](#child-markets)), so every message carries `null` here. The field is part of the shape so that child routing does not become a breaking change later; do not build on it carrying a value.
 
 **Scores are integers, not strings.** Unlike some fields on the price feed, `homeScore` and `awayScore` are JSON numbers.
 
