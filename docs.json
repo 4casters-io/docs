@@ -26,7 +26,8 @@
             "pages": [
               "pages/streaming/introduction",
               "pages/streaming/user-feed",
-              "pages/streaming/price-feed"
+              "pages/streaming/price-feed",
+              "pages/streaming/score-feed"
             ]
           },
           {
@@ -113,6 +114,11 @@
       },
       {
         "language": "es",
+        "banner": {
+          "content": "Esta documentación ha sido traducida por IA y se ofrece solo por comodidad; puede contener errores. **La documentación en inglés es la versión autorizada** — compruébala con el inglés antes de basarte en esta página. [Informar de un problema de traducción](https://github.com/4casters-io/docs/issues/new?labels=translation&title=%5Bes%5D+Translation+issue&body=%2A%2APage%3A%2A%2A+%3C%21--+paste+the+URL+of+the+page+--%3E%0A%0A%2A%2AWhat+reads+wrong%3A%2A%2A+%3C%21--+quote+the+text+--%3E%0A%0A%2A%2ASuggested+wording%3A%2A%2A",
+          "type": "warning",
+          "dismissible": false
+        },
         "tabs": [
           {
             "tab": "Introducción",
@@ -126,7 +132,8 @@
             "pages": [
               "es/pages/streaming/introduction",
               "es/pages/streaming/user-feed",
-              "es/pages/streaming/price-feed"
+              "es/pages/streaming/price-feed",
+              "es/pages/streaming/score-feed"
             ]
           },
           {
@@ -226,7 +233,8 @@
             "pages": [
               "zh-Hans/pages/streaming/introduction",
               "zh-Hans/pages/streaming/user-feed",
-              "zh-Hans/pages/streaming/price-feed"
+              "zh-Hans/pages/streaming/price-feed",
+              "zh-Hans/pages/streaming/score-feed"
             ]
           },
           {
@@ -331,7 +339,8 @@
             "pages": [
               "zh-Hant/pages/streaming/introduction",
               "zh-Hant/pages/streaming/user-feed",
-              "zh-Hant/pages/streaming/price-feed"
+              "zh-Hant/pages/streaming/price-feed",
+              "zh-Hant/pages/streaming/score-feed"
             ]
           },
           {
