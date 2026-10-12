@@ -16,8 +16,8 @@ function connectScoreFeed() {
   ws.on('open', () => {
     console.log('score feed connected');
 
-    // Optional: narrow the feed to specific games / leagues / sports.
-    // Omit this block to receive every live game (default).
+    // REQUIRED. A connection starts with no subscriptions and receives
+    // nothing until it asks: there is no "everything" default on this feed.
     ws.send(JSON.stringify({
       type: 'subscribe',
       gameIDs: [],
@@ -109,14 +109,14 @@ Install a filter. `gameIDs` are 24-character Mongo ObjectID hex strings; `league
 ```
 </CodeGroup>
 
-- `replace: true` clears any existing subscriptions on this connection and installs the new lists. Switches the connection into filtered mode.
+- `replace: true` clears any existing subscriptions on this connection and installs the new lists.
 - `replace: false` adds the new keys to whatever the connection is already subscribed to.
 
 A `replace: true` subscribe also triggers a fresh snapshot for the games you just subscribed to, so narrowing the feed fills your new cards immediately rather than on their next change.
 
 ### Unsubscribe
 
-Remove specific keys. The connection stays in its current mode (filtered or subscribe-all).
+Remove specific keys. Whatever is left is what the connection still receives; removing the last key leaves it receiving nothing.
 
 <CodeGroup>
 ```json JSON
@@ -185,7 +185,7 @@ Emitted whenever a game's observed state changes. One message per game per chang
 | `clockSeconds` | integer or null | the same clock in seconds, for arithmetic |
 | `homeScore` | integer or null | |
 | `awayScore` | integer or null | |
-| `stoppage` | object or null | `{ "type": …, "team": …, "since": … }` |
+| `stoppage` | object or null | `{ "type": …, "team": …, "since": … }`; `since` is **milliseconds since epoch**, like `ts`, and is omitted when the provider did not report one |
 | `ts` | integer | milliseconds since epoch, when the state was observed |
 | `snapshot` | boolean | present and `true` only on snapshot messages |
 

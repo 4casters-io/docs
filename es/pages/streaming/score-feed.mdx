@@ -16,8 +16,8 @@ function connectScoreFeed() {
   ws.on('open', () => {
     console.log('score feed connected');
 
-    // Optional: narrow the feed to specific games / leagues / sports.
-    // Omit this block to receive every live game (default).
+    // REQUIRED. A connection starts with no subscriptions and receives
+    // nothing until it asks: there is no "everything" default on this feed.
     ws.send(JSON.stringify({
       type: 'subscribe',
       gameIDs: [],
@@ -109,14 +109,14 @@ Instala un filtro. Los `gameIDs` son cadenas hexadecimales ObjectID de Mongo de 
 ```
 </CodeGroup>
 
-- `replace: true` borra las suscripciones existentes de esta conexión e instala las listas nuevas. Pasa la conexión a modo filtrado.
+- `replace: true` borra las suscripciones existentes de esta conexión e instala las listas nuevas.
 - `replace: false` añade las claves nuevas a aquello a lo que la conexión ya está suscrita.
 
 Suscribirse con `replace: true` dispara además una instantánea nueva de los juegos a los que acabas de suscribirte, así que al restringir el flujo tus tarjetas nuevas se rellenan de inmediato y no en su siguiente cambio.
 
 ### Cancelar suscripción {#unsubscribe}
 
-Quita claves concretas. La conexión permanece en su modo actual (filtrado o suscripción total).
+Quita claves concretas. Lo que quede es lo que la conexión sigue recibiendo; si quitas la última clave, deja de recibir nada.
 
 <CodeGroup>
 ```json JSON
@@ -185,7 +185,7 @@ Se emite cada vez que cambia el estado observado de un juego. Un mensaje por jue
 | `clockSeconds` | integer o null | el mismo reloj en segundos, para hacer cálculos |
 | `homeScore` | integer o null | |
 | `awayScore` | integer o null | |
-| `stoppage` | object o null | `{ "type": …, "team": …, "since": … }` |
+| `stoppage` | object o null | `{ "type": …, "team": …, "since": … }`; `since` son **milisegundos desde epoch**, como `ts`, y se omite cuando el proveedor no informó ninguno |
 | `ts` | integer | milisegundos desde epoch, cuando se observó el estado |
 | `snapshot` | boolean | presente y `true` solo en los mensajes de instantánea |
 

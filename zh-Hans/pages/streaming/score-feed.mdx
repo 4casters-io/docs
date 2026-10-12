@@ -16,8 +16,8 @@ function connectScoreFeed() {
   ws.on('open', () => {
     console.log('score feed connected');
 
-    // Optional: narrow the feed to specific games / leagues / sports.
-    // Omit this block to receive every live game (default).
+    // REQUIRED. A connection starts with no subscriptions and receives
+    // nothing until it asks: there is no "everything" default on this feed.
     ws.send(JSON.stringify({
       type: 'subscribe',
       gameIDs: [],
@@ -109,14 +109,14 @@ connectScoreFeed();
 ```
 </CodeGroup>
 
-- `replace: true` 清除该连接上任何现有订阅，并安装新列表。将连接切换为过滤模式。
+- `replace: true` 清除该连接上任何现有订阅，并安装新列表。
 - `replace: false` 将新键追加到该连接已订阅的集合中。
 
 带 `replace: true` 的 subscribe 还会为你刚刚订阅的赛事触发一份新的快照，因此收窄推送会立即填满你新的卡片，而不必等到它们下一次发生变化。
 
 ### 取消订阅 {#unsubscribe}
 
-移除指定键。连接保持当前模式（过滤或全量订阅）。
+移除指定键。剩下的键就是该连接仍会收到的内容；移除最后一个键后，它将不再收到任何消息。
 
 <CodeGroup>
 ```json JSON
@@ -185,7 +185,7 @@ connectScoreFeed();
 | `clockSeconds` | integer 或 null | 同一时钟的秒数形式，便于做计算 |
 | `homeScore` | integer 或 null | |
 | `awayScore` | integer 或 null | |
-| `stoppage` | object 或 null | `{ "type": …, "team": …, "since": … }` |
+| `stoppage` | object 或 null | `{ "type": …, "team": …, "since": … }`；`since` 是**自 epoch 起的毫秒数**，与 `ts` 相同；当数据源未提供时该字段被省略 |
 | `ts` | integer | 观测到该状态的时刻，Unix 毫秒时间戳 |
 | `snapshot` | boolean | 仅在快照消息上出现，且恒为 `true` |
 
