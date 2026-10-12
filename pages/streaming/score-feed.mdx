@@ -63,9 +63,11 @@ The score feed supports standard WebSocket `ping/pong`. You may proactively `pin
 
 ## Snapshot on connect
 
-When you connect, the feed sends the current state of every live game you are subscribed to **before** any live updates. Each snapshot message carries `"snapshot": true`.
+When you subscribe, the feed sends the current state of every live game your subscription covers **before** any live updates. Each snapshot message carries `"snapshot": true`.
 
 This exists because the feed publishes **changes**, not a heartbeat. Without a snapshot, a client that connects at half time would know nothing about a game until it next moved — which can be many minutes.
+
+A fresh connection has no subscriptions, so **subscribe first**: the snapshot that matters is the one your `replace: true` subscribe returns. Subscribe to a league board and its current state arrives at once.
 
 - Snapshot messages use the same `[type, payload]` shape as live ones. The only difference is the `snapshot` flag.
 - Games that have finished are not included.
@@ -74,9 +76,13 @@ This exists because the feed publishes **changes**, not a heartbeat. Without a s
 
 ## Subscriptions
 
-By default a connected client receives every live game across all sports and leagues. To narrow the feed, send one of the following commands as a JSON text frame after the socket is `open`. Commands take effect for the lifetime of the connection.
+**A connection starts with no subscriptions and receives nothing until it asks.** Send one of the following commands as a JSON text frame once the socket is `open`; they take effect for the lifetime of the connection.
 
-Subscriptions use the same commands and the same keys as the [price feed](/pages/streaming/price-feed#subscriptions), so a client that already speaks to that feed needs no new concepts.
+Subscriptions use the same commands and the same keys as the [price feed](/pages/streaming/price-feed#subscriptions), so a client that already speaks to that feed needs no new concepts — with one difference worth knowing if you have used that feed: it defaults to broadcasting everything and this one does not, and it has a `subscribeAll` catch-all and this one has none.
+
+<Warning>
+There is no way to subscribe to every game. Subscribe to what you are displaying — a league board, a live tab, or a single game. A client that connects and never subscribes receives no messages at all, which is working as intended, not a dead feed.
+</Warning>
 
 ### Subscribe by gameID, league, or sport
 
@@ -123,16 +129,6 @@ Remove specific keys. The connection stays in its current mode (filtered or subs
 ```
 </CodeGroup>
 
-### Subscribe to everything
-
-Explicit catch-all. Clears any per-key subscriptions on the connection.
-
-<CodeGroup>
-```json JSON
-{ "type": "subscribeAll" }
-```
-</CodeGroup>
-
 ### Routing semantics
 
 - A `gameID` subscription also receives updates for any game whose `parentGameID` matches it. Today no child market publishes state of its own, so this changes nothing in practice — see [Child markets](#child-markets) — but it means a `gameID` subscription will not need revisiting if one ever does.
@@ -140,7 +136,8 @@ Explicit catch-all. Clears any per-key subscriptions on the connection.
 - Sport IDs are case-insensitive — `baseball` and `Baseball` are equivalent.
 - Empty strings inside the arrays are ignored.
 - `subscribe` with `replace: false` **and** all-empty arrays is a no-op.
-- `subscribe` with `replace: true` **and** all-empty arrays is the "clear all my subs" path — the connection enters filtered mode with zero subscriptions and receives nothing until you subscribe again or send `subscribeAll`.
+- `subscribe` with `replace: true` **and** all-empty arrays is the "clear all my subs" path — the connection is left with zero subscriptions and receives nothing until you subscribe again.
+- `subscribeAll` is **not** a command on this feed. Sending it does nothing and is not acknowledged.
 
 ## Messages
 

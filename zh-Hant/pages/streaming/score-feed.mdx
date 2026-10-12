@@ -63,9 +63,11 @@ connectScoreFeed();
 
 ## 連線時的快照 {#snapshot-on-connect}
 
-當你連線時，推送會在任何即時更新**之前**，先傳送你所訂閱的每一場進行中賽事的當前狀態。每條快照訊息都帶有 `"snapshot": true`。
+當你訂閱時，推送會在任何即時更新**之前**，先傳送你的訂閱所涵蓋的每一場進行中賽事的當前狀態。每條快照訊息都帶有 `"snapshot": true`。
 
 之所以有這份快照，是因為該推送發布的是**變化**，而不是心跳。若沒有快照，在中場休息時連上的用戶端在某場賽事下一次發生變化之前對它一無所知 — 而這可能是好幾分鐘。
+
+新建立的連線沒有任何訂閱，因此請**先訂閱**：真正有用的快照是帶 `replace: true` 的訂閱命令所回傳的那一份。訂閱某個聯賽看板，其當前狀態會立即到達。
 
 - 快照訊息與即時訊息使用相同的 `[type, payload]` 結構，唯一的區別是 `snapshot` 標誌。
 - 已經結束的賽事不包含在內。
@@ -74,9 +76,13 @@ connectScoreFeed();
 
 ## 訂閱 {#subscriptions}
 
-預設情況下，已連線的用戶端會收到所有運動項目和聯賽的全部進行中賽事。若要收窄推送，可在套接字進入 `open` 之後，以 JSON 文字幀傳送下列命令之一。命令在該連線的生命週期內生效。
+**連線建立後沒有任何訂閱，在主動請求之前不會收到任何訊息。**請在套接字進入 `open` 後，以 JSON 文字幀傳送下列命令之一；命令在該連線的生命週期內生效。
 
-訂閱使用與 [行情推送](/zh-Hant/pages/streaming/price-feed#subscriptions) 相同的命令和相同的鍵，因此已經對接該推送的用戶端無需掌握任何新概念。
+<Warning>
+沒有任何方式可以訂閱全部賽事。請只訂閱你正在展示的內容 —— 一個聯賽看板、一個滾球標籤頁，或單場賽事。連線後從不訂閱的用戶端收不到任何訊息，這是預期行為，而不是推送失效。
+</Warning>
+
+訂閱使用與 [行情推送](/zh-Hant/pages/streaming/price-feed#subscriptions) 相同的命令和相同的鍵，因此已經對接該推送的用戶端無需掌握任何新概念；但若你用過那個推送，有一處差異值得注意：它預設廣播全部內容而本推送不會，它有 `subscribeAll` 這個 catch-all 而本推送沒有。
 
 ### 按 gameID、聯賽或運動項目訂閱 {#subscribe-by-gameid-league-or-sport}
 
@@ -123,16 +129,6 @@ connectScoreFeed();
 ```
 </CodeGroup>
 
-### 訂閱全部 {#subscribe-to-everything}
-
-顯式的全量訂閱。會清除該連線上所有按鍵訂閱。
-
-<CodeGroup>
-```json JSON
-{ "type": "subscribeAll" }
-```
-</CodeGroup>
-
 ### 路由語義 {#routing-semantics}
 
 - 訂閱某個 `gameID` 時，也會收到任何 `parentGameID` 與之匹配的賽事更新。目前沒有任何子市場會發布自己的狀態，因此這在實務上不會有任何影響 —— 參見[子市場](#child-markets) —— 但這意味著如果將來有子市場開始發布狀態，按 `gameID` 的訂閱無需改動。
@@ -140,7 +136,8 @@ connectScoreFeed();
 - 運動項目 ID 不區分大小寫 — `baseball` 與 `Baseball` 等價。
 - 陣列中的空字串會被忽略。
 - `subscribe` 在 `replace: false` **且** 陣列全部為空時為無操作。
-- `subscribe` 在 `replace: true` **且** 陣列全部為空時，是「清除我的全部訂閱」路徑 — 連線進入過濾模式且訂閱為零，在你再次訂閱或傳送 `subscribeAll` 之前不會收到任何訊息。
+- `subscribe` 在 `replace: true` **且** 陣列全部為空時，是「清除我的全部訂閱」路徑 — 連線的訂閱歸零，在你再次訂閱之前不會收到任何訊息。
+- `subscribeAll` 在本推送中**不是**命令。傳送它不會有任何效果，也不會得到確認。
 
 ## 訊息 {#messages}
 

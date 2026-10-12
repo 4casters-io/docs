@@ -63,9 +63,11 @@ El feed de puntuaciones admite el `ping/pong` estándar de WebSocket. Puedes env
 
 ## Instantáneas al conectar {#snapshot-on-connect}
 
-Al conectar, el feed envía el estado actual de todos los juegos en vivo a los que estás suscrito **antes** de cualquier actualización en tiempo real. Cada mensaje de instantánea lleva `"snapshot": true`.
+Al suscribirte, el feed envía el estado actual de todos los juegos en vivo que cubra tu suscripción **antes** de cualquier actualización en tiempo real. Cada mensaje de instantánea lleva `"snapshot": true`.
 
 Esto existe porque el feed publica **cambios**, no un heartbeat. Sin una instantánea, un cliente que se conecta en el descanso no sabría nada de un juego hasta su siguiente movimiento, que puede tardar muchos minutos.
+
+Una conexión recién abierta no tiene suscripciones, así que **suscríbete primero**: la instantánea que importa es la que devuelve tu suscripción con `replace: true`. Suscríbete al tablero de una liga y su estado actual llega de inmediato.
 
 - Los mensajes de instantánea usan la misma forma `[type, payload]` que los de tiempo real. La única diferencia es el indicador `snapshot`.
 - Los juegos que ya han terminado no se incluyen.
@@ -74,9 +76,13 @@ Esto existe porque el feed publica **cambios**, no un heartbeat. Sin una instant
 
 ## Suscripciones {#subscriptions}
 
-Por defecto, un cliente conectado recibe todos los juegos en vivo de todos los deportes y ligas. Para restringir el flujo, envía uno de los siguientes comandos como un frame de texto JSON después de que el socket esté `open`. Los comandos rigen durante toda la vida de la conexión.
+**Una conexión empieza sin suscripciones y no recibe nada hasta que las pide.** Envía uno de los siguientes comandos como un frame de texto JSON en cuanto el socket esté `open`; rigen durante toda la vida de la conexión.
 
-Las suscripciones usan los mismos comandos y las mismas claves que el [feed de precios](/es/pages/streaming/price-feed#subscriptions), así que un cliente que ya habla con ese feed no necesita conceptos nuevos.
+<Warning>
+No hay forma de suscribirse a todos los juegos. Suscríbete a lo que estés mostrando: el tablero de una liga, una pestaña en vivo o un solo juego. Un cliente que se conecta y nunca se suscribe no recibe ningún mensaje, y eso es el comportamiento esperado, no un feed caído.
+</Warning>
+
+Las suscripciones usan los mismos comandos y las mismas claves que el [feed de precios](/es/pages/streaming/price-feed#subscriptions), así que un cliente que ya habla con ese feed no necesita conceptos nuevos, con una diferencia que conviene conocer si vienes de ese feed: aquel difunde todo por defecto y este no, y aquel tiene un catch-all `subscribeAll` y este no tiene ninguno.
 
 ### Suscribirse por gameID, liga o deporte {#subscribe-by-gameid-league-or-sport}
 
@@ -123,16 +129,6 @@ Quita claves concretas. La conexión permanece en su modo actual (filtrado o sus
 ```
 </CodeGroup>
 
-### Suscribirse a todo {#subscribe-to-everything}
-
-Comodín explícito. Borra las suscripciones por clave de la conexión.
-
-<CodeGroup>
-```json JSON
-{ "type": "subscribeAll" }
-```
-</CodeGroup>
-
 ### Semántica de enrutado {#routing-semantics}
 
 - Una suscripción por `gameID` también recibe actualizaciones de cualquier juego cuyo `parentGameID` coincida con él. Hoy ningún mercado hijo publica estado propio, así que esto no cambia nada en la práctica — consulta [Mercados hijo](#child-markets) — pero significa que una suscripción por `gameID` no habrá que revisarla si algún día lo hace.
@@ -140,7 +136,8 @@ Comodín explícito. Borra las suscripciones por clave de la conexión.
 - Los IDs de deporte no distinguen mayúsculas — `baseball` y `Baseball` son equivalentes.
 - Las cadenas vacías dentro de los arrays se ignoran.
 - `subscribe` con `replace: false` **y** arrays vacíos no tiene efecto.
-- `subscribe` con `replace: true` **y** arrays vacíos es la vía de «borrar todas mis suscripciones»: la conexión entra en modo filtrado con cero suscripciones y no recibe nada hasta que vuelvas a suscribirte o envíes `subscribeAll`.
+- `subscribe` con `replace: true` **y** arrays vacíos es la vía de «borrar todas mis suscripciones»: la conexión queda con cero suscripciones y no recibe nada hasta que vuelvas a suscribirte.
+- `subscribeAll` **no** es un comando en este feed. Enviarlo no hace nada y no se confirma.
 
 ## Mensajes {#messages}
 
