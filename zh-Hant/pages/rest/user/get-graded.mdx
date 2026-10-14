@@ -1,0 +1,156 @@
+---
+title: '獲取已結算投注'
+description: '按開賽日期視窗回傳已結算投注，每筆成交一行，並附盈虧彙總'
+openapi: 'sources/core-api.openapi.json GET /user/v2/getGraded'
+---
+
+回傳你在某個日期視窗內開賽的賽事上的**已結算（已判定）投注**，以及盈虧和成交量彙總。
+
+此端點適用於針對已知時段的報表（例如“上週所有賽事”）。若要讓本地歷史副本隨投注結算保持同步，請改用 [按游標獲取已結算投注](/zh-Hant/pages/rest/user/get-graded-since) — 它按結算順序依次遍歷，因此你無需猜測日期視窗。
+
+## 行的組織方式 {#how-rows-work}
+
+- **每筆成交一行。** 一個成交了三次的訂單會回傳三行，每行有各自的 `txID`。請將 `txID` 作為行的唯一識別碼。
+- **訂單簿的兩側都包含在內。** 你吃掉的訂單以 `origin: "wager"` 出現；你掛出並被他人吃掉的訂單以 `origin: "offer"` 出現。無論哪種情況，`bet` 和 `odds` 都從**你的**一側給出。
+- **日期對應賽事的開賽時間，**而不是結算時間。結算較晚的投注仍歸入其賽事所在的視窗。
+- **每一行都內嵌了賽事資訊。**
+
+## 請求 {#request}
+
+`GET /user/v2/getGraded`
+
+同樣的參數也可以通過 `POST /user/v2/getGraded` 以 JSON 請求主體傳送。
+
+<ParamField query="startDate" type="string">
+  視窗起點（含），可為任意 ISO 8601 時間戳記，與賽事開賽時間比較。省略時回傳你的**全部歷史** — 此時不受下文 35 天限制。
+</ParamField>
+<ParamField query="endDate" type="string">
+  視窗終點（不含），可為任意 ISO 8601 時間戳記。預設為當前時間。
+</ParamField>
+
+<Warning>
+傳送 `startDate` 時，從 `startDate` 到 `endDate` 的視窗**最長為 35 天**。超出的視窗會以 `400` 拒絕 — 絕不會被靜默截斷。更長的時段請以 35 天為步長分頁查詢。
+</Warning>
+
+<CodeGroup>
+```bash curl
+curl "https://api.4casters.io/user/v2/getGraded?startDate=2026-08-01T00:00:00.000Z&endDate=2026-08-08T00:00:00.000Z" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+</CodeGroup>
+
+## 回應 {#response}
+
+<ResponseField name="data.graded" type="array">
+  視窗內你的已結算成交。
+  <Expandable title="GradedBet">
+    <ResponseField name="txID" type="string">成交 id。每行唯一。</ResponseField>
+    <ResponseField name="id" type="string">訂單 id。同一訂單的每筆成交共用此值。</ResponseField>
+    <ResponseField name="ticketNumber" type="string">展示用票據號。</ResponseField>
+    <ResponseField name="origin" type="string">`wager` — 你吃掉了此訂單。`offer` — 你掛出了此訂單並被吃掉。</ResponseField>
+    <ResponseField name="type" type="string">`moneyline`、`spread`、`total` 或 `moneyline1x2`。</ResponseField>
+    <ResponseField name="outcome" type="string">`winner`、`loser`、`half-win`、`half-loss` 或 `refunded`。</ResponseField>
+    <ResponseField name="bet" type="number">你在此筆成交上的本金。</ResponseField>
+    <ResponseField name="odds" type="number">從你一側給出的美式賠率。</ResponseField>
+    <ResponseField name="participantID" type="string">你所支援的參賽方。出現在 `moneyline` 和 `spread` 上。</ResponseField>
+    <ResponseField name="spread" type="number">盤口線。出現在 `spread` 上。</ResponseField>
+    <ResponseField name="total" type="number">盤口線。出現在 `total` 上。</ResponseField>
+    <ResponseField name="OU" type="string">`over` 或 `under`。出現在 `total` 上。</ResponseField>
+    <ResponseField name="market" type="string">所支援的結果。出現在 `moneyline1x2` 上。</ResponseField>
+    <ResponseField name="side" type="string">`yes` 或 `no`。出現在 `moneyline1x2` 上。</ResponseField>
+    <ResponseField name="fee" type="string">此筆成交收取的佣金。你作為 maker 時為 `"0.00"` — maker 不支付佣金。</ResponseField>
+    <ResponseField name="risk" type="string">你承擔風險的金額：本金加 `fee`。</ResponseField>
+    <ResponseField name="win" type="string">你可能贏得的金額：毛收益減 `fee`。</ResponseField>
+    <ResponseField name="result" type="string">你在此筆成交上的結算盈虧 — 獲勝時為 `win`，虧損時為負的 `risk`。結果未知時不出現。</ResponseField>
+    <ResponseField name="createdAt" type="string">下單的 ISO 8601 時間。</ResponseField>
+    <ResponseField name="matchedTime" type="string">成交的 ISO 8601 時間。</ResponseField>
+    <ResponseField name="settledAt" type="string">該筆成交被判定的 ISO 8601 時間。</ResponseField>
+    <ResponseField name="graded" type="boolean">此處始終為 `true`。</ResponseField>
+    <ResponseField name="adminRefund" type="boolean">若該投注由管理員退款而非按結果判定，則為 `true`。</ResponseField>
+    <ResponseField name="cancelled" type="boolean">對於 `offer` 行，表示你訂單的剩餘部分之後是否被取消。`wager` 行始終為 `false`。</ResponseField>
+    <ResponseField name="takenRatio" type="number">僅 `offer` 行。你訂單的完整數量中已成交的比例，`0`–`1`。</ResponseField>
+    <ResponseField name="expiry" type="string">僅 `offer` 行。你訂單的 ISO 8601 過期時間，或 `null`。</ResponseField>
+    <ResponseField name="wagerRequestID" type="string">你下單時傳送的 `wagerRequestID`，或 `null`。</ResponseField>
+    <ResponseField name="userReference" type="string">你下單時傳送的 `userReference`，或 `null`。</ResponseField>
+    <ResponseField name="platform" type="string">訂單來源，例如 `api`、`web`、`mobile`。</ResponseField>
+    <Snippet file="zh-Hant/types/game-summary.mdx" />
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="data.summary" type="object">
+  回傳各行的彙總合計。
+  <Expandable title="summary">
+    <ResponseField name="pnl" type="number">`result` 之和，以整美元計。</ResponseField>
+    <ResponseField name="volume" type="number">每行 `risk` 與 `win` 中較小者之和，以整美元計。</ResponseField>
+  </Expandable>
+</ResponseField>
+
+<Note>
+行上的金額欄位（`fee`、`risk`、`win`、`result`）是保留兩位小數的**字串**，因此可以精確相加。`summary` 合計為四捨五入後的數字。
+</Note>
+
+在極少數情況下，某行對應的訂單無法載入。該行僅包含 `txID`、`ticketNumber`、`settledAt`、`matchedTime` 和 `game`，且其 `id` 是物件 `{ "_id": "…", "error": "…" }` 而非字串。請跳過或記錄該行。
+
+### 示例 {#example}
+
+一筆以 -110 吃單買大、本金 $100 且輸掉的投注，佣金為 1%：
+
+<CodeGroup>
+```json JSON
+{
+  "data": {
+    "graded": [
+      {
+        "txID": "66b2a1f0c3e4d5a6b7c8d9e0",
+        "id": "66b2a1e9c3e4d5a6b7c8d9d1",
+        "ticketNumber": "8f3c2a1b9d4e5f60718293a4b5c6d7e8",
+        "origin": "wager",
+        "type": "total",
+        "outcome": "loser",
+        "bet": 100,
+        "odds": -110,
+        "total": 8.5,
+        "OU": "over",
+        "fee": "1.00",
+        "risk": "101.00",
+        "win": "89.91",
+        "result": "-101.00",
+        "createdAt": "2026-08-01T23:10:04.112Z",
+        "matchedTime": "2026-08-01T23:10:04.380Z",
+        "settledAt": "2026-08-02T02:41:57.003Z",
+        "graded": true,
+        "adminRefund": false,
+        "cancelled": false,
+        "wagerRequestID": null,
+        "userReference": "my-ref-1042",
+        "platform": "api",
+        "game": {
+          "id": "66b0f4e2a9b8c7d6e5f4a3b2",
+          "league": "MLB",
+          "sport": "baseball",
+          "start": "2026-08-01T23:05:00.000Z",
+          "ended": true,
+          "live": false,
+          "isSpecials": false,
+          "participants": [/* away, home */]
+        }
+      }
+    ],
+    "summary": { "pnl": -101, "volume": 90 }
+  }
+}
+```
+</CodeGroup>
+
+## 速率限制 {#rate-limits}
+
+**每使用者每分鐘 60 次請求**，併疊加 [全域每 IP 限制](/zh-Hant/pages/rest/introduction#rate-limiting)。`429` 回應帶有以秒為單位的 `Retry-After` 回應標頭。
+
+## 錯誤 {#errors}
+
+| 狀態 | 含義 |
+|---|---|
+| `400` | 日期格式錯誤，或視窗超過 35 天。 |
+| `401` | 認證令牌缺失或無效。 |
+| `403` | 你的帳戶無權使用此端點。 |
+| `429` | 觸發速率限制。請等待 `Retry-After` 秒。 |

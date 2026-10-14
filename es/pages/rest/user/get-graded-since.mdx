@@ -1,0 +1,132 @@
+---
+title: 'Obtener apuestas liquidadas desde un cursor'
+description: 'Consulta tus apuestas liquidadas en orden de liquidación con un cursor, para mantener una copia local sincronizada'
+openapi: 'sources/core-api.openapi.json GET /user/v2/getGradedSince'
+---
+
+Devuelve tus **apuestas liquidadas en el orden en que se liquidaron**, una página a la vez. Cada respuesta te da un `cursor`; reenvíalo para obtener la página siguiente. Así mantienes una copia local de tu historial de apuestas sincronizada sin adivinar ventanas de fechas.
+
+Las filas son exactamente las filas de [Obtener apuestas liquidadas por fechas](/es/pages/rest/user/get-graded): una por cruce, desde tu lado, con el juego incrustado.
+
+## Cómo consultar {#how-to-poll}
+
+1. **Primera llamada:** envía `since`, una marca de tiempo ISO 8601. Recibes las apuestas liquidadas estrictamente después de ese instante, de la más antigua a la más reciente, más un `cursor`.
+2. **Cada llamada posterior:** envía el `cursor` más reciente, **una vez por segundo**.
+3. Si una respuesta tiene `hasMore: true`, vuelve a llamar **de inmediato** con el nuevo cursor hasta que `hasMore` sea `false`. Luego vuelve a una vez por segundo.
+
+Una página vacía devuelve tu cursor sin cambios, así que un proceso de consulta nunca pierde su posición. Trata el cursor como opaco: nunca construyas ni edites uno. Un cursor que este endpoint no te dio se rechaza con `400`.
+
+```js
+let cursor = firstResponse.data.cursor; // from your one-time ?since=<ISO> call
+while (true) {
+  let hasMore = true;
+  while (hasMore) {
+    const res = await get('/user/v2/getGradedSince', { cursor });
+    if (res.status === 429) { await sleep(res.headers['retry-after'] * 1000); continue; } // same cursor
+    for (const row of res.data.graded) upsert(row.txID, row);
+    cursor = res.data.cursor;
+    hasMore = res.data.hasMore;
+  }
+  await sleep(1000);
+}
+```
+
+<Note>
+**Haz upsert por `txID`, no agregues.** Una apuesta puede volver más tarde si cambia su liquidación: un reembolso, o una reliquidación tras una corrección del marcador. Reaparece más adelante en el recorrido; la versión más reciente es la que vale.
+</Note>
+
+## Reanudar con `settledThrough` {#resuming-with-settledthrough}
+
+Cada respuesta también incluye `settledThrough`, una marca de tiempo ISO 8601: ya tienes **todas** las apuestas liquidadas en ese instante o antes.
+
+Si prefieres no guardar el cursor opaco, reanuda con `since=settledThrough`. Así no puedes perderte ninguna apuesta. Puede que veas algunas filas de nuevo, porque varias apuestas pueden liquidarse en el mismo milisegundo y una página puede terminar a mitad de ellas; elimina duplicados por `txID`. El `cursor` sigue siendo la posición exacta.
+
+## Solicitud {#request}
+
+`GET /user/v2/getGradedSince`
+
+Los mismos parámetros también se pueden enviar como cuerpo JSON con `POST /user/v2/getGradedSince`. Envía exactamente uno de `since` y `cursor`.
+
+<ParamField query="since" type="string">
+  Solo en la primera llamada. Devuelve las apuestas liquidadas estrictamente después de este instante ISO 8601.
+</ParamField>
+<ParamField query="cursor" type="string">
+  En cada llamada posterior. El `cursor` de la respuesta anterior, tal cual.
+</ParamField>
+
+<CodeGroup>
+```bash Primera llamada
+curl "https://api.4casters.io/user/v2/getGradedSince?since=2026-08-01T00:00:00.000Z" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+
+```bash Siguiente llamada
+curl "https://api.4casters.io/user/v2/getGradedSince?cursor=CURSOR_FROM_LAST_RESPONSE" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+</CodeGroup>
+
+## Respuesta {#response}
+
+<ResponseField name="data.graded" type="array">
+  Hasta **100** cruces liquidados, primero la liquidación más antigua. Mismos campos que [Obtener apuestas liquidadas por fechas](/es/pages/rest/user/get-graded#response).
+</ResponseField>
+<ResponseField name="data.cursor" type="string">
+  Tu nueva posición. Envíala como `cursor` en la siguiente llamada. En una página vacía es el cursor que enviaste.
+</ResponseField>
+<ResponseField name="data.hasMore" type="boolean">
+  `true` si ya hay otra página lista: vuelve a llamar de inmediato.
+</ResponseField>
+<ResponseField name="data.settledThrough" type="string">
+  ISO 8601. Tienes todas las apuestas liquidadas en este instante o antes. Es seguro reanudar desde aquí con `since`.
+</ResponseField>
+
+### Ejemplo {#example}
+
+<CodeGroup>
+```json JSON
+{
+  "data": {
+    "graded": [
+      {
+        "txID": "66b2a1f0c3e4d5a6b7c8d9e0",
+        "id": "66b2a1e9c3e4d5a6b7c8d9d1",
+        "origin": "wager",
+        "type": "total",
+        "outcome": "loser",
+        "bet": 100,
+        "odds": -110,
+        "total": 8.5,
+        "OU": "over",
+        "fee": "1.00",
+        "risk": "101.00",
+        "win": "89.91",
+        "result": "-101.00",
+        "settledAt": "2026-08-02T02:41:57.003Z",
+        "game": { "id": "66b0f4e2a9b8c7d6e5f4a3b2", "league": "MLB" /* ... */ }
+      }
+    ],
+    "cursor": "gc_9QmT4xR2vK7pL1sN8wZ3",
+    "hasMore": false,
+    "settledThrough": "2026-08-02T02:41:57.003Z"
+  }
+}
+```
+</CodeGroup>
+
+## Límites de tasa {#rate-limits}
+
+**10 solicitudes cada 5 segundos por usuario**, además del [límite global por IP](/es/pages/rest/introduction#rate-limiting). Eso deja margen para vaciar un atraso mientras consultas una vez por segundo.
+
+La liquidación en vivo nunca llena una página (unas pocas filas por segundo como mucho), así que `hasMore` solo se activa de verdad cuando te estás poniendo al día tras una caída. Un día completo de liquidaciones de una cuenta con mucha actividad se vacía en unos 12 segundos.
+
+Si recibes un `429`, espera `Retry-After` segundos y reenvía el **mismo** cursor.
+
+## Errores {#errors}
+
+| Estado | Significado |
+|---|---|
+| `400` | Se enviaron `since` y `cursor` a la vez, un `since` mal formado, o un cursor que este endpoint no emitió. |
+| `401` | Token de autenticación ausente o no válido. |
+| `403` | Tu cuenta no puede usar este endpoint. |
+| `429` | Límite de tasa superado. Espera `Retry-After` segundos y reenvía el mismo cursor. |

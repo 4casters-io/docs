@@ -1,0 +1,156 @@
+---
+title: 'Obtener apuestas liquidadas por fechas'
+description: 'Apuestas liquidadas en una ventana de fechas de inicio del juego, una fila por cruce, con un resumen de P&L'
+openapi: 'sources/core-api.openapi.json GET /user/v2/getGraded'
+---
+
+Devuelve tus **apuestas liquidadas** en juegos que empezaron dentro de una ventana de fechas, más un resumen de P&L y volumen.
+
+Usa este endpoint para informes sobre un periodo conocido ("todo lo de los juegos de la semana pasada"). Para mantener una copia local de tu historial sincronizada a medida que se liquidan las apuestas, usa [Obtener apuestas liquidadas desde un cursor](/es/pages/rest/user/get-graded-since): recorre las liquidaciones en orden, así nunca tienes que adivinar una ventana de fechas.
+
+## Cómo funcionan las filas {#how-rows-work}
+
+- **Una fila por cruce.** Una orden que se cruzó tres veces vuelve como tres filas, cada una con su propio `txID`. Usa `txID` como identidad de la fila.
+- **Ambos lados del libro.** Las órdenes que tomaste aparecen con `origin: "wager"`; las órdenes que colocaste y que alguien tomó aparecen con `origin: "offer"`. En ambos casos, `bet` y `odds` son desde **tu** lado.
+- **Las fechas se comparan con la hora de inicio del juego,** no con la hora de liquidación. Una apuesta que se liquida tarde sigue cayendo en la ventana de su juego.
+- **El juego va incrustado** en cada fila.
+
+## Solicitud {#request}
+
+`GET /user/v2/getGraded`
+
+Los mismos parámetros también se pueden enviar como cuerpo JSON con `POST /user/v2/getGraded`.
+
+<ParamField query="startDate" type="string">
+  Inicio de la ventana, inclusivo, como cualquier marca de tiempo ISO 8601, comparado con la hora de inicio del juego. Omítelo para obtener tu **historial completo**: el límite de 35 días de abajo no aplica.
+</ParamField>
+<ParamField query="endDate" type="string">
+  Fin de la ventana, exclusivo, como cualquier marca de tiempo ISO 8601. El valor por defecto es ahora.
+</ParamField>
+
+<Warning>
+Cuando envías `startDate`, la ventana de `startDate` a `endDate` puede ser **de 35 días como máximo**. Una ventana más amplia se rechaza con `400`: nunca se trunca en silencio. Recorre periodos más largos en tramos de 35 días.
+</Warning>
+
+<CodeGroup>
+```bash curl
+curl "https://api.4casters.io/user/v2/getGraded?startDate=2026-08-01T00:00:00.000Z&endDate=2026-08-08T00:00:00.000Z" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+</CodeGroup>
+
+## Respuesta {#response}
+
+<ResponseField name="data.graded" type="array">
+  Tus cruces liquidados en la ventana.
+  <Expandable title="GradedBet">
+    <ResponseField name="txID" type="string">Id del cruce. Único por fila.</ResponseField>
+    <ResponseField name="id" type="string">Id de la orden. Compartido por todos los cruces de la misma orden.</ResponseField>
+    <ResponseField name="ticketNumber" type="string">Número de ticket de visualización.</ResponseField>
+    <ResponseField name="origin" type="string">`wager`: tomaste esta orden. `offer`: colocaste la orden y alguien la tomó.</ResponseField>
+    <ResponseField name="type" type="string">`moneyline`, `spread`, `total` o `moneyline1x2`.</ResponseField>
+    <ResponseField name="outcome" type="string">`winner`, `loser`, `half-win`, `half-loss` o `refunded`.</ResponseField>
+    <ResponseField name="bet" type="number">Tu importe en este cruce.</ResponseField>
+    <ResponseField name="odds" type="number">Cuotas americanas desde tu lado.</ResponseField>
+    <ResponseField name="participantID" type="string">El participante por el que apostaste. Presente en `moneyline` y `spread`.</ResponseField>
+    <ResponseField name="spread" type="number">La línea. Presente en `spread`.</ResponseField>
+    <ResponseField name="total" type="number">La línea. Presente en `total`.</ResponseField>
+    <ResponseField name="OU" type="string">`over` o `under`. Presente en `total`.</ResponseField>
+    <ResponseField name="market" type="string">El resultado por el que apostaste. Presente en `moneyline1x2`.</ResponseField>
+    <ResponseField name="side" type="string">`yes` o `no`. Presente en `moneyline1x2`.</ResponseField>
+    <ResponseField name="fee" type="string">Comisión cobrada en este cruce. `"0.00"` cuando fuiste el maker: los makers no pagan comisión.</ResponseField>
+    <ResponseField name="risk" type="string">Lo que pusiste en riesgo: importe más `fee`.</ResponseField>
+    <ResponseField name="win" type="string">Lo que podías ganar: ganancia bruta menos `fee`.</ResponseField>
+    <ResponseField name="result" type="string">Tu P&L liquidado en este cruce: `win` si ganaste, menos `risk` si perdiste. Ausente cuando el resultado es desconocido.</ResponseField>
+    <ResponseField name="createdAt" type="string">Marca de tiempo ISO 8601 en que se colocó la orden.</ResponseField>
+    <ResponseField name="matchedTime" type="string">Marca de tiempo ISO 8601 del cruce.</ResponseField>
+    <ResponseField name="settledAt" type="string">Marca de tiempo ISO 8601 en que se liquidó el cruce.</ResponseField>
+    <ResponseField name="graded" type="boolean">Siempre `true` aquí.</ResponseField>
+    <ResponseField name="adminRefund" type="boolean">`true` si un administrador reembolsó la apuesta en lugar de liquidarla según el resultado.</ResponseField>
+    <ResponseField name="cancelled" type="boolean">En filas `offer`, si el resto de tu orden se canceló después. Siempre `false` en filas `wager`.</ResponseField>
+    <ResponseField name="takenRatio" type="number">Solo filas `offer`. Qué parte del tamaño completo de tu orden se ha cruzado, `0`–`1`.</ResponseField>
+    <ResponseField name="expiry" type="string">Solo filas `offer`. Vencimiento ISO 8601 de tu orden, o `null`.</ResponseField>
+    <ResponseField name="wagerRequestID" type="string">El `wagerRequestID` que enviaste al colocar la orden, o `null`.</ResponseField>
+    <ResponseField name="userReference" type="string">El `userReference` que enviaste al colocar la orden, o `null`.</ResponseField>
+    <ResponseField name="platform" type="string">Origen de la orden, p. ej. `api`, `web`, `mobile`.</ResponseField>
+    <Snippet file="es/types/game-summary.mdx" />
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="data.summary" type="object">
+  Totales sobre las filas devueltas.
+  <Expandable title="summary">
+    <ResponseField name="pnl" type="number">Suma de `result`, en dólares enteros.</ResponseField>
+    <ResponseField name="volume" type="number">Suma del menor entre `risk` y `win` por fila, en dólares enteros.</ResponseField>
+  </Expandable>
+</ResponseField>
+
+<Note>
+Los campos de dinero de las filas (`fee`, `risk`, `win`, `result`) son **cadenas** con dos decimales, para que sumen con exactitud. Los totales de `summary` son números redondeados.
+</Note>
+
+En casos raros, la orden de una fila no se puede cargar. Esa fila trae solo `txID`, `ticketNumber`, `settledAt`, `matchedTime` y `game`, y su `id` es un objeto `{ "_id": "…", "error": "…" }` en lugar de una cadena. Omítela o regístrala.
+
+### Ejemplo {#example}
+
+Una toma de $100 al over a -110 que perdió, con 1% de comisión:
+
+<CodeGroup>
+```json JSON
+{
+  "data": {
+    "graded": [
+      {
+        "txID": "66b2a1f0c3e4d5a6b7c8d9e0",
+        "id": "66b2a1e9c3e4d5a6b7c8d9d1",
+        "ticketNumber": "8f3c2a1b9d4e5f60718293a4b5c6d7e8",
+        "origin": "wager",
+        "type": "total",
+        "outcome": "loser",
+        "bet": 100,
+        "odds": -110,
+        "total": 8.5,
+        "OU": "over",
+        "fee": "1.00",
+        "risk": "101.00",
+        "win": "89.91",
+        "result": "-101.00",
+        "createdAt": "2026-08-01T23:10:04.112Z",
+        "matchedTime": "2026-08-01T23:10:04.380Z",
+        "settledAt": "2026-08-02T02:41:57.003Z",
+        "graded": true,
+        "adminRefund": false,
+        "cancelled": false,
+        "wagerRequestID": null,
+        "userReference": "my-ref-1042",
+        "platform": "api",
+        "game": {
+          "id": "66b0f4e2a9b8c7d6e5f4a3b2",
+          "league": "MLB",
+          "sport": "baseball",
+          "start": "2026-08-01T23:05:00.000Z",
+          "ended": true,
+          "live": false,
+          "isSpecials": false,
+          "participants": [/* away, home */]
+        }
+      }
+    ],
+    "summary": { "pnl": -101, "volume": 90 }
+  }
+}
+```
+</CodeGroup>
+
+## Límites de tasa {#rate-limits}
+
+**60 solicitudes por minuto por usuario**, además del [límite global por IP](/es/pages/rest/introduction#rate-limiting). Un `429` incluye un encabezado `Retry-After` en segundos.
+
+## Errores {#errors}
+
+| Estado | Significado |
+|---|---|
+| `400` | Fecha mal formada, o una ventana de más de 35 días. |
+| `401` | Token de autenticación ausente o no válido. |
+| `403` | Tu cuenta no puede usar este endpoint. |
+| `429` | Límite de tasa superado. Espera `Retry-After` segundos. |

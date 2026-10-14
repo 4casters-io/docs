@@ -1,0 +1,132 @@
+---
+title: 'Get graded bets since a cursor'
+description: 'Poll your settled bets in settlement order with a cursor, to keep a local copy in sync'
+openapi: 'sources/core-api.openapi.json GET /user/v2/getGradedSince'
+---
+
+Returns your **graded (settled) bets in the order they settled**, a page at a time. Each response gives you a `cursor`; send it back to get the next page. This is how you keep a local copy of your bet history in sync without guessing date windows.
+
+The rows are exactly the rows of [Get graded bets](/pages/rest/user/get-graded): one per fill, from your side, with the game embedded.
+
+## How to poll
+
+1. **First call:** send `since`, an ISO 8601 timestamp. You get the bets settled strictly after that instant, oldest first, plus a `cursor`.
+2. **Every call after that:** send the latest `cursor`, **once per second**.
+3. If a response has `hasMore: true`, call again **immediately** with the new cursor until `hasMore` is `false`. Then go back to once per second.
+
+An empty page returns your cursor unchanged, so a poller never loses its place. Treat the cursor as opaque: never build or edit one. A cursor this endpoint didn't give you is rejected with `400`.
+
+```js
+let cursor = firstResponse.data.cursor; // from your one-time ?since=<ISO> call
+while (true) {
+  let hasMore = true;
+  while (hasMore) {
+    const res = await get('/user/v2/getGradedSince', { cursor });
+    if (res.status === 429) { await sleep(res.headers['retry-after'] * 1000); continue; } // same cursor
+    for (const row of res.data.graded) upsert(row.txID, row);
+    cursor = res.data.cursor;
+    hasMore = res.data.hasMore;
+  }
+  await sleep(1000);
+}
+```
+
+<Note>
+**Upsert by `txID`, don't append.** A bet can come back later if its settlement changes — a refund, or a regrade after a score correction. It reappears further along the walk; the latest version wins.
+</Note>
+
+## Resuming with `settledThrough`
+
+Every response also has `settledThrough`, an ISO 8601 timestamp: you now hold **every** bet settled at or before that instant.
+
+If you'd rather not store the opaque cursor, resume with `since=settledThrough`. You can't miss a bet that way. You may see a few rows again, because several bets can settle in the same millisecond and a page can end partway through them; dedupe by `txID`. The `cursor` is still the exact position.
+
+## Request
+
+`GET /user/v2/getGradedSince`
+
+The same parameters can also be sent as a JSON body with `POST /user/v2/getGradedSince`. Send exactly one of `since` and `cursor`.
+
+<ParamField query="since" type="string">
+  First call only. Returns bets settled strictly after this ISO 8601 instant.
+</ParamField>
+<ParamField query="cursor" type="string">
+  Every later call. The `cursor` from the previous response, verbatim.
+</ParamField>
+
+<CodeGroup>
+```bash First call
+curl "https://api.4casters.io/user/v2/getGradedSince?since=2026-08-01T00:00:00.000Z" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+
+```bash Next call
+curl "https://api.4casters.io/user/v2/getGradedSince?cursor=CURSOR_FROM_LAST_RESPONSE" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+</CodeGroup>
+
+## Response
+
+<ResponseField name="data.graded" type="array">
+  Up to **100** graded fills, oldest settlement first. Same fields as [Get graded bets](/pages/rest/user/get-graded#response).
+</ResponseField>
+<ResponseField name="data.cursor" type="string">
+  Your new position. Send it as `cursor` on the next call. On an empty page it's the cursor you sent.
+</ResponseField>
+<ResponseField name="data.hasMore" type="boolean">
+  `true` if another page is ready now — call again immediately.
+</ResponseField>
+<ResponseField name="data.settledThrough" type="string">
+  ISO 8601. You hold every bet settled at or before this instant. Safe to resume from with `since`.
+</ResponseField>
+
+### Example
+
+<CodeGroup>
+```json JSON
+{
+  "data": {
+    "graded": [
+      {
+        "txID": "66b2a1f0c3e4d5a6b7c8d9e0",
+        "id": "66b2a1e9c3e4d5a6b7c8d9d1",
+        "origin": "wager",
+        "type": "total",
+        "outcome": "loser",
+        "bet": 100,
+        "odds": -110,
+        "total": 8.5,
+        "OU": "over",
+        "fee": "1.00",
+        "risk": "101.00",
+        "win": "89.91",
+        "result": "-101.00",
+        "settledAt": "2026-08-02T02:41:57.003Z",
+        "game": { "id": "66b0f4e2a9b8c7d6e5f4a3b2", "league": "MLB" /* ... */ }
+      }
+    ],
+    "cursor": "gc_9QmT4xR2vK7pL1sN8wZ3",
+    "hasMore": false,
+    "settledThrough": "2026-08-02T02:41:57.003Z"
+  }
+}
+```
+</CodeGroup>
+
+## Rate limits
+
+**10 requests per 5 seconds per user**, on top of the [global per-IP limit](/pages/rest/introduction#rate-limiting). That leaves room to drain a backlog while polling once per second.
+
+Live settlement never fills a page — a few rows per second at most — so `hasMore` only really fires when you're catching up after downtime. A busy account's full day of settlements drains in about 12 seconds.
+
+If you get a `429`, wait `Retry-After` seconds and resend the **same** cursor.
+
+## Errors
+
+| Status | Meaning |
+|---|---|
+| `400` | Both `since` and `cursor` sent, a malformed `since`, or a cursor this endpoint didn't issue. |
+| `401` | Missing or invalid auth token. |
+| `403` | Your account may not use this endpoint. |
+| `429` | Rate limited. Wait `Retry-After` seconds and resend the same cursor. |

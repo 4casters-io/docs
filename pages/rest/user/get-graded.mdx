@@ -1,0 +1,156 @@
+---
+title: 'Get graded bets'
+description: 'Settled bets for a game-start date window, one row per fill, with a P&L summary'
+openapi: 'sources/core-api.openapi.json GET /user/v2/getGraded'
+---
+
+Returns your **graded (settled) bets** on games that started inside a date window, plus a P&L and volume summary.
+
+Use this endpoint for reports over a known period ("everything on games last week"). To keep a local copy of your history in sync as bets settle, use [Get graded bets since a cursor](/pages/rest/user/get-graded-since) instead — it walks settlements in order, so you never have to guess a date window.
+
+## How rows work
+
+- **One row per fill.** An order that matched three times comes back as three rows, each with its own `txID`. Use `txID` as the row's identity.
+- **Both sides of the book.** Orders you took appear with `origin: "wager"`; orders you posted that someone took appear with `origin: "offer"`. Either way `bet` and `odds` are from **your** side.
+- **Dates match the game's start time,** not the settlement time. A bet that settles late still falls in its game's window.
+- **The game is embedded** in every row.
+
+## Request
+
+`GET /user/v2/getGraded`
+
+The same parameters can also be sent as a JSON body with `POST /user/v2/getGraded`.
+
+<ParamField query="startDate" type="string">
+  Start of the window, inclusive, as any ISO 8601 timestamp, matched against the game start time. Omit it to get your **full history** — the 35-day limit below does not apply.
+</ParamField>
+<ParamField query="endDate" type="string">
+  End of the window, exclusive, as any ISO 8601 timestamp. Defaults to now.
+</ParamField>
+
+<Warning>
+When you send `startDate`, the window from `startDate` to `endDate` may be **at most 35 days**. A wider window is rejected with `400` — it is never silently truncated. Page through longer periods in 35-day steps.
+</Warning>
+
+<CodeGroup>
+```bash curl
+curl "https://api.4casters.io/user/v2/getGraded?startDate=2026-08-01T00:00:00.000Z&endDate=2026-08-08T00:00:00.000Z" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+</CodeGroup>
+
+## Response
+
+<ResponseField name="data.graded" type="array">
+  Your graded fills in the window.
+  <Expandable title="GradedBet">
+    <ResponseField name="txID" type="string">Fill id. Unique per row.</ResponseField>
+    <ResponseField name="id" type="string">Order id. Shared by every fill of the same order.</ResponseField>
+    <ResponseField name="ticketNumber" type="string">Display ticket number.</ResponseField>
+    <ResponseField name="origin" type="string">`wager` — you took this order. `offer` — you posted the order and it was taken.</ResponseField>
+    <ResponseField name="type" type="string">`moneyline`, `spread`, `total`, or `moneyline1x2`.</ResponseField>
+    <ResponseField name="outcome" type="string">`winner`, `loser`, `half-win`, `half-loss`, or `refunded`.</ResponseField>
+    <ResponseField name="bet" type="number">Your stake on this fill.</ResponseField>
+    <ResponseField name="odds" type="number">American odds from your side.</ResponseField>
+    <ResponseField name="participantID" type="string">The participant you backed. Set for `moneyline` and `spread`.</ResponseField>
+    <ResponseField name="spread" type="number">The line. Set for `spread`.</ResponseField>
+    <ResponseField name="total" type="number">The line. Set for `total`.</ResponseField>
+    <ResponseField name="OU" type="string">`over` or `under`. Set for `total`.</ResponseField>
+    <ResponseField name="market" type="string">The outcome backed. Set for `moneyline1x2`.</ResponseField>
+    <ResponseField name="side" type="string">`yes` or `no`. Set for `moneyline1x2`.</ResponseField>
+    <ResponseField name="fee" type="string">Commission charged on this fill. `"0.00"` when you were the maker — makers pay no commission.</ResponseField>
+    <ResponseField name="risk" type="string">What you put at risk: stake plus `fee`.</ResponseField>
+    <ResponseField name="win" type="string">What you stood to win: gross winnings minus `fee`.</ResponseField>
+    <ResponseField name="result" type="string">Your settled P&L on this fill — `win` when you won, minus `risk` when you lost. Absent when the outcome is unknown.</ResponseField>
+    <ResponseField name="createdAt" type="string">ISO 8601 time the order was placed.</ResponseField>
+    <ResponseField name="matchedTime" type="string">ISO 8601 time of the fill.</ResponseField>
+    <ResponseField name="settledAt" type="string">ISO 8601 time the fill was graded.</ResponseField>
+    <ResponseField name="graded" type="boolean">Always `true` here.</ResponseField>
+    <ResponseField name="adminRefund" type="boolean">`true` if the bet was refunded by an admin rather than graded on the result.</ResponseField>
+    <ResponseField name="cancelled" type="boolean">For `offer` rows, whether the rest of your order was later cancelled. Always `false` for `wager` rows.</ResponseField>
+    <ResponseField name="takenRatio" type="number">`offer` rows only. How much of your order's full size has been filled, `0`–`1`.</ResponseField>
+    <ResponseField name="expiry" type="string">`offer` rows only. ISO 8601 expiry of your order, or `null`.</ResponseField>
+    <ResponseField name="wagerRequestID" type="string">The `wagerRequestID` you sent when placing the order, or `null`.</ResponseField>
+    <ResponseField name="userReference" type="string">The `userReference` you sent when placing the order, or `null`.</ResponseField>
+    <ResponseField name="platform" type="string">Where the order came from, e.g. `api`, `web`, `mobile`.</ResponseField>
+    <Snippet file="types/game-summary.mdx" />
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="data.summary" type="object">
+  Totals over the returned rows.
+  <Expandable title="summary">
+    <ResponseField name="pnl" type="number">Sum of `result`, in whole dollars.</ResponseField>
+    <ResponseField name="volume" type="number">Sum of the smaller of `risk` and `win` per row, in whole dollars.</ResponseField>
+  </Expandable>
+</ResponseField>
+
+<Note>
+Money fields on rows (`fee`, `risk`, `win`, `result`) are **strings** with two decimals, so they add up exactly. The `summary` totals are rounded numbers.
+</Note>
+
+In rare cases a row's order can't be loaded. That row carries only `txID`, `ticketNumber`, `settledAt`, `matchedTime` and `game`, and its `id` is an object `{ "_id": "…", "error": "…" }` instead of a string. Skip or log it.
+
+### Example
+
+A $100 take on the over at -110 that lost, at 1% commission:
+
+<CodeGroup>
+```json JSON
+{
+  "data": {
+    "graded": [
+      {
+        "txID": "66b2a1f0c3e4d5a6b7c8d9e0",
+        "id": "66b2a1e9c3e4d5a6b7c8d9d1",
+        "ticketNumber": "8f3c2a1b9d4e5f60718293a4b5c6d7e8",
+        "origin": "wager",
+        "type": "total",
+        "outcome": "loser",
+        "bet": 100,
+        "odds": -110,
+        "total": 8.5,
+        "OU": "over",
+        "fee": "1.00",
+        "risk": "101.00",
+        "win": "89.91",
+        "result": "-101.00",
+        "createdAt": "2026-08-01T23:10:04.112Z",
+        "matchedTime": "2026-08-01T23:10:04.380Z",
+        "settledAt": "2026-08-02T02:41:57.003Z",
+        "graded": true,
+        "adminRefund": false,
+        "cancelled": false,
+        "wagerRequestID": null,
+        "userReference": "my-ref-1042",
+        "platform": "api",
+        "game": {
+          "id": "66b0f4e2a9b8c7d6e5f4a3b2",
+          "league": "MLB",
+          "sport": "baseball",
+          "start": "2026-08-01T23:05:00.000Z",
+          "ended": true,
+          "live": false,
+          "isSpecials": false,
+          "participants": [/* away, home */]
+        }
+      }
+    ],
+    "summary": { "pnl": -101, "volume": 90 }
+  }
+}
+```
+</CodeGroup>
+
+## Rate limits
+
+**60 requests per minute per user**, on top of the [global per-IP limit](/pages/rest/introduction#rate-limiting). A `429` carries a `Retry-After` header in seconds.
+
+## Errors
+
+| Status | Meaning |
+|---|---|
+| `400` | Malformed date, or a window wider than 35 days. |
+| `401` | Missing or invalid auth token. |
+| `403` | Your account may not use this endpoint. |
+| `429` | Rate limited. Wait `Retry-After` seconds. |
