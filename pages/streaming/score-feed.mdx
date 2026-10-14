@@ -61,9 +61,26 @@ connectScoreFeed();
 
 The score feed supports standard WebSocket `ping/pong`. You may proactively `ping()` on an interval and track `pong` to verify liveness.
 
+The server pings too, about every 25 seconds, and closes a connection that leaves two of its pings unanswered with close code `4002` (`pong timeout`). Standard WebSocket clients answer pings automatically.
+
+**Read messages as they arrive.** A pong is queued behind any messages you have not read yet, so a client that reads more slowly than the feed sends can miss its own 30-second pong deadline and end up reconnecting over and over. Do slow work off the socket's read path.
+
+## Connection limits and close codes
+
+Keep to at most **10** open score-feed connections per account. Past that, a new connection is refused with HTTP `429` before the WebSocket upgrade.
+
+| When | What you get | What to do |
+| --- | --- | --- |
+| No valid token | HTTP `401` before the upgrade | Fix the token before retrying |
+| Too many connections for your account | HTTP `429` before the upgrade | Close connections you no longer use |
+| The server is shutting down | HTTP `503` before the upgrade | Reconnect after a short delay |
+| A deploy closes your connection | close code `1001` | Reconnect; you get a fresh snapshot |
+| Your session ended (logout or revocation) | close code `1008`, reason `session revoked` | Sign in again before reconnecting |
+| Two server pings went unanswered | close code `4002`, reason `pong timeout` | Reconnect, and read messages promptly |
+
 ## Snapshot on connect
 
-When you subscribe, the feed sends the current state of every live game your subscription covers **before** any live updates. Each snapshot message carries `"snapshot": true`.
+When you subscribe, the feed sends the current state of every live game your subscription covers. Each snapshot message carries `"snapshot": true`.
 
 This exists because the feed publishes **changes**, not a heartbeat. Without a snapshot, a client that connects at half time would know nothing about a game until it next moved — which can be many minutes.
 
@@ -73,6 +90,12 @@ A fresh connection has no subscriptions, so **subscribe first**: the snapshot th
 - Games that have finished are not included.
 - After the snapshot, live updates follow on the same socket. There is no separate "snapshot complete" message: treat each message the same way whether or not it is flagged.
 - If you reconnect, you get a fresh snapshot. Rebuilding from it is the supported way to recover from a dropped connection.
+- **A snapshot usually arrives before live updates, but it is not a fence and not a board reset.**
+    - If you re-subscribe faster than [snapshot pacing](#subscribe-by-gameid-league-or-sport) allows, live updates for the new board can arrive before its snapshot.
+    - A game's snapshot message can be replaced by a newer live message for the same game, so that game never arrives flagged.
+    - Right after a deploy, a snapshot can be partial if the server has not finished loading state, and nothing signals that it was.
+
+  Apply every message by the [newest-wins](#pitfalls) rule and none of these leaves your board wrong.
 
 ## Subscriptions
 
@@ -114,6 +137,8 @@ Install a filter. `gameIDs` are 24-character Mongo ObjectID hex strings; `league
 
 A `replace: true` subscribe also triggers a fresh snapshot for the games you just subscribed to, so narrowing the feed fills your new cards immediately rather than on their next change.
 
+**Snapshots are paced** per connection: up to three at once, then one a second. A `replace: true` subscribe over that budget is not refused or dropped. Its snapshot is deferred, and when it is sent it covers your subscriptions as they stand at that moment.
+
 ### Unsubscribe
 
 Remove specific keys. Whatever is left is what the connection still receives; removing the last key leaves it receiving nothing.
@@ -131,7 +156,7 @@ Remove specific keys. Whatever is left is what the connection still receives; re
 
 ### Routing semantics
 
-- A `gameID` subscription also receives updates for any game whose `parentGameID` matches it. Today no child market publishes state of its own, so this changes nothing in practice — see [Child markets](#child-markets) — but it means a `gameID` subscription will not need revisiting if one ever does.
+- A `gameID` subscription also receives updates for any game whose `parentGameID` matches it. A game's live market publishes state of its own (see [Child markets](#child-markets)), so subscribing to a game's `gameID` also delivers its live market's messages.
 - League IDs are case-insensitive — `mlb` and `MLB` are equivalent.
 - Sport IDs are case-insensitive — `baseball` and `Baseball` are equivalent.
 - Empty strings inside the arrays are ignored.
@@ -148,6 +173,8 @@ Every message on `/v1/score` arrives as a 2-tuple `[type, payload]`.
 ### `gameState`
 
 Emitted whenever a game's observed state changes. One message per game per change — the feed does not repeat an unchanged state, so a quiet game is normal and is not a sign of a dead connection.
+
+If your connection falls behind, the feed sends the newest state for each game rather than every intermediate one: a message still waiting to be sent is replaced by a newer one for the same game.
 
 <CodeGroup>
 ```json JSON
@@ -175,7 +202,7 @@ Emitted whenever a game's observed state changes. One message per game per chang
 | Field | Type | Notes |
 | --- | --- | --- |
 | `gameID` | string | 24-character ObjectID hex |
-| `parentGameID` | string or null | reserved for child markets; **`null` on every message today** |
+| `parentGameID` | string or null | `null` on a game's own messages; the parent's `gameID` on a live market's messages (see [Child markets](#child-markets)) |
 | `league` | string | short code, e.g. `NBA` |
 | `sport` | string | lowercase token, e.g. `basketball` |
 | `status` | string | see below |
@@ -279,12 +306,16 @@ A message carries at most one sport block, and only for the sport it applies to.
 
 ## Child markets
 
-A game's live market, first half and second half are separate games in our system, each with its own `gameID` and its own league ID — `NBA-LIVE`, `NFL-1H`, `NBA-2H`. **None of them publishes state on this feed.** State is produced for parent games only, so a subscription to a child market's `gameID` or to a suffixed league ID receives nothing at all — and nothing is exactly what a quiet game looks like.
+A game's live market, first half and second half are separate games in our system, each with its own `gameID` and its own league ID — `NBA-LIVE`, `NFL-1H`, `NBA-2H`.
 
-To show a score beside a child market, subscribe to its **parent's** `gameID`, or to the parent league (`NBA`, not `NBA-LIVE`). The score, clock and period of a live or second-half market are the parent game's; there is no separate state to fetch.
+**A live market publishes state.** Every state its parent game publishes is published again under the live market, with the live market's own `gameID` and league (`NBA-LIVE`) and `parentGameID` set to the parent's `gameID`. The score, clock and period are the parent's.
+
+**First-half, second-half and props markets publish nothing.** A subscription to one of their `gameID`s or league IDs receives nothing at all — and nothing is exactly what a quiet game looks like.
+
+To show a score beside any child market, subscribe to its **parent**: the parent's `gameID`, or the parent league (`NBA`, not `NBA-LIVE`). Show the parent's state on the child's card. That works for every kind of child market.
 
 <Warning>
-Subscribing to `NBA-LIVE`, `NFL-1H` or any other suffixed league ID is silently accepted and delivers no messages. Use the parent league ID.
+Subscribing to `NFL-1H`, `NBA-2H` or another half or props league ID is silently accepted and delivers no messages. Use the parent league ID.
 </Warning>
 
 ## Pitfalls
@@ -293,7 +324,7 @@ Subscribing to `NBA-LIVE`, `NFL-1H` or any other suffixed league ID is silently 
 
 **A quiet game is not a dead feed.** The feed publishes changes. A rain delay, a half-time break or a stoppage produces no messages at all, sometimes for many minutes. Do not use "no message recently" as a liveness check for a game — use `ping`/`pong` for the connection, and `status` for the game.
 
-**`parentGameID` is always `null` today.** Only parent games publish state (see [Child markets](#child-markets)), so every message carries `null` here. The field is part of the shape so that child routing does not become a breaking change later; do not build on it carrying a value.
+**`parentGameID` is `null` on a game's own messages.** It carries a value only on a live market's messages, where it is the parent's `gameID` (see [Child markets](#child-markets)). A subscription to a parent's `gameID` receives both, under two different `gameID`s with the same state, so key your board by the `gameID` you display.
 
 **Scores are integers, not strings.** Unlike some fields on the price feed, `homeScore` and `awayScore` are JSON numbers.
 
