@@ -55,6 +55,8 @@
                   "pages/rest/user/get-matched-bets",
                   "pages/rest/user/get-unmatched-orders",
                   "pages/rest/user/get-orders-for-game",
+                  "pages/rest/user/get-graded",
+                  "pages/rest/user/get-graded-since",
                   "pages/rest/user/get-graded-wagers",
                   "pages/rest/user/get-bet-by-id",
                   "pages/rest/user/get-bet-by-wager-request-id",
@@ -98,10 +100,6 @@
                 ]
               }
             ]
-          },
-          {
-            "tab": "API Reference",
-            "openapi": "/sources/core-api.openapi.json"
           },
           {
             "tab": "Changelog",
@@ -155,6 +153,8 @@
                   "es/pages/rest/user/get-matched-bets",
                   "es/pages/rest/user/get-unmatched-orders",
                   "es/pages/rest/user/get-orders-for-game",
+                  "es/pages/rest/user/get-graded",
+                  "es/pages/rest/user/get-graded-since",
                   "es/pages/rest/user/get-graded-wagers",
                   "es/pages/rest/user/get-bet-by-id",
                   "es/pages/rest/user/get-bet-by-wager-request-id",
@@ -198,10 +198,6 @@
                 ]
               }
             ]
-          },
-          {
-            "tab": "Referencia de API",
-            "openapi": "/sources/core-api.openapi.json"
           },
           {
             "tab": "Registro de cambios",
@@ -255,6 +251,8 @@
                   "zh-Hans/pages/rest/user/get-matched-bets",
                   "zh-Hans/pages/rest/user/get-unmatched-orders",
                   "zh-Hans/pages/rest/user/get-orders-for-game",
+                  "zh-Hans/pages/rest/user/get-graded",
+                  "zh-Hans/pages/rest/user/get-graded-since",
                   "zh-Hans/pages/rest/user/get-graded-wagers",
                   "zh-Hans/pages/rest/user/get-bet-by-id",
                   "zh-Hans/pages/rest/user/get-bet-by-wager-request-id",
@@ -298,10 +296,6 @@
                 ]
               }
             ]
-          },
-          {
-            "tab": "API 参考",
-            "openapi": "/sources/core-api.openapi.json"
           },
           {
             "tab": "更新日志",
@@ -360,6 +354,8 @@
                   "zh-Hant/pages/rest/user/get-matched-bets",
                   "zh-Hant/pages/rest/user/get-unmatched-orders",
                   "zh-Hant/pages/rest/user/get-orders-for-game",
+                  "zh-Hant/pages/rest/user/get-graded",
+                  "zh-Hant/pages/rest/user/get-graded-since",
                   "zh-Hant/pages/rest/user/get-graded-wagers",
                   "zh-Hant/pages/rest/user/get-bet-by-id",
                   "zh-Hant/pages/rest/user/get-bet-by-wager-request-id",
@@ -403,10 +399,6 @@
                 ]
               }
             ]
-          },
-          {
-            "tab": "API 參考",
-            "openapi": "/sources/core-api.openapi.json"
           },
           {
             "tab": "更新日誌",

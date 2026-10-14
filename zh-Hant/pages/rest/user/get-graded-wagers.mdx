@@ -1,8 +1,12 @@
 ---
-title: '獲取已結算注單'
+title: '獲取已結算注單（舊版）'
 description: '列出兩個日期之間的已結算注單及盈虧彙總'
 openapi: 'api-reference/openapi.json GET /user/getGradedWagers'
 ---
+
+<Warning>
+**已棄用。**查詢日期視窗請使用 [獲取已結算投注](/zh-Hant/pages/rest/user/get-graded)，若要隨投注結算保持同步，請使用 [按游標獲取已結算投注](/zh-Hant/pages/rest/user/get-graded-since)。此端點對現有整合繼續可用。
+</Warning>
 
 回傳呼叫方在兩個日期之間的全部**已結算（已判定）注單**，以及盈虧和成交量彙總。日期對應注單所屬賽事的**開賽時間**（因此 `startDate=06-22-2022` 回傳開賽時間晚於 06-21-2022 00:00 GMT 的注單）。
 

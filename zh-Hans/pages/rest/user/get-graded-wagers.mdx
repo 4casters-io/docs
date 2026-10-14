@@ -1,8 +1,12 @@
 ---
-title: '获取已结算注单'
+title: '获取已结算注单（旧版）'
 description: '列出两个日期之间的已结算注单及盈亏汇总'
 openapi: 'api-reference/openapi.json GET /user/getGradedWagers'
 ---
+
+<Warning>
+**已弃用。**查询日期窗口请使用 [获取已结算投注](/zh-Hans/pages/rest/user/get-graded)，若要随投注结算保持同步，请使用 [按游标获取已结算投注](/zh-Hans/pages/rest/user/get-graded-since)。此端点对现有集成继续可用。
+</Warning>
 
 返回调用方在两个日期之间的全部**已结算（已判定）注单**，以及盈亏和成交量汇总。日期对应注单所属赛事的**开赛时间**（因此 `startDate=06-22-2022` 返回开赛时间晚于 06-21-2022 00:00 GMT 的注单）。
 

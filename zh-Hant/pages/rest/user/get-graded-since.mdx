@@ -1,0 +1,132 @@
+---
+title: '按游標獲取已結算投注'
+description: '使用游標按結算順序輪詢已結算投注，使本地副本保持同步'
+openapi: 'sources/core-api.openapi.json GET /user/v2/getGradedSince'
+---
+
+**按結算順序**分頁回傳你的**已結算（已判定）投注**。每個回應都會給你一個 `cursor`；將其發回即可獲取下一頁。這樣你無需猜測日期視窗，就能讓本地投注歷史副本保持同步。
+
+回傳的行與 [獲取已結算投注](/zh-Hant/pages/rest/user/get-graded) 完全相同：每筆成交一行，從你的一側給出，並內嵌賽事資訊。
+
+## 如何輪詢 {#how-to-poll}
+
+1. **首次呼叫：**傳送 `since`，即一個 ISO 8601 時間戳記。你會得到在該時刻之後（不含）結算的投注，按從舊到新排列，外加一個 `cursor`。
+2. **之後的每次呼叫：**傳送最新的 `cursor`，**每秒一次**。
+3. 若回應中 `hasMore: true`，請使用新游標**立即**再次呼叫，直到 `hasMore` 為 `false`。然後恢復為每秒一次。
+
+空頁會原樣回傳你的游標，因此輪詢方永遠不會丟失位置。請將游標視為不透明值：切勿自行構造或修改。不是由此端點簽發的游標會以 `400` 拒絕。
+
+```js
+let cursor = firstResponse.data.cursor; // from your one-time ?since=<ISO> call
+while (true) {
+  let hasMore = true;
+  while (hasMore) {
+    const res = await get('/user/v2/getGradedSince', { cursor });
+    if (res.status === 429) { await sleep(res.headers['retry-after'] * 1000); continue; } // same cursor
+    for (const row of res.data.graded) upsert(row.txID, row);
+    cursor = res.data.cursor;
+    hasMore = res.data.hasMore;
+  }
+  await sleep(1000);
+}
+```
+
+<Note>
+**按 `txID` 執行 upsert，而不是追加。** 若投注的結算發生變化 — 退款，或比分更正後重新判定 — 它可能會再次回傳。它會在遍歷的更後位置重新出現；以最新版本為準。
+</Note>
+
+## 使用 `settledThrough` 恢復 {#resuming-with-settledthrough}
+
+每個回應還包含 `settledThrough`，一個 ISO 8601 時間戳記：表示你已持有在該時刻或之前結算的**全部**投注。
+
+如果你不想儲存不透明的游標，可以用 `since=settledThrough` 恢復。這樣不會遺漏任何投注。你可能會再次看到少量行，因為多筆投注可能在同一毫秒內結算，而一頁可能恰好在它們中間結束；請按 `txID` 去重。`cursor` 仍是精確的位置。
+
+## 請求 {#request}
+
+`GET /user/v2/getGradedSince`
+
+同樣的參數也可以通過 `POST /user/v2/getGradedSince` 以 JSON 請求主體傳送。`since` 和 `cursor` 必須且只能傳送其中一個。
+
+<ParamField query="since" type="string">
+  僅首次呼叫。回傳在此 ISO 8601 時刻之後（不含）結算的投注。
+</ParamField>
+<ParamField query="cursor" type="string">
+  之後的每次呼叫。原樣傳送上一個回應中的 `cursor`。
+</ParamField>
+
+<CodeGroup>
+```bash 首次呼叫
+curl "https://api.4casters.io/user/v2/getGradedSince?since=2026-08-01T00:00:00.000Z" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+
+```bash 後續呼叫
+curl "https://api.4casters.io/user/v2/getGradedSince?cursor=CURSOR_FROM_LAST_RESPONSE" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+</CodeGroup>
+
+## 回應 {#response}
+
+<ResponseField name="data.graded" type="array">
+  最多 **100** 筆已結算成交，按結算時間從早到晚排列。欄位與 [獲取已結算投注](/zh-Hant/pages/rest/user/get-graded#response) 相同。
+</ResponseField>
+<ResponseField name="data.cursor" type="string">
+  你的新位置。在下次呼叫時作為 `cursor` 傳送。空頁時即為你傳送的游標。
+</ResponseField>
+<ResponseField name="data.hasMore" type="boolean">
+  若已有下一頁可取則為 `true` — 請立即再次呼叫。
+</ResponseField>
+<ResponseField name="data.settledThrough" type="string">
+  ISO 8601。你已持有在該時刻或之前結算的全部投注。可安全地用 `since` 從此處恢復。
+</ResponseField>
+
+### 示例 {#example}
+
+<CodeGroup>
+```json JSON
+{
+  "data": {
+    "graded": [
+      {
+        "txID": "66b2a1f0c3e4d5a6b7c8d9e0",
+        "id": "66b2a1e9c3e4d5a6b7c8d9d1",
+        "origin": "wager",
+        "type": "total",
+        "outcome": "loser",
+        "bet": 100,
+        "odds": -110,
+        "total": 8.5,
+        "OU": "over",
+        "fee": "1.00",
+        "risk": "101.00",
+        "win": "89.91",
+        "result": "-101.00",
+        "settledAt": "2026-08-02T02:41:57.003Z",
+        "game": { "id": "66b0f4e2a9b8c7d6e5f4a3b2", "league": "MLB" /* ... */ }
+      }
+    ],
+    "cursor": "gc_9QmT4xR2vK7pL1sN8wZ3",
+    "hasMore": false,
+    "settledThrough": "2026-08-02T02:41:57.003Z"
+  }
+}
+```
+</CodeGroup>
+
+## 速率限制 {#rate-limits}
+
+**每使用者每 5 秒 10 次請求**，併疊加 [全域每 IP 限制](/zh-Hant/pages/rest/introduction#rate-limiting)。這在每秒輪詢一次的同時，仍留有餘量來消化積壓。
+
+即時結算永遠不會填滿一頁 — 每秒最多幾行 — 因此 `hasMore` 只有在停機後追趕進度時才會真正觸發。一個繁忙帳戶一整天的結算大約 12 秒即可消化完畢。
+
+如果收到 `429`，請等待 `Retry-After` 秒，然後重新發送**同一個**游標。
+
+## 錯誤 {#errors}
+
+| 狀態 | 含義 |
+|---|---|
+| `400` | 同時傳送了 `since` 和 `cursor`、`since` 格式錯誤，或游標不是由此端點簽發的。 |
+| `401` | 認證令牌缺失或無效。 |
+| `403` | 你的帳戶無權使用此端點。 |
+| `429` | 觸發速率限制。請等待 `Retry-After` 秒，然後重新發送同一個游標。 |
