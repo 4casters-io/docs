@@ -58,6 +58,7 @@
                   "pages/rest/user/get-graded",
                   "pages/rest/user/get-graded-since",
                   "pages/rest/user/get-graded-wagers",
+                  "pages/rest/user/get-rebates",
                   "pages/rest/user/get-bet-by-id",
                   "pages/rest/user/get-bet-by-wager-request-id",
                   "pages/rest/user/get-bet-by-user-reference",
