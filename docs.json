@@ -208,6 +208,109 @@
         ]
       },
       {
+        "language": "pt-BR",
+        "tabs": [
+          {
+            "tab": "Introdução",
+            "pages": [
+              "pt-BR/pages/introduction",
+              "pt-BR/pages/authentication"
+            ]
+          },
+          {
+            "tab": "Streaming WebSocket",
+            "pages": [
+              "pt-BR/pages/streaming/introduction",
+              "pt-BR/pages/streaming/user-feed",
+              "pt-BR/pages/streaming/price-feed"
+            ]
+          },
+          {
+            "tab": "API de Ordens",
+            "pages": [
+              "pt-BR/pages/websocket/introduction",
+              "pt-BR/pages/websocket/heartbeat",
+              "pt-BR/pages/websocket/place-order",
+              "pt-BR/pages/websocket/cancel-orders"
+            ]
+          },
+          {
+            "tab": "API REST",
+            "groups": [
+              {
+                "group": "Primeiros passos",
+                "pages": [
+                  "pt-BR/pages/rest/introduction",
+                  "pt-BR/pages/rest/authentication"
+                ]
+              },
+              {
+                "group": "Usuário",
+                "pages": [
+                  "pt-BR/pages/rest/user/get-me",
+                  "pt-BR/pages/rest/user/get-matched-bets",
+                  "pt-BR/pages/rest/user/get-unmatched-orders",
+                  "pt-BR/pages/rest/user/get-orders-for-game",
+                  "pt-BR/pages/rest/user/get-graded",
+                  "pt-BR/pages/rest/user/get-graded-since",
+                  "pt-BR/pages/rest/user/get-graded-wagers",
+                  "pt-BR/pages/rest/user/get-bet-by-id",
+                  "pt-BR/pages/rest/user/get-bet-by-wager-request-id",
+                  "pt-BR/pages/rest/user/get-bet-by-user-reference",
+                  "pt-BR/pages/rest/user/orders-heartbeat",
+                  "pt-BR/pages/rest/user/get-game-liability"
+                ]
+              },
+              {
+                "group": "Ordens",
+                "pages": [
+                  "pt-BR/pages/rest/orders/place-order",
+                  "pt-BR/pages/rest/orders/edit-order",
+                  "pt-BR/pages/rest/orders/lookup-order",
+                  "pt-BR/pages/rest/orders/cancel-order",
+                  "pt-BR/pages/rest/orders/cancel-multiple",
+                  "pt-BR/pages/rest/orders/cancel-by-reference",
+                  "pt-BR/pages/rest/orders/cancel-all-for-game",
+                  "pt-BR/pages/rest/orders/cancel-all-for-league",
+                  "pt-BR/pages/rest/orders/cancel-all-orders"
+                ]
+              },
+              {
+                "group": "Mercados",
+                "pages": [
+                  "pt-BR/pages/rest/markets/get-leagues",
+                  "pt-BR/pages/rest/markets/get-participants",
+                  "pt-BR/pages/rest/markets/get-games",
+                  "pt-BR/pages/rest/markets/get-orderbook",
+                  "pt-BR/pages/rest/markets/get-single-orderbook",
+                  "pt-BR/pages/rest/markets/get-average-price",
+                  "pt-BR/pages/rest/markets/get-matched-volume",
+                  "pt-BR/pages/rest/markets/get-orderbook-v1"
+                ]
+              },
+              {
+                "group": "Afiliados",
+                "pages": [
+                  "pt-BR/pages/rest/affiliate/get-affiliate-commission",
+                  "pt-BR/pages/rest/affiliate/deep-links"
+                ]
+              }
+            ]
+          },
+          {
+            "tab": "Registro de alterações",
+            "pages": [
+              "pt-BR/pages/changelog"
+            ]
+          }
+        ],
+        "banner": {
+          "content": "Esta documentação foi traduzida por IA por conveniência e pode conter erros. **A versão em inglês é a oficial** — consulte-a antes de confiar nesta página. [Relatar um erro de tradução](https://github.com/4casters-io/docs/issues/new?labels=translation&title=%5Bpt-BR%5D+Translation+issue&body=%2A%2APage%3A%2A%2A+%3C%21--+paste+the+URL+of+the+page+--%3E%0A%0A%2A%2AWhat+reads+wrong%3A%2A%2A+%3C%21--+quote+the+text+--%3E%0A%0A%2A%2ASuggested+wording%3A%2A%2A%0A%0A---%0A_Language%3A+pt-BR.+The+English+page+is+authoritative._%0A)",
+          "type": "warning",
+          "dismissible": false
+        }
+      },
+      {
         "language": "zh-Hans",
         "tabs": [
           {

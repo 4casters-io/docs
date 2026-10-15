@@ -234,6 +234,33 @@ They differ in vocabulary, and in a grammar pattern that shows up constantly in 
 
 Each needs its own reviewer. Neither is a derivation of the other.
 
+#### Brazilian Portuguese (`pt-BR`) — API glossary
+
+Derived from the Spanish table above (same English column — the terms that matter for this money API) and the Brazilian exchange idiom (Betfair Brasil). **No fluent human has read these pages yet**, so the `pt-BR` banner stays until Gate 2. This table records the intended rendering so the frontend can match it; if the drafted pages disagree, a reviewer settles it.
+
+Address the user as `você`. Numbers stay `en-US` format (`3,000`, `1%`), same PM decision as every other locale.
+
+| English | pt-BR |
+|---|---|
+| matched / unmatched (bets) | casada / não casada |
+| matched bets | apostas casadas |
+| orderbook | livro de ordens |
+| order | ordem |
+| resting order | ordem em aberto |
+| place an order | enviar uma ordem |
+| stake | valor apostado |
+| settle | liquidar |
+| liability | exposição |
+| risk (the stake side of a bet) | risco |
+| american odds | odds americanas |
+| game | evento |
+| league | liga |
+| user feed / price feed | feed de usuário / feed de preços |
+| in-play | ao vivo |
+| user | usuário |
+
+`matched` / `unmatched` as **API field names** stay in English (rule 2); the Portuguese words are for the concept in prose. `WebSocket`, `REST`, `maker`, `taker`, `heartbeat`, `token`, `moneyline`, `spread`, `total` stay in English, as in every locale.
+
 ### New languages
 
 Write the table before drafting. Copy the English column from the Spanish table above — those are the terms that matter for this API — and fill in the target language with a native speaker, not after the fact.

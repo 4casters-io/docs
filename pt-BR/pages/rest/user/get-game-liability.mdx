@@ -1,0 +1,38 @@
+---
+title: 'Obter exposição do evento'
+description: 'Perda no pior caso de um único evento'
+openapi: 'GET /user/getGameLiability'
+---
+
+Calcula a **exposição financeira no pior caso** da conta autenticada para um único evento, levando em conta cada aposta em cada mercado do evento.
+
+O valor é sempre `<= 0`: mesmo um livro totalmente coberto pode incorrer em perda por cancelamentos por chuva, suspensões ou desclassificações.
+
+## Requisição {#request}
+
+`GET /user/getGameLiability`
+
+<ParamField query="gameID" type="string" required>O id do evento para o qual a exposição é calculada.</ParamField>
+
+<CodeGroup>
+```bash curl
+curl "https://api.4casters.io/user/getGameLiability?gameID=657f8ea1ea0ce6f62c1fe37d" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+</CodeGroup>
+
+## Resposta {#response}
+
+<ResponseField name="data.liability" type="number">
+  A perda no pior caso, na moeda da conta. Sempre `<= 0`. Retorna `0` quando a conta autenticada não tem apostas no evento.
+</ResponseField>
+
+### Exemplo {#example}
+
+<CodeGroup>
+```json JSON
+{
+  "data": { "liability": -125.50 }
+}
+```
+</CodeGroup>

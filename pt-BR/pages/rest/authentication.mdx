@@ -1,0 +1,108 @@
+---
+title: 'Autenticação'
+description: 'Faça login e autorize requisições'
+openapi: 'POST /user/login'
+---
+
+<Note>
+**Sem chaves de API.** A 4casters ainda não emite chaves de API. Faça login com o nome de usuário e a senha da sua conta, exatamente como faria no site, e use o token retornado. Consulte a [visão geral de autenticação](/pt-BR/pages/authentication) para ver como o token é usado nas três APIs e como lidar com seu tempo de vida de 30 dias.
+</Note>
+
+Para usar qualquer rota autenticada você precisa de um token de autenticação. Os tokens são obtidos ao fazer login e são válidos por **30 dias**, após o que um novo login é necessário.
+
+## Entrar {#log-in}
+
+`POST /user/login`
+
+<CodeGroup>
+```bash curl
+curl -X POST https://api.4casters.io/user/login \
+  -H "Content-Type: application/json" \
+  -d '{"username": "your_username", "password": "your_password"}'
+```
+
+```json Corpo JSON
+{
+  "username": "your_username",
+  "password": "your_password"
+}
+```
+</CodeGroup>
+
+### Requisição {#request}
+
+<ParamField body="username" type="string" required>Nome de usuário da conta (ou email).</ParamField>
+<ParamField body="password" type="string" required>Senha da conta.</ParamField>
+
+### Resposta {#response}
+
+O token é retornado tanto em `data.user.auth` **quanto** em um cookie `auth` assinado (`Set-Cookie`). Na maioria das integrações de servidor você vai querer capturar `data.user.auth` e descartar o cookie.
+
+```json
+{
+  "data": {
+    "user": {
+      "id": "5fe37acbb5a23600123662c1",
+      "username": "your_username",
+      "auth": "5cd551d6...",
+      "type": "p2p",
+      "oddsFormat": "american",
+      "displayBalance": 1250.50,
+      "creditLimit": 500,
+      "liability": -125.00,
+      "commissionCharged": 0.01,
+      "hasMarketMakerAccess": false,
+      "isPro": false,
+      "createdAt": "2020-12-23T17:14:09.000Z"
+    }
+  }
+}
+```
+
+Consulte [`User`](/api-reference/openapi.json) no esquema OpenAPI para todos os campos.
+
+### Respostas de erro {#error-responses}
+
+| Status | Significado |
+| ------ | ------- |
+| `400`  | `username` e `password` são obrigatórios. |
+| `401`  | O nome de usuário ou a senha está incorreto. |
+| `403`  | Conta banida, bloqueada ou encerrada. |
+| `429`  | Limite de taxa de login excedido. |
+
+## Autorizar requisições {#authorizing-requests}
+
+Passe o token de `data.user.auth` em cada requisição seguinte. Três formatos de cabeçalho / payload são aceitos, nesta ordem de preferência:
+
+<Tabs>
+  <Tab title="Cabeçalho Authorization (recomendado)">
+    ```bash
+    curl https://api.4casters.io/user/getMe \
+      -H "Authorization: Bearer 5cd551d6..."
+    ```
+    O prefixo `Bearer ` é opcional: você também pode enviar o token sem prefixo.
+  </Tab>
+  <Tab title="Cookie">
+    O cookie `auth` assinado que `/user/login` define é honrado automaticamente em cada endpoint quando reutilizado no mesmo cliente.
+  </Tab>
+  <Tab title="Campo do corpo (somente POST)">
+    ```json
+    { "token": "5cd551d6...", "...": "..." }
+    ```
+    É oferecido como alternativa para clientes que não conseguem definir cabeçalhos personalizados com facilidade (p. ex. alguns emissores de webhooks).
+  </Tab>
+</Tabs>
+
+Se nenhum token for fornecido — ou o token for desconhecido / estiver expirado — o servidor responde com `401 InvalidCredentials`.
+
+## Rotação de token {#token-rotation}
+
+As requisições autenticadas com tokens de mais de 30 dias rotacionam automaticamente para um token novo. Quando isso ocorre, o token novo é retornado no cabeçalho de resposta `X-Auth-Token` (e como cookie `auth` assinado atualizado). O token antigo para de funcionar imediatamente; a requisição que provocou a rotação ainda tem sucesso, mas cada requisição seguinte com o valor antigo retorna `401`. As integrações de longa duração devem ficar atentas a esse cabeçalho e persistir o valor novo, ou simplesmente fazer login novamente em qualquer `401`.
+
+## Sair {#logging-out}
+
+`POST /user/logout` invalida o token usado para fazer a chamada. As requisições seguintes com esse token retornam `401`; os demais tokens da mesma conta não são afetados.
+
+## Autenticação de dois fatores {#two-factor-authentication}
+
+A autenticação de dois fatores protege os saques, não o login. `POST /user/login` nunca exige um código, seja qual for a configuração de 2FA da conta.

@@ -1,0 +1,132 @@
+---
+title: 'Obter apostas liquidadas a partir de um cursor'
+description: 'Consulta suas apostas liquidadas em ordem de liquidação com um cursor, para manter uma cópia local sincronizada'
+openapi: 'sources/core-api.openapi.json GET /user/v2/getGradedSince'
+---
+
+Retorna suas **apostas liquidadas na ordem em que foram liquidadas**, uma página por vez. Cada resposta lhe dá um `cursor`; reenvie-o para obter a página seguinte. Assim você mantém uma cópia local do seu histórico de apostas sincronizada sem adivinhar janelas de datas.
+
+As linhas são exatamente as linhas de [Obter apostas liquidadas por datas](/pt-BR/pages/rest/user/get-graded): uma por casamento, do seu lado, com o evento embutido.
+
+## Como consultar {#how-to-poll}
+
+1. **Primeira chamada:** envie `since`, uma marca de tempo ISO 8601. Você recebe as apostas liquidadas estritamente depois desse instante, da mais antiga à mais recente, mais um `cursor`.
+2. **Cada chamada seguinte:** envie o `cursor` mais recente, **uma vez por segundo**.
+3. Se uma resposta tiver `hasMore: true`, chame de novo **imediatamente** com o novo cursor até que `hasMore` seja `false`. Depois volte a uma vez por segundo.
+
+Uma página vazia retorna seu cursor sem alterações, de modo que um processo de consulta nunca perde sua posição. Trate o cursor como opaco: nunca construa nem edite um. Um cursor que este endpoint não lhe deu é rejeitado com `400`.
+
+```js
+let cursor = firstResponse.data.cursor; // from your one-time ?since=<ISO> call
+while (true) {
+  let hasMore = true;
+  while (hasMore) {
+    const res = await get('/user/v2/getGradedSince', { cursor });
+    if (res.status === 429) { await sleep(res.headers['retry-after'] * 1000); continue; } // same cursor
+    for (const row of res.data.graded) upsert(row.txID, row);
+    cursor = res.data.cursor;
+    hasMore = res.data.hasMore;
+  }
+  await sleep(1000);
+}
+```
+
+<Note>
+**Faça upsert por `txID`, não agregue.** Uma aposta pode voltar mais tarde se a liquidação dela mudar: um reembolso, ou uma reliquidação após uma correção de placar. Ela reaparece mais adiante no percurso; a versão mais recente é a que vale.
+</Note>
+
+## Retomar com `settledThrough` {#resuming-with-settledthrough}
+
+Cada resposta também inclui `settledThrough`, uma marca de tempo ISO 8601: você já tem **todas** as apostas liquidadas nesse instante ou antes.
+
+Se você preferir não guardar o cursor opaco, retome com `since=settledThrough`. Assim você não pode perder nenhuma aposta. Você pode ver algumas linhas de novo, porque várias apostas podem ser liquidadas no mesmo milissegundo e uma página pode terminar no meio delas; remova duplicatas por `txID`. O `cursor` continua sendo a posição exata.
+
+## Requisição {#request}
+
+`GET /user/v2/getGradedSince`
+
+Os mesmos parâmetros também podem ser enviados como corpo JSON com `POST /user/v2/getGradedSince`. Envie exatamente um de `since` e `cursor`.
+
+<ParamField query="since" type="string">
+  Somente na primeira chamada. Retorna as apostas liquidadas estritamente depois deste instante ISO 8601.
+</ParamField>
+<ParamField query="cursor" type="string">
+  Em cada chamada seguinte. O `cursor` da resposta anterior, tal como está.
+</ParamField>
+
+<CodeGroup>
+```bash Primeira chamada
+curl "https://api.4casters.io/user/v2/getGradedSince?since=2026-08-01T00:00:00.000Z" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+
+```bash Próxima chamada
+curl "https://api.4casters.io/user/v2/getGradedSince?cursor=CURSOR_FROM_LAST_RESPONSE" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+</CodeGroup>
+
+## Resposta {#response}
+
+<ResponseField name="data.graded" type="array">
+  Até **100** casamentos liquidados, primeiro a liquidação mais antiga. Mesmos campos de [Obter apostas liquidadas por datas](/pt-BR/pages/rest/user/get-graded#response).
+</ResponseField>
+<ResponseField name="data.cursor" type="string">
+  Sua nova posição. Envie-a como `cursor` na próxima chamada. Em uma página vazia é o cursor que você enviou.
+</ResponseField>
+<ResponseField name="data.hasMore" type="boolean">
+  `true` se já há outra página pronta: chame de novo imediatamente.
+</ResponseField>
+<ResponseField name="data.settledThrough" type="string">
+  ISO 8601. Você tem todas as apostas liquidadas neste instante ou antes. É seguro retomar daqui com `since`.
+</ResponseField>
+
+### Exemplo {#example}
+
+<CodeGroup>
+```json JSON
+{
+  "data": {
+    "graded": [
+      {
+        "txID": "66b2a1f0c3e4d5a6b7c8d9e0",
+        "id": "66b2a1e9c3e4d5a6b7c8d9d1",
+        "origin": "wager",
+        "type": "total",
+        "outcome": "loser",
+        "bet": 100,
+        "odds": -110,
+        "total": 8.5,
+        "OU": "over",
+        "fee": "1.00",
+        "risk": "101.00",
+        "win": "89.91",
+        "result": "-101.00",
+        "settledAt": "2026-08-02T02:41:57.003Z",
+        "game": { "id": "66b0f4e2a9b8c7d6e5f4a3b2", "league": "MLB" /* ... */ }
+      }
+    ],
+    "cursor": "gc_9QmT4xR2vK7pL1sN8wZ3",
+    "hasMore": false,
+    "settledThrough": "2026-08-02T02:41:57.003Z"
+  }
+}
+```
+</CodeGroup>
+
+## Limites de taxa {#rate-limits}
+
+**10 requisições a cada 5 segundos por usuário**, além do [limite global por IP](/pt-BR/pages/rest/introduction#rate-limiting). Isso deixa margem para esvaziar um atraso enquanto você consulta uma vez por segundo.
+
+A liquidação ao vivo nunca enche uma página (algumas poucas linhas por segundo no máximo), então `hasMore` só é ativado de verdade quando você está se atualizando após uma queda. Um dia inteiro de liquidações de uma conta com muita atividade é esvaziado em cerca de 12 segundos.
+
+Se você receber um `429`, aguarde `Retry-After` segundos e reenvie o **mesmo** cursor.
+
+## Erros {#errors}
+
+| Status | Significado |
+|---|---|
+| `400` | `since` e `cursor` foram enviados ao mesmo tempo, um `since` malformado, ou um cursor que este endpoint não emitiu. |
+| `401` | Token de autenticação ausente ou inválido. |
+| `403` | Sua conta não pode usar este endpoint. |
+| `429` | Limite de taxa excedido. Aguarde `Retry-After` segundos e reenvie o mesmo cursor. |

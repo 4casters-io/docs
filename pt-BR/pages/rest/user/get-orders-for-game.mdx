@@ -1,0 +1,48 @@
+---
+title: 'Obter ordens de um evento'
+description: 'Lista suas ordens abertas e apostas casadas em um único evento'
+openapi: 'GET /user/getOrdersForGame'
+---
+
+Para um id de evento da 4casters dado, retorna as ordens abertas e as apostas casadas (não liquidadas) da conta autenticada nesse evento. Este endpoint não retorna apostas liquidadas: use [Obter apostas liquidadas](/pt-BR/pages/rest/user/get-graded-wagers) para essas.
+
+## Requisição {#request}
+
+`GET /user/getOrdersForGame`
+
+<ParamField query="gameID" type="string" required>Id de evento da 4casters.</ParamField>
+
+<CodeGroup>
+```bash curl
+curl "https://api.4casters.io/user/getOrdersForGame?gameID=688c0516fbc14da0c202d426" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+</CodeGroup>
+
+## Resposta {#response}
+
+<ResponseField name="data.unmatched" type="array">
+  Array de ordens abertas no evento, ordenadas de forma ascendente por horário de início do evento. Mesma forma de [Obter ordens não casadas](/pt-BR/pages/rest/user/get-unmatched-orders).
+</ResponseField>
+<ResponseField name="data.matched" type="array">
+  Array de apostas casadas (não liquidadas) no evento. Mesma forma de [Obter apostas casadas](/pt-BR/pages/rest/user/get-matched-bets).
+</ResponseField>
+
+### Exemplo {#example}
+
+<CodeGroup>
+```json JSON
+{
+  "data": {
+    "unmatched": [/* UnmatchedOrder, ... */],
+    "matched":   [/* MatchedBet, ...     */]
+  }
+}
+```
+</CodeGroup>
+
+## Erros {#errors}
+
+| Status | Significado |
+| ------ | ------- |
+| `404`  | `gameID` falta ou não é um id de evento válido. |
