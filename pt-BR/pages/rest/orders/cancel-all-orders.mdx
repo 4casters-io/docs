@@ -1,0 +1,57 @@
+---
+title: 'Cancelar todas as ordens'
+description: 'Cancela todas as ordens abertas da sua conta'
+openapi: 'POST /session/cancelAllOrders'
+---
+
+Cancela **todas** as ordens abertas da conta autenticada em todos os eventos e ligas. Use para paradas de emergência: um botão de corte a partir de um sistema de monitoramento, por exemplo.
+
+Como alternativa menos destrutiva que permite retomar ordens mais tarde, consulte `POST /session/pauseOrders` (endpoint irmão que cancela e lembra; combina-se com `resumeOrders`).
+
+## Requisição {#request}
+
+`POST /session/cancelAllOrders`
+
+Não recebe parâmetros.
+
+<CodeGroup>
+```bash curl
+curl -X POST https://api.4casters.io/session/cancelAllOrders \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+</CodeGroup>
+
+## Resposta {#response}
+
+<ResponseField name="data" type="array">
+  Resultados de cancelamento por ordem. Mesma forma de [Cancelar uma ordem](/pt-BR/pages/rest/orders/cancel-order#response).
+</ResponseField>
+
+### Exemplo {#example}
+
+<CodeGroup>
+```json JSON
+{
+  "data": [
+    {
+      "success": true,
+      "sessionID": "65b036dfb31407c2b6bc1cfe",
+      "odds": -110,
+      "filled": 0,
+      "offered": 0,
+      "remaining": 100,
+      "gameID": "65f0c3c24ef07d0008abc123"
+    },
+    {
+      "success": true,
+      "sessionID": "65b036e0b31407c2b6bc1d08",
+      "odds": 125,
+      "filled": 25,
+      "offered": 0,
+      "remaining": 75,
+      "gameID": "65f0c4ae4ef07d0008abc456"
+    }
+  ]
+}
+```
+</CodeGroup>

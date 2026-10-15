@@ -1,0 +1,387 @@
+---
+title: 'Enviar ordens'
+description: 'Envie uma ou mais ordens à exchange'
+openapi: 'POST /session/v3/place'
+---
+
+Envie uma ou mais ordens. O endpoint aceita um lote: os resultados por ordem voltam em `data.createdSessions`, **de forma posicional** em relação ao seu array `orders` de entrada. Cada entrada é um resultado bem-sucedido `{ matched, unmatched }` ou uma falha `{ error, errorType }`.
+
+## Requisição {#request}
+
+`POST /session/v3/place`
+
+<CodeGroup>
+```bash curl
+curl -X POST https://api.4casters.io/session/v3/place \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "orders": [
+      {
+        "gameID": "688c0516fbc14da0c202d426",
+        "type": "moneyline",
+        "side": "5c12bc1ce0daba000f47ba8b",
+        "odds": -175,
+        "bet": 100,
+        "orderType": "post",
+        "userReference": "docs-example"
+      }
+    ]
+  }'
+```
+
+```json Corpo JSON
+{
+  "orders": [
+    {
+      "gameID": "4CASTER_GAME_ID",
+      "type": "moneyline | spread | total | moneyline1x2",
+      "side": "PARTICIPANT_ID | over | under | yes | no",
+      "market": "PARTICIPANT_ID | draw",
+      "odds": -110,
+      "bet": 100,
+      "number": 3.5,
+      "orderType": "limit | post | postArb | fillAndKill | fillOrKill",
+      "expirationMinutes": 10,
+      "userReference": "OPTIONAL_CLIENT_SIDE_IDENTIFIER"
+    }
+  ]
+}
+```
+</CodeGroup>
+
+### Campos da ordem {#order-fields}
+
+<Snippet file="pt-BR/types/order-fields.mdx" />
+
+## Tipos de ordem {#order-types}
+
+### `limit` {#limit}
+
+O tipo de ordem padrão. Executa contra qualquer liquidez correspondente ao seu preço ou melhor como taker (com comissão de taker) e deixa o restante no livro como maker. Uma ordem `limit` pode ficar totalmente casada, totalmente em aberto, ou parcialmente casada com o restante em aberto.
+
+### `post` {#post}
+
+Cria uma oferta em aberto. Se a ordem **casaria** com liquidez existente ao ser enviada, o servidor a rejeita (`rejected_order_type_rules`, p. ex. `"post order cannot have matches"`).
+
+### `postArb` {#postarb}
+
+Comporta-se como `post`, mas você pode enviar **mesmo quando a ordem casaria**, **somente se** suas odds americanas estiverem dentro de **1%** das odds da ordem em aberto com a qual você casaria. Se a diferença de preço for maior que 1%, o envio é rejeitado.
+
+Exemplos:
+
+- Melhor oferta **+100** e você envia **+100** — `post` é rejeitada (casaria); `postArb` é permitida.
+- Melhor oferta **+200** — `postArb` a **+190** é rejeitada (longe demais de **+200**). Em torno de **+198** está na borda da faixa de 1% frente a **+200**.
+- Melhor ordem **−200** — a faixa se estende até cerca de **−202** no lado negativo (a mesma regra de 1%).
+- Com **+100** no livro, **−101** é o limite de referência do outro lado para a tolerância de 1%.
+
+`postArb` evita as **comissões de taker** de um cruzamento normal: você não é cobrado por comissões de taker neste fluxo como ocorreria se tomasse liquidez em aberto como taker.
+
+As ordens enviadas como `postArb` são marcadas com `isPostArb: true` em suas atualizações do [feed de usuário](/pt-BR/pages/streaming/user-feed) e do [feed de preços](/pt-BR/pages/streaming/price-feed); o campo é omitido nos demais tipos de ordem. A própria resposta de envio não inclui o indicador.
+
+### `fillAndKill` {#fillandkill}
+
+Executa imediatamente como taker contra o tamanho disponível ao seu preço ou melhor e cancela o restante. Um `fillAndKill` nunca fica no livro.
+
+Um casamento **parcial** é um resultado correto: se você envia `bet: 1000` e só há $400 de liquidez casável, você casa por $400 e o restante de $600 é cancelado: a resposta é um sucesso, não um erro. A ordem só é rejeitada (`rejected_order_type_rules`, `"fill and kill has no matches"`) quando não há liquidez casável alguma. Consulte os cenários de Fill And Kill nos [exemplos](#examples) abaixo.
+
+### `fillOrKill` {#fillorkill}
+
+Tudo ou nada. Seu `bet` **inteiro** deve casar imediatamente ao seu preço ou melhor; caso contrário, toda a ordem é rejeitada, incluindo os casamentos que ela teria feito pelo caminho, que são revertidos. Um `fillOrKill` nunca fica no livro e nunca deixa você parcialmente casado.
+
+Use-o quando uma posição parcial for pior do que nenhuma posição, por exemplo quando a ordem é uma perna de uma cobertura que você só pode executar por completo.
+
+As rejeições levam `errorType: rejected_order_type_rules` com uma de duas mensagens, que distinguem "não havia nada" de "não havia o suficiente":
+
+- `"fill or kill has no matches"` — não há liquidez casável ao seu preço.
+- `"fill or kill matched but not fully"` — parte da liquidez casou, mas não o seu tamanho completo. Esses casamentos foram revertidos.
+
+<Note>
+  Um resíduo de **$10 ou menos** conta como completo: um `fillOrKill` de $1,000 que casa $992 tem sucesso, porque os $8 que não puderam casar estão abaixo do tamanho mínimo que poderia ficar no livro. Um resíduo maior que $10 rejeita a ordem.
+</Note>
+
+## Resposta {#response}
+
+<ResponseField name="data.createdSessions" type="array">
+  Resultados por ordem, na mesma ordem posicional que o array `orders` de entrada. Cada entrada é um envio bem-sucedido ou um erro.
+  <Expandable title="Envio bem-sucedido">
+    <ResponseField name="matched" type="array">
+      Casamentos produzidos por esta ordem. Vazio quando a ordem não casou.
+      <Expandable title="MatchedFill">
+        <ResponseField name="amount"               type="number">Valor apostado da porção casada.</ResponseField>
+        <ResponseField name="odds"                 type="integer">Odds americanas do casamento.</ResponseField>
+        <ResponseField name="number"               type="number">Spread ou total do casamento (`null` em moneylines).</ResponseField>
+        <ResponseField name="type"                 type="string">Tipo de mercado.</ResponseField>
+        <ResponseField name="side"                 type="string">Lado da ordem.</ResponseField>
+        <ResponseField name="market"               type="string">Presente em `moneyline1x2`.</ResponseField>
+        <ResponseField name="orderID"              type="string">Id da ordem da oferta casada do outro lado.</ResponseField>
+        <ResponseField name="txID"                 type="string">Id de transação do casamento.</ResponseField>
+        <ResponseField name="wagerRequestID"       type="string">Id gerado pelo servidor que agrupa cada casamento ou oferta derivado desta ordem de entrada.</ResponseField>
+        <ResponseField name="userReference"        type="string" />
+        <ResponseField name="risk"                 type="number" />
+        <ResponseField name="win"                  type="number">Valor a ganhar, líquido da comissão de taker.</ResponseField>
+        <ResponseField name="winWithoutCommission" type="number">Valor a ganhar antes da comissão.</ResponseField>
+      </Expandable>
+    </ResponseField>
+    <ResponseField name="unmatched" type="object">
+      Oferta em aberto criada a partir do restante não casado. Pode estar vazia (`{}`) quando a ordem casou por completo.
+      <Expandable title="UnmatchedOffer">
+        <ResponseField name="orderID"        type="string">Id da nova ordem em aberto. Use-o para cancelar.</ResponseField>
+        <ResponseField name="wagerRequestID" type="string" />
+        <ResponseField name="offered"        type="number" />
+        <ResponseField name="odds"           type="integer" />
+        <ResponseField name="type"           type="string" />
+        <ResponseField name="side"           type="string" />
+        <ResponseField name="market"         type="string">Presente em `moneyline1x2`.</ResponseField>
+        <ResponseField name="number"         type="number" />
+        <ResponseField name="userReference"  type="string" />
+      </Expandable>
+    </ResponseField>
+  </Expandable>
+  <Expandable title="Erro por ordem">
+    <ResponseField name="error"     type="string">Descrição da falha em texto legível.</ResponseField>
+    <ResponseField name="errorType" type="string">`validation_error`, `rejected_liability`, `rejected_order_type_rules` ou `system_error`.</ResponseField>
+  </Expandable>
+</ResponseField>
+
+## Exemplos {#examples}
+
+### Cenário 1 — Ordens que casam sem liquidez restante {#scenario-1-match-orders-with-no-leftover-liquidity}
+
+Três ordens que casam na hora com a liquidez disponível.
+
+<CodeGroup>
+```json Requisição
+{
+  "orders": [
+    { "gameID": "688c0516fbc14da0c202d426", "type": "moneyline", "side": "5c12bc1ce0daba000f47ba8b", "odds": -175, "bet": 100, "orderType": "post" },
+    { "gameID": "688c0516fbc14da0c202d426", "type": "spread",    "side": "5c12bc1ce0daba000f47ba8b", "odds": -110, "bet": 100, "orderType": "post", "number": 3.5 },
+    { "gameID": "688c0516fbc14da0c202d426", "type": "total",     "side": "over",                     "odds": -104, "bet": 100, "orderType": "post", "number": 50 }
+  ]
+}
+```
+
+```json Resposta
+{
+  "data": {
+    "createdSessions": [
+      {
+        "matched": [
+          {
+            "amount": 50, "odds": -175, "type": "moneyline",
+            "side": "5d48bd5198366d41ec7238da",
+            "orderID": "68d42f82cfebf0b249a2c26e",
+            "txID":    "68d42f83cfebf0b249a2c279",
+            "wagerRequestID": "68d42f83cfebf0b249a2c278",
+            "risk": 50.286, "win": 28.286, "winWithoutCommission": 28.571
+          }
+        ],
+        "unmatched": {}
+      },
+      { "matched": [/* spread fill */], "unmatched": {} },
+      { "matched": [/* total fill  */], "unmatched": {} }
+    ]
+  }
+}
+```
+</CodeGroup>
+
+### Cenário 2 — Ordem limit com liquidez restante {#scenario-2-limit-order-with-leftover-liquidity}
+
+Uma ordem limit de 300 que casa parcialmente e deixa o restante em aberto.
+
+<CodeGroup>
+```json Resposta
+{
+  "data": {
+    "createdSessions": [
+      {
+        "matched": [
+          {
+            "amount": 185, "odds": -185, "type": "moneyline",
+            "side": "5d48bd5198366d41ec7238da",
+            "orderID": "68d43574cfebf0b249a2c28d",
+            "txID":    "68d43574cfebf0b249a2c290",
+            "wagerRequestID": "68d43574cfebf0b249a2c28f",
+            "risk": 186, "win": 99, "winWithoutCommission": 100
+          }
+        ],
+        "unmatched": {
+          "orderID": "68d43575cfebf0b249a2c292",
+          "wagerRequestID": "68d43574cfebf0b249a2c28f",
+          "offered": 115, "odds": -185, "type": "moneyline",
+          "side": "5d48bd5198366d41ec7238da", "number": null
+        }
+      }
+    ]
+  }
+}
+```
+</CodeGroup>
+
+### Cenário 3 — Fill and Kill, casamento completo {#scenario-3-fill-and-kill-full-match}
+
+<CodeGroup>
+```json Resposta
+{
+  "data": {
+    "createdSessions": [
+      {
+        "matched": [
+          {
+            "amount": 100, "odds": -186, "type": "moneyline",
+            "side": "5d48bd5198366d41ec7238da",
+            "orderID": "68d4368acfebf0b249a2c298",
+            "txID":    "68d436bacfebf0b249a2c29b",
+            "wagerRequestID": "68d436bacfebf0b249a2c29a",
+            "userReference": "docs-fillandkill-match",
+            "risk": 100.538, "win": 53.226, "winWithoutCommission": 53.763
+          }
+        ],
+        "unmatched": {}
+      }
+    ]
+  }
+}
+```
+</CodeGroup>
+
+### Cenário 4 — Fill and Kill, sem casamento {#scenario-4-fill-and-kill-no-match}
+
+Um `fillAndKill` sem casamento retorna um erro por ordem.
+
+<CodeGroup>
+```json Resposta
+{
+  "data": {
+    "createdSessions": [
+      {
+        "error": "fill and kill has no matches",
+        "errorType": "rejected_order_type_rules"
+      }
+    ]
+  }
+}
+```
+</CodeGroup>
+
+### Cenário 5 — Fill or Kill, liquidez insuficiente {#scenario-5-fill-or-kill-not-enough-liquidity}
+
+`fillOrKill` é o equivalente de tudo ou nada de `fillAndKill`. Onde um `fillAndKill` de $1,000 contra $400 de liquidez casa $400 e cancela o restante, um `fillOrKill` rejeita toda a ordem e reverte esses $400: nunca deixa você parcialmente casado.
+
+<CodeGroup>
+```json Requisição
+{
+  "orders": [
+    {
+      "gameID": "688c0516fbc14da0c202d426",
+      "type": "moneyline",
+      "side": "5c12bc1ce0daba000f47ba8b",
+      "odds": -110,
+      "bet": 1000,
+      "orderType": "fillOrKill",
+      "userReference": "docs-fillorkill-partial"
+    }
+  ]
+}
+```
+
+```json Resposta
+{
+  "data": {
+    "createdSessions": [
+      {
+        "error": "fill or kill matched but not fully",
+        "errorType": "rejected_order_type_rules"
+      }
+    ]
+  }
+}
+```
+</CodeGroup>
+
+Sem liquidez casável alguma, a mesma ordem é rejeitada com `"fill or kill has no matches"` em vez disso.
+
+### Cenário 6 — `postArb` frente a `post` quando o livro casaria {#scenario-6-postarb-vs-post-when-the-book-would-match}
+
+`post` rejeita uma ordem que casaria com liquidez em aberto (por exemplo, melhor oferta **+100** e você tenta enviar **+100**). `postArb` permite essa situação quando suas odds estão dentro de **1%** da ordem com a qual você casaria, de modo que o mesmo envio a **+100** pode ter sucesso como `postArb` e você evita as comissões de taker que pagaria em um cruzamento normal. Se o seu preço estiver longe demais da cotação em aberto (p. ex. melhor oferta **+200** mas você envia **+190**), `postArb` é rejeitada.
+
+<CodeGroup>
+```json Requisição
+{
+  "orders": [
+    {
+      "gameID": "688c0516fbc14da0c202d426",
+      "type": "moneyline",
+      "side": "5c12bc1ce0daba000f47ba8b",
+      "odds": 100,
+      "bet": 50,
+      "orderType": "postArb",
+      "userReference": "docs-postarb-same-line-as-offer"
+    }
+  ]
+}
+```
+</CodeGroup>
+
+### Cenário 7 — `moneyline1x2` (futebol de três vias) {#scenario-7-moneyline1x2-soccer-three-way}
+
+`moneyline1x2` é o mercado de futebol de três vias — mandante / visitante / empate — enviado como uma aposta yes/no sobre o resultado indicado por `market`. Abaixo, **yes sobre o empate** a +250.
+
+<CodeGroup>
+```json Requisição
+{
+  "orders": [
+    {
+      "gameID": "65f0c3...",
+      "type": "moneyline1x2",
+      "side": "yes",
+      "market": "draw",
+      "odds": 250,
+      "bet": 50,
+      "orderType": "post",
+      "userReference": "docs-ml1x2-yes-draw"
+    }
+  ]
+}
+```
+</CodeGroup>
+
+Para apostar que o **time mandante não vence**, envie `side: "no"` e defina `market` como o id do participante mandante.
+
+## Atraso ao vivo {#live-delay}
+
+As ordens enviadas em um evento marcado como live seguem estas regras:
+
+1. Se a ordem não casar com nenhuma liquidez existente, é enviada imediatamente.
+2. Se a ordem casar com liquidez existente, incorre em um atraso antes da execução.
+3. Ligas diferentes têm períodos de atraso ao vivo diferentes:
+    - **NFL, UFCMMA, NCAAF** — 3 segundos.
+    - **NCAAB, NBA** — 5 segundos.
+    - **ATP, WTA** — 8 segundos.
+    - **Padrão** — 10 segundos.
+4. Após o atraso, a ordem tenta executar:
+    - Se as odds melhoram, casa na hora.
+    - Se as odds pioram, não casa.
+
+## Erros por ordem {#per-order-errors}
+
+<Snippet file="pt-BR/types/order-error.mdx" />
+
+Exemplo com vários envios, alguns com erro:
+
+<CodeGroup>
+```json Resposta
+{
+  "data": {
+    "createdSessions": [
+      { "matched": [/* successful fill */], "unmatched": {} },
+      { "error": "game not found: invalid gameID", "errorType": "validation_error" },
+      { "error": "Insufficient balance.",          "errorType": "rejected_liability" },
+      { "error": "post order cannot have matches", "errorType": "rejected_order_type_rules" },
+      { "error": "failed to interact with database","errorType": "system_error" }
+    ]
+  }
+}
+```
+</CodeGroup>

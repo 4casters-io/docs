@@ -1,0 +1,47 @@
+<ParamField body="gameID" type="string" required>
+  Id de evento da 4casters. Obtenha um com `GET /exchange/v2/getGames` ou `GET /exchange/v2/getOrderbook`.
+</ParamField>
+
+<ParamField body="type" type="string" required>
+  Tipo de mercado. Um de `moneyline`, `spread`, `total`, `moneyline1x2`. `moneyline1x2` é **somente futebol** (moneyline de três vias: mandante / visitante / empate).
+</ParamField>
+
+<ParamField body="side" type="string" required>
+  Lado da ordem. O significado depende de `type`:
+  - `moneyline`, `spread` — o id do participante que você está apoiando.
+  - `total` — `"over"` ou `"under"`.
+  - `moneyline1x2` — `"yes"` ou `"no"` no resultado indicado por `market`.
+</ParamField>
+
+<ParamField body="market" type="string">
+  **Somente `moneyline1x2`.** `"draw"` ou um id de participante — nomeia o resultado no qual você aposta yes/no. Exemplo: `side: "yes"` + `market: "draw"` significa *a partida termina em empate*; `side: "no"` + `market: "<homeTeamId>"` significa *o time mandante não vence*.
+</ParamField>
+
+<ParamField body="odds" type="integer" required>
+  Odds da ordem no formato **americano** (p. ex. `-110`, `+150`).
+</ParamField>
+
+<ParamField body="bet" type="number" required>
+  Valor a arriscar na aposta. Uma ordem com `bet: 100, odds: 120` pode ser casada por outros usuários por um total de **120 a -120**.
+</ParamField>
+
+<ParamField body="number" type="number">
+  Número de spread ou de total. Obrigatório para `spread` e `total`. Não é usado em `moneyline` nem `moneyline1x2`.
+</ParamField>
+
+<ParamField body="orderType" type="string">
+  Um de `limit`, `post`, `postArb`, `fillAndKill`, `fillOrKill`. O valor padrão é `limit`.
+  - `limit` — casa contra qualquer liquidez ao seu preço ou melhor como taker e deixa o restante no livro como maker.
+  - `post`  — garante maker. É rejeitada se a ordem casaria com liquidez em aberto (`rejected_order_type_rules`, p. ex. `"post order cannot have matches"`).
+  - `postArb` — como `post`, mas pode casar se suas odds americanas estiverem dentro de **1%** da ordem em aberto. Evita as taxas de taker que você pagaria em um cruzamento normal.
+  - `fillAndKill` — garante taker. Casa o tamanho disponível ao seu preço ou melhor e cancela o restante; nunca fica no livro. Um preenchimento **parcial** é um sucesso. Só é rejeitada quando não há liquidez casável.
+  - `fillOrKill` — taker de tudo ou nada. Casa seu `bet` **inteiro** imediatamente ou toda a ordem é rejeitada e quaisquer preenchimentos parciais são revertidos; nunca fica no livro.
+</ParamField>
+
+<ParamField body="expirationMinutes" type="integer">
+  Cancelar automaticamente após N minutos a partir do envio. Omita para deixar a ordem no livro até o início do evento (o comportamento padrão: toda ordem aberta é cancelada automaticamente quando o evento começa).
+</ParamField>
+
+<ParamField body="userReference" type="string">
+  Identificador definido pelo cliente, preservado em cada preenchimento e oferta em aberto derivada desta ordem. Use-o para consultar a ordem mais tarde com `GET /user/getBetByUserReference`.
+</ParamField>

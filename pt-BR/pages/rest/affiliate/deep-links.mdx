@@ -1,0 +1,69 @@
+---
+title: 'Links diretos'
+description: 'Leve um jogador direto a uma aposta específica, com o seu referido anexado'
+---
+
+Um link direto abre a página inicial da 4casters com o modal para tomar a aposta já aberto no evento, no mercado e no lado que você escolheu. Adicione o seu código de referido e qualquer jogador que se cadastre depois de chegar pelo link fica atribuído a você.
+
+```
+https://4casters.io/?game={gameID}&market=spread&side=away&line=3.5&ref=YOUR_CODE
+```
+
+O link funciona tanto se o visitante estiver logado quanto se não estiver. Um visitante sem sessão vê a aposta e um aviso para entrar / cadastrar-se; o código de referido é lembrado no navegador dele e preenchido de antemão no formulário de cadastro.
+
+## Construir um link {#building-a-link}
+
+Parta do id do evento, que você pode obter de [`/exchange/getGames`](/pt-BR/pages/rest/markets/get-games) ou da barra de endereços de qualquer página de evento (`/exchange-single/{gameID}`). Depois adicione o mercado que você quer abrir.
+
+<ParamField query="game" type="string" required>
+  O id do evento (24 caracteres hexadecimais).
+</ParamField>
+<ParamField query="market" type="string" required>
+  `moneyline`, `spread`, `total` ou `1x2` (mercados de futebol de três vias).
+</ParamField>
+<ParamField query="side" type="string" required>
+  `home` ou `away` para moneyline, spread e 1x2. `over` ou `under` para total. `draw` também é aceito para 1x2.
+</ParamField>
+<ParamField query="line" type="number">
+  O número do spread ou do total, escrito do ponto de vista do lado escolhido. Visitante +3.5 é `side=away&line=3.5`; mandante -3.5 é `side=home&line=-3.5`. Omita para abrir a linha principal.
+</ParamField>
+<ParamField query="pick" type="string">
+  Somente 1x2: `yes` (padrão) ou `no`.
+</ParamField>
+<ParamField query="ref" type="string">
+  O seu código de referido, o mesmo usado nos links `/sign-up/{code}`.
+</ParamField>
+
+## Exemplos {#examples}
+
+<CodeGroup>
+```text Moneyline visitante
+https://4casters.io/?game=6a84db9c5ddbd1134524a222&market=moneyline&side=away&ref=YOUR_CODE
+```
+
+```text Mandante -3.5
+https://4casters.io/?game=6a84db9c5ddbd1134524a222&market=spread&side=home&line=-3.5&ref=YOUR_CODE
+```
+
+```text Total da linha principal, under
+https://4casters.io/?game=6a84db9c5ddbd1134524a222&market=total&side=under&ref=YOUR_CODE
+```
+
+```text Empate, de três vias
+https://4casters.io/?game=6a84db9c5ddbd1134524a222&market=1x2&side=draw&ref=YOUR_CODE
+```
+</CodeGroup>
+
+## O que o jogador vê {#what-the-player-sees}
+
+O link aponta para um mercado, não para uma ordem específica. Ao abrir a página, o modal mostra o melhor preço em aberto nesse lado naquele momento, junto com os demais preços disponíveis. Os preços se movem, então o número que um jogador vê pode diferir do que você viu ao construir o link; o modal sempre mostra o livro ao vivo e o jogador confirma o preço antes de a aposta ser enviada.
+
+Se ninguém estiver oferecendo esse lado naquele momento, o modal passa a criar uma oferta nessa linha em vez de tomar uma, assim como ao clicar em uma célula vazia da exchange.
+
+## Notas {#notes}
+
+- **Os eventos passam a ao vivo.** Quando um evento começa, seu mercado pré-início é fechado e um mercado ao vivo separado é aberto. Um link pré-início seguido após o começo abre o livro do mercado ao vivo.
+- **Linhas desconhecidas.** Se a linha do link não for uma que o evento tenha (ou `line` for omitido e o evento ainda não tiver uma linha principal publicada), a página inicial abre sem modal. O jogador nunca é movido para outra linha em silêncio.
+- **Atribuição de referidos.** O primeiro código de referido com que um navegador chega é o que é preservado até que esse visitante se cadastre. Um visitante que já tem conta não é reatribuído.
+- **Também nas páginas de evento.** Os mesmos parâmetros `market` / `side` / `line` / `ref` também funcionam em uma página de evento (`/exchange-single/{gameID}?market=...`), e abrem o modal sobre a página desse evento em vez da página inicial.
+- **Props e mercados de jogador** ainda não podem ser endereçados com estes parâmetros.

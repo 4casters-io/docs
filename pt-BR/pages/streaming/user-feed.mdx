@@ -1,0 +1,546 @@
+O feed de usuário transmite as atualizações da sua conta (ordens, casamentos, cancelamentos).
+
+<CodeGroup>
+```javascript JavaScript
+// user_feed_quickstart.js 
+const WebSocket = require('ws'); 
+const token = process.env.FOURCASTERS_TOKEN; 
+function connectUserFeed() { 
+  const ws = new WebSocket('wss://streaming-api.4casters.io/v2/user', { 
+    headers: { Authorization: token }, 
+  });
+  let pingTimer; let lastPong = Date.now(); 
+  ws.on('open', () => { 
+    console.log('user feed connected'); 
+    pingTimer = setInterval(() => { 
+      if (ws.readyState === WebSocket.OPEN) { 
+        ws.ping(); 
+      } 
+      if (Date.now() - lastPong > 30000) { 
+        console.warn('user feed: missed pong >30s, closing'); 
+        ws.terminate(); 
+      } 
+    }, 10000); 
+  }); 
+ 
+  ws.on('pong', () => { lastPong = Date.now(); }); 
+ 
+  ws.on('message', (buf) => { 
+    try { 
+      const msg = JSON.parse(buf.toString()); 
+      console.log('user update:', JSON.stringify(msg, null, 2)); 
+    } catch { console.log('user update (raw):', buf.toString()); } 
+  }); 
+ 
+  ws.on('error', (e) => console.error('⚠️ user feed error:', e.message));
+ 
+  ws.on('close', (code, reason) => { 
+    console.log(`user feed closed: ${code} ${reason}`); 
+    clearInterval(pingTimer); 
+    // basic backoff reconnect 
+    setTimeout(connectUserFeed, 1000); 
+  }); 
+} 
+ 
+connectUserFeed(); 
+```
+</CodeGroup>
+
+## Mensagens {#messages}
+
+O feed de usuário envia cada atualização como um **objeto JSON sem envelope** (sem envelope de tupla). Todas as atualizações compartilham um mesmo envelope; a ação é determinada por quais de `unmatched` / `matched` estão preenchidos e pelo valor de `origin`.
+
+### Envelope comum {#common-envelope}
+
+<CodeGroup>
+```typescript Esquema
+{
+  matched:    null | MatchedBlock,
+  unmatched:  null | UnmatchedBlock,
+  origin:     "offer" | "wager",
+
+  gameID:             string,
+  parentGameID:       string | null,
+  eventName:          string,
+  league:             string,
+  sport:              string,
+  live:               boolean,
+  start:              string,   // RFC3339
+  awayRotationNumber: string,
+
+  platform:           string,   // e.g. "api"
+  createdAt:          string,   // RFC3339
+  messageID:          string,   // Redis stream entry id, e.g. "1715361234567-0"
+}
+```
+</CodeGroup>
+
+`messageID` é o id de entrada do stream que a streaming-api adiciona antes de enviar. Persista o último que você processou: é o seu cursor de reprodução. Consulte [Reproduzir mensagens perdidas](#replaying-missed-messages) mais abaixo.
+
+### O bloco `matched` {#the-matched-block}
+
+Presente sempre que a atualização representa um casamento (`matched != null`). Cada campo abaixo é enviado em
+cada casamento, exceto os marcados como condicionais. Todos os valores são da **sua** perspectiva: como taker você vê
+o lado que tomou; como maker você vê o lado que colocou.
+
+| Campo | Tipo | É enviado | Significado |
+|---|---|---|---|
+| `txID` | string | sempre | Id da aposta. Deduplique casamentos com este valor: é o mesmo `txID` que [obter apostas casadas](/pt-BR/pages/rest/user/get-matched-bets) retorna. |
+| `orderID` | string | sempre | Id da ordem de onde este casamento provém. Como maker, sua ordem em aberto; como taker, a ordem que você atingiu. |
+| `wagerRequestID` | string | sempre | Id da requisição de envio por trás do casamento. Como taker, sua própria requisição; como maker, a requisição que originalmente colocou sua ordem. |
+| `amount` | number | sempre | Valor apostado **sem** comissão. Igual a `risk` em um casamento de maker, mas **não** em um casamento de taker: veja abaixo. |
+| `risk` | number | sempre | O que você pode perder neste casamento. Como taker, inclui a comissão cobrada em caso de perda; como maker, não há comissão. |
+| `win` | number | sempre | O que você pode ganhar neste casamento. Como taker, líquido da comissão cobrada em caso de ganho; como maker, não há comissão. |
+| `odds` | integer | sempre | Odds americanas do seu lado do casamento. |
+| `type` | string | sempre | `moneyline`, `spread`, `total` ou `moneyline1x2`. |
+| `side` | string | sempre | Consulte [semântica de side e market](#side-and-market-semantics-by-bet-type). |
+| `number` | number | condicional | A linha de spread ou de total. É omitido por completo em `moneyline` e `moneyline1x2`. |
+| `market` | string | condicional | Somente `moneyline1x2`. |
+| `userReference` | string \| null | sempre | Eco do `userReference` que você enviou na ordem. `null` se você não enviou nenhum. |
+| `isPostArb` | boolean | condicional | `true` em casamentos de ordens `postArb`; é omitido nos demais. |
+
+<Warning>
+  **Não derive `win` a partir de `risk`.** `risk` e `win` são arredondados cada um para 2 casas decimais de forma
+  independente a partir do valor sem arredondamento, então `risk x odds` pode divergir de `win` em um centavo.
+  Contabilize o valor `win` tal como ele chega; se faltar, trate a mensagem como malformada em vez de reconstruí-la.
+
+  **Não trate `amount` como sinônimo de `risk`.** Em um casamento de taker, `amount` exclui a
+  comissão cobrada em caso de perda e `risk` a inclui. Contabilizar `amount` como o seu risco
+  subcontará a comissão em cada tomada.
+</Warning>
+
+<Note>
+  As mesmas quantias em REST ([obter apostas casadas](/pt-BR/pages/rest/user/get-matched-bets)) vêm
+  formatadas como string com 2 casas decimais em vez de números, e são calculadas com uma ordem de comissão e
+  arredondamento ligeiramente diferente. Concilie com um centavo de tolerância em vez de igualdade exata.
+</Note>
+
+### O bloco `unmatched` {#the-unmatched-block}
+
+Presente sempre que a atualização diz respeito a uma ordem que está (ou deixa de estar) no livro: envios,
+cancelamentos e o lado maker de um casamento. As odds e os lados são da perspectiva do **maker**,
+ou seja, o que você colocou, não o que o livro oferece aos demais.
+
+| Campo | Tipo | É enviado | Significado |
+|---|---|---|---|
+| `orderID` | string | sempre | Id da ordem. |
+| `wagerRequestID` | string | sempre | Id da requisição de envio que criou a ordem. |
+| `filled` | number | sempre | **Em um casamento: o risco casado somente por este evento**, não o total acumulado. `0` em um envio. Em um cancelamento é, em vez disso, o risco acumulado casado antes de o cancelamento chegar. |
+| `offered` | number | sempre | Risco total que a ordem ofereceu. `0` identifica um cancelamento. |
+| `remaining` | number | sempre | Risco que continua em aberto no livro. `0` significa totalmente casado. |
+| `odds` | integer | sempre | Odds americanas do seu lado da ordem. |
+| `type` | string | sempre | `moneyline`, `spread`, `total` ou `moneyline1x2`. |
+| `side` | string | sempre | Consulte [semântica de side e market](#side-and-market-semantics-by-bet-type). |
+| `number` | number | condicional | A linha de spread ou de total. É omitido por completo em `moneyline` e `moneyline1x2`. |
+| `market` | string | condicional | Somente `moneyline1x2`. |
+| `userReference` | string | condicional | Eco do `userReference` que você enviou; é omitido se a ordem não levava nenhum. |
+| `isPostArb` | boolean | condicional | `true` para ordens `postArb`; é omitido nos demais. |
+
+<Warning>
+  `filled` e `remaining` não são o mesmo tipo de número. `remaining` é estado acumulado — o que resta
+  no livro agora mesmo —, mas em um casamento `filled` descreve apenas aquele evento. Ao longo de vários
+  casamentos parciais eles não somam: `filled + remaining` iguala `offered` no primeiro casamento e
+  desvia depois.
+
+  Para acompanhar quanto de uma ordem em aberto já foi casado, use `offered - remaining`, ou acumule
+  `filled` você mesmo. Não misture os dois.
+</Warning>
+
+### Como identificar a ação {#how-to-identify-the-action}
+
+- `unmatched.filled === 0 && unmatched.offered > 0` -> ordem enviada
+- `unmatched.offered === 0` -> ordem cancelada
+- `matched != null && unmatched == null` -> casado como taker
+- `matched != null && unmatched != null` -> casado como maker (casamento parcial se `unmatched.remaining > 0`)
+
+As atualizações de ordens enviadas com `orderType: "postArb"` também levam `isPostArb: true` dentro de `matched` / `unmatched` (em atualizações de envio, casamento e cancelamento); o campo é omitido nos demais.
+
+### Semântica de side e market por tipo de aposta {#side-and-market-semantics-by-bet-type}
+
+O significado de `side` (e quais campos extras aparecem) dentro de `matched` / `unmatched` depende de `type`:
+
+| `type` | `side` | `number` | `market` |
+|---|---|---|---|
+| `moneyline` | hex ObjectID de participante | — | — |
+| `spread` | hex ObjectID de participante | linha de spread (p. ex. `6.5`) | — |
+| `total` | `"over"` / `"under"` | linha de total (p. ex. `209.5`) | — |
+| `moneyline1x2` | `"yes"` / `"no"` | — | hex ObjectID de participante (mandante ou visitante) ou `"draw"` |
+
+`market` só está presente em atualizações `moneyline1x2`: nomeia o resultado de 3 vias de que o mercado trata (time mandante, time visitante ou o empate), e `side` indica se a aposta é yes ou no sobre esse resultado. Todos os campos são da **sua** perspectiva: como maker você vê o lado que colocou; como taker você vê o lado que tomou.
+
+### Ação: ordem enviada {#action-order-placed}
+
+Uma oferta nova foi colocada no livro. `unmatched.filled` é `0`, `unmatched.offered > 0` e `matched` é `null`.
+
+<CodeGroup>
+```json JSON
+{
+  "unmatched": {
+    "filled": 0,
+    "offered": 999,
+    "remaining": 999,
+    "orderID": "62619e6b40e36d0494600f67",
+    "wagerRequestID": "62619e6b40e36d0494600f70",
+    "type": "moneyline",
+    "side": "607349dc22a237cf46b021fb",
+    "odds": -105
+  },
+  "matched": null,
+  "origin": "offer",
+  "gameID": "603eb5d05eca45001243aedc",
+  "parentGameID": null,
+  "eventName": "PHILADELPHIA-76ERS-VS-MIAMI-HEAT",
+  "league": "NBA",
+  "sport": "basketball",
+  "live": false,
+  "start": "2026-04-22T01:00:00.000Z",
+  "awayRotationNumber": "571",
+  "platform": "api",
+  "createdAt": "2026-04-21T18:11:54.614Z",
+  "messageID": "1715361234567-0"
+}
+```
+</CodeGroup>
+
+### Ação: ordem cancelada {#action-order-cancelled}
+
+O usuário (ou o sistema em seu nome) cancelou uma oferta. O campo distintivo é **`unmatched.offered === 0`**.
+
+<CodeGroup>
+```json JSON
+{
+  "unmatched": {
+    "filled": 0,
+    "offered": 0,
+    "remaining": 0,
+    "orderID": "62619e6b40e36d0494600f67",
+    "wagerRequestID": "62619e6b40e36d0494600f70",
+    "type": "spread",
+    "side": "607349dc22a237cf46b021fb",
+    "number": 6.5,
+    "odds": -110
+  },
+  "matched": null,
+  "origin": "offer",
+  "gameID": "603eb5d05eca45001243aedc",
+  "parentGameID": null,
+  "eventName": "PHILADELPHIA-76ERS-VS-MIAMI-HEAT",
+  "league": "NBA",
+  "sport": "basketball",
+  "live": false,
+  "start": "2026-04-22T01:00:00.000Z",
+  "awayRotationNumber": "571",
+  "platform": "api",
+  "createdAt": "2026-04-21T18:12:30.000Z",
+  "messageID": "1715361234890-0"
+}
+```
+</CodeGroup>
+
+### Ação: ordem casada (taker) {#action-order-matched-taker}
+
+O usuário tomou a oferta de outro. `unmatched` é `null`, `matched` leva o casamento e `origin` é `"wager"`.
+
+<CodeGroup>
+```json JSON
+{
+  "unmatched": null,
+  "matched": {
+    "txID": "62619e6b40e36d0494600f99",
+    "amount": 100.0,
+    "risk": 100.0,
+    "win": 95.24,
+    "odds": -105,
+    "orderID": "62619e6b40e36d0494600f67",
+    "wagerRequestID": "62619e6b40e36d0494600f70",
+    "type": "moneyline",
+    "side": "607349dc22a237cf46b021fb"
+  },
+  "origin": "wager",
+  "gameID": "603eb5d05eca45001243aedc",
+  "parentGameID": null,
+  "eventName": "PHILADELPHIA-76ERS-VS-MIAMI-HEAT",
+  "league": "NBA",
+  "sport": "basketball",
+  "live": false,
+  "start": "2026-04-22T01:00:00.000Z",
+  "awayRotationNumber": "571",
+  "platform": "api",
+  "createdAt": "2026-04-21T18:13:00.000Z",
+  "messageID": "1715361240000-0"
+}
+```
+</CodeGroup>
+
+### Ação: ordem casada (maker, casamento parcial) {#action-order-matched-maker-partial-fill}
+
+Alguém atingiu a oferta colocada do usuário. Tanto `matched` quanto `unmatched` estão preenchidos; `unmatched.remaining` mostra o que continua no livro. Como `unmatched` está definido, `origin` é `"offer"`.
+
+<CodeGroup>
+```json JSON
+{
+  "unmatched": {
+    "filled": 100,
+    "offered": 500,
+    "remaining": 400,
+    "orderID": "62619e6b40e36d0494600f67",
+    "wagerRequestID": "62619e6b40e36d0494600f70",
+    "type": "spread",
+    "side": "607349dc22a237cf46b021fb",
+    "number": 6.5,
+    "odds": 110
+  },
+  "matched": {
+    "txID": "62619e6b40e36d0494600fa0",
+    "amount": 100,
+    "risk": 100,
+    "win": 110,
+    "odds": 110,
+    "orderID": "62619e6b40e36d0494600f67",
+    "wagerRequestID": "62619e6b40e36d0494600f70",
+    "type": "spread",
+    "side": "607349dc22a237cf46b021fb",
+    "number": 6.5
+  },
+  "origin": "offer",
+  "gameID": "603eb5d05eca45001243aedc",
+  "parentGameID": null,
+  "eventName": "PHILADELPHIA-76ERS-VS-MIAMI-HEAT",
+  "league": "NBA",
+  "sport": "basketball",
+  "live": false,
+  "start": "2026-04-22T01:00:00.000Z",
+  "awayRotationNumber": "571",
+  "platform": "api",
+  "createdAt": "2026-04-21T18:14:00.000Z",
+  "messageID": "1715361250000-0"
+}
+```
+</CodeGroup>
+
+### Ação: ordem casada (moneyline1x2) {#action-order-matched-moneyline1x2}
+
+Os casamentos em mercados de futebol de 3 vias levam o **par `market` + `side`** descrito acima em vez de um `side` hex de participante. Aqui o usuário tomou "yes" sobre o time mandante a +120 (uma aposta de que o Arsenal vence):
+
+<CodeGroup>
+```json JSON (taker)
+{
+  "unmatched": null,
+  "matched": {
+    "txID": "685e321440e36d0494601b07",
+    "amount": 100.0,
+    "risk": 100.0,
+    "win": 120.0,
+    "odds": 120,
+    "orderID": "685e2f1c40e36d0494601a22",
+    "wagerRequestID": "685e321440e36d0494601b00",
+    "type": "moneyline1x2",
+    "side": "yes",
+    "market": "607349dc22a237cf46b021fb"
+  },
+  "origin": "wager",
+  "gameID": "685e21aa0be1b7d5a3f9c4d2",
+  "parentGameID": null,
+  "eventName": "ARSENAL-VS-CHELSEA",
+  "league": "EPL",
+  "sport": "soccer",
+  "live": false,
+  "start": "2026-07-04T19:00:00.000Z",
+  "awayRotationNumber": "3012",
+  "platform": "api",
+  "createdAt": "2026-07-03T14:25:02.114Z",
+  "messageID": "1751552702114-0"
+}
+```
+```json JSON (maker, preenchimento parcial)
+{
+  "unmatched": {
+    "filled": 100,
+    "offered": 500,
+    "remaining": 400,
+    "orderID": "685e2f1c40e36d0494601a22",
+    "wagerRequestID": "685e2f1c40e36d0494601a19",
+    "type": "moneyline1x2",
+    "side": "no",
+    "market": "607349dc22a237cf46b021fb",
+    "odds": -120
+  },
+  "matched": {
+    "txID": "685e321440e36d0494601b07",
+    "amount": 120.0,
+    "risk": 120.0,
+    "win": 100.0,
+    "odds": -120,
+    "orderID": "685e2f1c40e36d0494601a22",
+    "wagerRequestID": "685e2f1c40e36d0494601a19",
+    "type": "moneyline1x2",
+    "side": "no",
+    "market": "607349dc22a237cf46b021fb"
+  },
+  "origin": "offer",
+  "gameID": "685e21aa0be1b7d5a3f9c4d2",
+  "parentGameID": null,
+  "eventName": "ARSENAL-VS-CHELSEA",
+  "league": "EPL",
+  "sport": "soccer",
+  "live": false,
+  "start": "2026-07-04T19:00:00.000Z",
+  "awayRotationNumber": "3012",
+  "platform": "api",
+  "createdAt": "2026-07-03T14:25:02.114Z",
+  "messageID": "1751552702114-1"
+}
+```
+</CodeGroup>
+
+Observe as duas perspectivas do mesmo casamento: o taker vê `side: "yes"` a `+120`, o maker vê `side: "no"` a `-120` sobre o mesmo `market`.
+
+## Reproduzir mensagens perdidas {#replaying-missed-messages}
+
+O feed de usuário v2 suporta **recuperação de lacunas após uma desconexão**. Cada mensagem leva um `messageID` (um id de entrada de stream monotonicamente crescente, p. ex. `"1751552702114-0"`). Se a conexão cair, você pode obter exatamente as mensagens que perdeu.
+
+### Endpoint {#endpoint}
+
+```
+GET https://streaming-api.4casters.io/v2/user/messages?afterID=<messageID>&beforeID=<messageID>
+```
+
+A autenticação é a mesma do WebSocket: token no cabeçalho `Authorization`, no cabeçalho `Auth` ou no parâmetro de consulta `token`. Só são retornadas mensagens que pertencem ao usuário autenticado.
+
+| Parâmetro | Obrigatório | Significado |
+|---|---|---|
+| `afterID` | sim | O `messageID` da **última mensagem que você processou** antes da queda. Os resultados começam estritamente depois dela. |
+| `beforeID` | não | Limite superior exclusivo. Omita para ler até o fim do histórico retido. |
+
+### Resposta: `success` {#response-success}
+
+Seu `afterID` ainda estava presente no histórico retido, então a lista retornada é um preenchimento de lacuna **completo**: nada se perdeu entre `afterID` e `beforeID`:
+
+```json
+{
+  "status": "success",
+  "messages": [
+    { "...": "feed messages in order, each with its messageID" }
+  ]
+}
+```
+
+Aplique as mensagens em ordem e retome o processamento das mensagens ao vivo.
+
+### Resposta: `cache_expired` {#response-cache_expired}
+
+Seu `afterID` já saiu do histórico retido, então o servidor **não pode provar que a reprodução é completa**:
+
+```json
+{
+  "status": "cache_expired",
+  "availableMessages": [
+    { "...": "whatever is still retained, oldest first" }
+  ]
+}
+```
+
+`availableMessages` é o que continua retido, do mais antigo ao mais recente. As mensagens anteriores à janela de retenção não podem ser recuperadas pela reprodução: reconecte imediatamente em vez de confiar em um olhar para trás longo.
+
+### Exemplo: cliente que reconecta com reprodução {#example-reconnecting-client-with-replay}
+
+Um cliente Node.js completo (o keepalive ping/pong é omitido por brevidade; consulte o início rápido no topo desta página). Duas coisas o mantêm correto: cada mensagem — ao vivo, em buffer ou reproduzida — passa por uma única verificação de cursor que só avança, e uma reprodução falha reconecta em vez de passar para o ao vivo por cima da lacuna.
+
+<CodeGroup>
+```javascript JavaScript
+// user_feed_replay_client.js
+const WebSocket = require('ws');
+const token = process.env.FOURCASTERS_TOKEN;
+const HOST = 'streaming-api.4casters.io';
+
+// Your replay cursor: the messageID of the last message you processed.
+// Persist it durably (disk/db) so replay also works across process restarts.
+let cursor = null;
+
+// messageIDs are "<unix-ms>-<seq>"; compare numerically part by part.
+function isAfterCursor(messageID) {
+  if (!cursor) return true;
+  const [ms, seq] = messageID.split('-').map(Number);
+  const [cMs, cSeq] = cursor.split('-').map(Number);
+  return ms > cMs || (ms === cMs && seq > cSeq);
+}
+
+function processMessage(msg) {
+  // Replay can overlap live delivery, so every message — live, buffered,
+  // or replayed — passes through this check. The cursor only moves forward.
+  if (!isAfterCursor(msg.messageID)) return;
+  cursor = msg.messageID;
+  // Business logic goes here. `msg` is the same envelope everywhere.
+  console.log('user update:', msg.origin, msg.messageID);
+}
+
+async function replayGap() {
+  const params = new URLSearchParams({ afterID: cursor });
+  const res = await fetch(`https://${HOST}/v2/user/messages?${params}`, {
+    headers: { Authorization: token },
+  });
+  if (!res.ok) throw new Error(`replay request failed: ${res.status}`);
+  const body = await res.json();
+
+  if (body.status === 'success') {
+    // Complete gap-fill: nothing between the cursor and now was lost.
+    body.messages.forEach(processMessage);
+  } else if (body.status === 'cache_expired') {
+    // Apply what is still retained; anything older is not recoverable.
+    console.warn('replay window expired - messages may have been lost');
+    body.availableMessages.forEach(processMessage);
+  } else {
+    throw new Error(`unexpected replay status: ${body.status}`);
+  }
+}
+
+function connect() {
+  const ws = new WebSocket(`wss://${HOST}/v2/user`, {
+    headers: { Authorization: token },
+  });
+
+  let live = false; // false while replay is in flight
+  const buffer = [];
+  // Settles when the open handler is done, so a reconnect never starts a
+  // second replay while this one is in flight.
+  let openTask = Promise.resolve();
+
+  ws.on('open', () => {
+    openTask = (async () => {
+      console.log('user feed connected');
+      if (cursor !== null) {
+        try {
+          await replayGap();
+        } catch (e) {
+          // Going live now would advance the cursor over the unfilled gap
+          // and lose it — reconnect and retry from the same cursor.
+          console.error('replay failed, reconnecting:', e.message);
+          ws.terminate();
+          return;
+        }
+      }
+      // Drain messages buffered during replay; processMessage skips
+      // anything the replay already covered.
+      buffer.splice(0).forEach(processMessage);
+      live = true;
+    })();
+  });
+
+  ws.on('message', (buf) => {
+    const msg = JSON.parse(buf.toString());
+    if (live) processMessage(msg);
+    else buffer.push(msg);
+  });
+
+  ws.on('close', async (code, reason) => {
+    console.log(`user feed closed: ${code} ${reason} - reconnecting`);
+    await openTask.catch(() => {});
+    setTimeout(connect, 1000);
+  });
+
+  ws.on('error', (e) => console.error('user feed error:', e.message));
+}
+
+connect();
+```
+</CodeGroup>

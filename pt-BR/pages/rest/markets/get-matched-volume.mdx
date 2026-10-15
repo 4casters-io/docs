@@ -1,0 +1,76 @@
+---
+title: 'Obter volume casado'
+description: 'Volume casado total do site em um intervalo de datas'
+openapi: 'GET /exchange/getMatchedVolume'
+---
+
+Retorna o volume casado total do site para um intervalo inclusivo de **dias de calendário do Leste dos EUA (ET)**.
+
+## Como o volume é calculado {#how-volume-is-calculated}
+
+Cada aposta casada contribui com os valores apostados de **ambos os lados** do casamento:
+
+- a **aposta do taker** (o valor casado), mais
+- a **aposta do maker**, derivada das odds do taker: a odds positivas do taker é `stake × odds / 100`, a odds negativas do taker é `stake × −100 / odds`.
+
+De forma equivalente, da perspectiva de qualquer uma das partes cada aposta casada contribui com **`risk + win`**: sua aposta mais seu ganho potencial, porque seu ganho potencial é exatamente a aposta da contraparte. Uma tomada de $100 a +150 conta como $250 de volume ($100 do lado taker + $150 do lado maker).
+
+<Note>
+O volume usa os valores apostados brutos antes da comissão. Os campos `risk` / `win` de [Obter apostas casadas](/pt-BR/pages/rest/user/get-matched-bets) já incluem comissão, então somá-los diferirá ligeiramente deste endpoint.
+</Note>
+
+## Atualidade {#freshness}
+
+Os dias ET finalizados são lidos de um arquivo diário fechado. Se o intervalo terminar hoje (um `endDate` posterior a hoje é cortado para hoje), um agregado ao vivo dos casamentos de hoje é somado, de modo que a porção do dia atual é atualizada em tempo real à medida que as apostas casam.
+
+## Requisição {#request}
+
+`GET /exchange/getMatchedVolume`
+
+<ParamField query="startDate" type="string" required>
+  Primeiro dia de calendário ET do intervalo, `YYYY-MM-DD` (inclusivo).
+</ParamField>
+
+<ParamField query="endDate" type="string" required>
+  Último dia de calendário ET do intervalo, `YYYY-MM-DD` (inclusivo). Não deve ser anterior a `startDate`. As datas posteriores a hoje são cortadas para hoje.
+</ParamField>
+
+<CodeGroup>
+```bash curl
+curl "https://api.4casters.io/exchange/getMatchedVolume?startDate=2026-08-10&endDate=2026-08-11" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+</CodeGroup>
+
+## Resposta {#response}
+
+<ResponseField name="data" type="object">
+  <Expandable title="data">
+    <ResponseField name="startDate" type="string">Eco da data de início solicitada.</ResponseField>
+    <ResponseField name="endDate" type="string">Eco da data de fim solicitada (antes do corte).</ResponseField>
+    <ResponseField name="matchedVolume" type="number">Volume casado total em USD: a soma dos valores apostados dos dois lados (risco + ganho) de cada aposta casada no intervalo.</ResponseField>
+  </Expandable>
+</ResponseField>
+
+```json Resposta de exemplo
+{
+  "data": {
+    "startDate": "2026-08-10",
+    "endDate": "2026-08-11",
+    "matchedVolume": 6447933.012757301
+  }
+}
+```
+
+## Limites de taxa {#rate-limits}
+
+Não há um limite específico do endpoint: aplica-se somente o [limite global por IP](/pt-BR/pages/rest/introduction#rate-limiting) (3,000 requisições por minuto móvel). Para dashboards, consultar uma vez a cada poucos segundos é mais que suficiente; tenha em conta que os dias finalizados nunca mudam, então só os intervalos que incluem hoje se beneficiam de consultar de novo.
+
+## Erros {#errors}
+
+| Status | Significado |
+|---|---|
+| `400` | `startDate` / `endDate` falta ou está malformado (deve ser `YYYY-MM-DD`), ou `startDate` é posterior a `endDate`. |
+| `401` | Token de autenticação ausente ou inválido. |
+| `429` | Limite de taxa global por IP excedido. Respeite o cabeçalho `Retry-After`. |
+| `503` | O timeout de 15 segundos do servidor foi atingido. É seguro tentar novamente. |

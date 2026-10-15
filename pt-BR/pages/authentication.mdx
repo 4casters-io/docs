@@ -1,0 +1,152 @@
+---
+title: 'Autenticação'
+description: 'Não há chaves de API. Seu login da 4casters é sua credencial de API.'
+---
+
+<Warning>
+**A 4casters não emite chaves de API hoje.** Você se autentica em todas as APIs da 4casters com o mesmo nome de usuário e senha que usa para entrar em [4casters.io](https://4casters.io). Não há nada a solicitar, gerar ou copiar das configurações da sua conta.
+
+Chaves de API dedicadas estão no roadmap. Quando forem lançadas, serão anunciadas no [registro de alterações](/pt-BR/pages/changelog) e esta página será atualizada. Até lá, seu login é a credencial.
+</Warning>
+
+## Como funciona {#how-it-works}
+
+1. **Entre** com o nome de usuário (ou email) e a senha da sua conta via `POST /user/login` na API REST.
+2. **Receba um token** na resposta. É uma string hexadecimal de 256 caracteres.
+3. **Envie esse token** em cada requisição REST e em cada handshake WebSocket. As três APIs aceitam o mesmo token.
+
+Não há um cadastro separado para acesso à API. Se você consegue entrar no site, pode usar a API.
+
+## 1. Entrar {#1-log-in}
+
+`POST https://api.4casters.io/user/login`
+
+<CodeGroup>
+```bash curl
+curl -X POST https://api.4casters.io/user/login \
+  -H "Content-Type: application/json" \
+  -d '{"username": "your_username", "password": "your_password"}'
+```
+
+```javascript JavaScript
+const res = await fetch('https://api.4casters.io/user/login', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    username: process.env.FOURCASTERS_USERNAME,
+    password: process.env.FOURCASTERS_PASSWORD,
+  }),
+});
+const { data } = await res.json();
+const token = data.user.auth;
+```
+
+```python Python
+import os, requests
+
+res = requests.post(
+    "https://api.4casters.io/user/login",
+    json={
+        "username": os.environ["FOURCASTERS_USERNAME"],
+        "password": os.environ["FOURCASTERS_PASSWORD"],
+    },
+    headers={"User-Agent": "my-bot/1.0"},
+)
+token = res.json()["data"]["user"]["auth"]
+```
+</CodeGroup>
+
+O campo `username` aceita tanto o seu nome de usuário quanto o email da conta.
+
+O token está em `data.user.auth` no corpo da resposta. O mesmo valor também é definido como um cookie `auth` assinado; integrações do lado do servidor devem capturar `data.user.auth` e ignorar o cookie.
+
+```json
+{
+  "data": {
+    "user": {
+      "id": "5fe37acbb5a23600123662c1",
+      "username": "your_username",
+      "auth": "5cd551d6...",
+      "...": "..."
+    }
+  }
+}
+```
+
+A forma completa da resposta está documentada na [página de autenticação REST](/pt-BR/pages/rest/authentication).
+
+<Tip>
+Entre **uma vez** e reutilize o token. O login tem limite de taxa por IP e por conta, e cada login bem-sucedido emite um novo token. Entrar novamente não invalida os tokens que você já possui.
+</Tip>
+
+## 2. Enviar o token {#2-send-the-token}
+
+<Tabs>
+  <Tab title="API REST">
+    Passe o token no cabeçalho `Authorization`. O prefixo `Bearer ` é opcional.
+
+    ```bash
+    curl https://api.4casters.io/user/getMe \
+      -H "Authorization: Bearer 5cd551d6..."
+    ```
+
+    Um token ausente, desconhecido ou expirado retorna `401` com o corpo `{ "error": { "message": "InvalidCredentials", "code": 401 } }`.
+  </Tab>
+  <Tab title="WebSocket de ordens">
+    Passe o token no cabeçalho `Authorization` do handshake. O servidor deriva sua conta a partir do token.
+
+    ```javascript
+    const ws = new WebSocket('wss://orders-api.4casters.io/orders/ws', {
+      headers: { Authorization: token },
+    });
+    ```
+
+    Consulte [API de ordens](/pt-BR/pages/websocket/introduction).
+  </Tab>
+  <Tab title="WebSocket de streaming">
+    O mesmo cabeçalho e o mesmo token, tanto para o feed de usuário quanto para o feed de preços.
+
+    ```javascript
+    const ws = new WebSocket('wss://streaming-api.4casters.io/v2/user', {
+      headers: { Authorization: token },
+    });
+    ```
+
+    Consulte [API de streaming](/pt-BR/pages/streaming/introduction).
+  </Tab>
+</Tabs>
+
+## Tempo de vida do token {#token-lifetime}
+
+| | |
+| --- | --- |
+| **Válido por** | 30 dias a partir do login. |
+| **Após 30 dias** | A próxima requisição REST autenticada rotaciona o token no ato: o valor antigo para de funcionar imediatamente e o substituto é retornado no cabeçalho de resposta `X-Auth-Token`. |
+| **Sair** | `POST /user/logout` invalida o token usado para fazer essa chamada. Os demais tokens da conta não são afetados. |
+
+Para uma integração de longa duração, faça uma destas opções:
+
+- **Faça login novamente em qualquer `401`.** O mais simples e robusto. Trate o `401` como "pegue um token novo", não como um erro fatal.
+- **Fique atento ao `X-Auth-Token`.** Sempre que esse cabeçalho estiver presente em uma resposta, persista seu valor e use-o a partir de então.
+
+Um script que faz login uma vez, guarda o token e nunca olha os cabeçalhos de resposta funcionará por exatamente 30 dias e depois falhará com `401` em todas as requisições.
+
+## Autenticação de dois fatores {#two-factor-authentication}
+
+A autenticação de dois fatores na 4casters protege os **saques**, não o login. Ativá-la na sua conta não muda como você se autentica na API. `POST /user/login` nunca pede um código.
+
+## Erros de login {#login-errors}
+
+| Status | Significado | O que fazer |
+| --- | --- | --- |
+| `400` | Falta `username` ou `password` no corpo. | Envie ambos como JSON. |
+| `401` | O nome de usuário ou a senha estão incorretos. | Verifique as credenciais. A mensagem é a mesma exista a conta ou não. |
+| `403` | Conta banida, encerrada ou congelada. | Entre em contato com o suporte. |
+| `428` | `CHALLENGE_REQUIRED`. Só é retornado enquanto a plataforma está mitigando ativamente um ataque de credential stuffing; um desafio de verificação humana está sendo exigido. | Continue usando um token que você já possui, ou aguarde e tente novamente. Clientes automatizados não conseguem resolver o desafio. |
+| `429` | Limite de taxa de login excedido. | Aguarde os segundos indicados em `Retry-After` e reutilize os tokens existentes em vez de fazer login novamente. |
+
+## Mantendo as credenciais seguras {#keeping-credentials-safe}
+
+- Guarde o nome de usuário e a senha em variáveis de ambiente ou em um gerenciador de segredos, nunca no controle de versão.
+- Trate o token como uma senha. Qualquer um que o possua pode enviar ordens e ler sua conta.
+- Considere uma conta dedicada para o trading automatizado, de modo que uma credencial de bot vazada não exponha seu saldo principal. As contas são abertas da mesma forma que qualquer conta de usuário.
