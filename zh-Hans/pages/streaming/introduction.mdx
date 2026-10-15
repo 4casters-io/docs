@@ -2,13 +2,16 @@
 title: '4casters 推送 API'
 ---
 
-4casters 推送 API 通过原始 WebSocket 连接投递实时的用户和市场更新。
+4casters 推送 API 通过原始 WebSocket 连接投递实时的用户、市场和赛事更新。
 
 ## 端点 {#endpoints}
 - **用户推送**：`wss://streaming-api.4casters.io/v2/user`
 - **行情推送**：`wss://streaming-api.4casters.io/price-stream`
+- **比分推送**：`wss://streaming-api.4casters.io/v1/score`
 
 行情推送默认广播全部市场更新。客户端可以选择将推送收窄到特定赛事、联赛或运动项目 — 见 [订阅](/zh-Hans/pages/streaming/price-feed#subscriptions)。
+
+比分推送广播实时的赛事状态 — 比分、节次、比赛时钟，以及对各个运动项目而言关键的那部分细节。它使用与行情推送相同的订阅命令，并且在你连接时额外发送每一场已订阅的进行中赛事的当前状态 — 见 [连接时的快照](/zh-Hans/pages/streaming/score-feed#snapshot-on-connect)。
 
 ## 认证 {#auth}
 

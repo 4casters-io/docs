@@ -1,0 +1,333 @@
+El feed de puntuaciones transmite el estado en vivo del juego — marcador, periodo, reloj y el detalle que importa en cada deporte — como mensajes JSON sobre una conexión WebSocket en bruto.
+
+<CodeGroup>
+```javascript JavaScript
+// score_feed_quickstart.js
+const WebSocket = require('ws');
+const token = process.env.FOURCASTERS_TOKEN;
+
+function connectScoreFeed() {
+  const ws = new WebSocket('wss://streaming-api.4casters.io/v1/score', {
+    headers: { Authorization: token },
+  });
+
+  let pingTimer; let lastPong = Date.now();
+
+  ws.on('open', () => {
+    console.log('score feed connected');
+
+    // REQUIRED. A connection starts with no subscriptions and receives
+    // nothing until it asks: there is no "everything" default on this feed.
+    ws.send(JSON.stringify({
+      type: 'subscribe',
+      gameIDs: [],
+      leagueIDs: ['NBA'],
+      sportIDs: [],
+      replace: true,
+    }));
+
+    pingTimer = setInterval(() => {
+      if (ws.readyState === WebSocket.OPEN) ws.ping();
+      if (Date.now() - lastPong > 30000) {
+        console.warn('score feed: missed pong >30s, closing');
+        ws.terminate();
+      }
+    }, 10000);
+  });
+
+  ws.on('pong', () => { lastPong = Date.now(); });
+
+  ws.on('message', (buf) => {
+    try {
+      const [type, payload] = JSON.parse(buf.toString());
+      if (type !== 'gameState') return; // ignore types you don't know
+      console.log('game state:', JSON.stringify(payload, null, 2));
+    } catch { console.log('score feed (raw):', buf.toString()); }
+  });
+
+  ws.on('error', (e) => console.error('score feed error:', e.message));
+
+  ws.on('close', (code, reason) => {
+    console.log(`score feed closed: ${code} ${reason}`);
+    clearInterval(pingTimer);
+    setTimeout(connectScoreFeed, 1000);
+  });
+}
+connectScoreFeed();
+```
+</CodeGroup>
+
+## Ping/Pong {#pingpong}
+
+El feed de puntuaciones admite el `ping/pong` estándar de WebSocket. Puedes enviar `ping()` de forma proactiva en un intervalo y seguir el `pong` para comprobar que la conexión sigue viva.
+
+El servidor también envía pings, aproximadamente cada 25 segundos, y cierra con el código `4002` (`pong timeout`) una conexión que deja dos de sus pings sin responder. Los clientes WebSocket estándar responden a los pings automáticamente.
+
+**Lee los mensajes a medida que llegan.** Un pong queda en cola detrás de los mensajes que aún no has leído, así que un cliente que lee más despacio de lo que envía el feed puede incumplir su propio plazo de 30 segundos para el pong y acabar reconectándose una y otra vez. Haz el trabajo lento fuera del camino de lectura del socket.
+
+## Límites de conexión y códigos de cierre {#connection-limits-and-close-codes}
+
+Mantén como máximo **10** conexiones abiertas al feed de puntuaciones por cuenta. A partir de ahí, una conexión nueva se rechaza con HTTP `429` antes de la actualización a WebSocket.
+
+| Cuándo | Qué recibes | Qué hacer |
+| --- | --- | --- |
+| Sin un token válido | HTTP `401` antes de la actualización | Corrige el token antes de reintentar |
+| Demasiadas conexiones para tu cuenta | HTTP `429` antes de la actualización | Cierra las conexiones que ya no uses |
+| El servidor se está apagando | HTTP `503` antes de la actualización | Reconéctate tras una breve espera |
+| Un despliegue cierra tu conexión | código de cierre `1001` | Reconéctate; recibes una instantánea nueva |
+| Tu sesión terminó (cierre de sesión o revocación) | código de cierre `1008`, motivo `session revoked` | Inicia sesión de nuevo antes de reconectarte |
+| Dos pings del servidor quedaron sin respuesta | código de cierre `4002`, motivo `pong timeout` | Reconéctate y lee los mensajes sin demora |
+
+## Instantáneas al conectar {#snapshot-on-connect}
+
+Al suscribirte, el feed envía el estado actual de todos los juegos en vivo que cubra tu suscripción. Cada mensaje de instantánea lleva `"snapshot": true`.
+
+Esto existe porque el feed publica **cambios**, no un heartbeat. Sin una instantánea, un cliente que se conecta en el descanso no sabría nada de un juego hasta su siguiente movimiento, que puede tardar muchos minutos.
+
+Una conexión recién abierta no tiene suscripciones, así que **suscríbete primero**: la instantánea que importa es la que devuelve tu suscripción con `replace: true`. Suscríbete al tablero de una liga y su estado actual llega de inmediato.
+
+- Los mensajes de instantánea usan la misma forma `[type, payload]` que los de tiempo real. La única diferencia es el indicador `snapshot`.
+- Los juegos que ya han terminado no se incluyen.
+- Tras la instantánea, las actualizaciones en tiempo real llegan por el mismo socket. No hay un mensaje aparte de «instantánea completa»: trata todos los mensajes igual, lleven o no el indicador.
+- Si te reconectas, recibes una instantánea nueva. Reconstruir el estado a partir de ella es la forma admitida de recuperarse de una conexión caída.
+- **Una instantánea suele llegar antes que las actualizaciones en tiempo real, pero no es una barrera ni un reinicio del tablero.**
+    - Si vuelves a suscribirte más rápido de lo que permite el [ritmo de instantáneas](#subscribe-by-gameid-league-or-sport), las actualizaciones del tablero nuevo pueden llegar antes que su instantánea.
+    - El mensaje de instantánea de un juego puede ser sustituido por un mensaje en tiempo real más reciente del mismo juego, de modo que ese juego nunca llega con el indicador.
+    - Justo después de un despliegue, una instantánea puede ser parcial si el servidor aún no ha terminado de cargar el estado, y nada indica que lo fue.
+
+  Aplica cada mensaje según la regla de que [gana el más reciente](#pitfalls) y ninguno de estos casos deja mal tu tablero.
+
+## Suscripciones {#subscriptions}
+
+**Una conexión empieza sin suscripciones y no recibe nada hasta que las pide.** Envía uno de los siguientes comandos como un frame de texto JSON en cuanto el socket esté `open`; rigen durante toda la vida de la conexión.
+
+<Warning>
+No hay forma de suscribirse a todos los juegos. Suscríbete a lo que estés mostrando: el tablero de una liga, una pestaña en vivo o un solo juego. Un cliente que se conecta y nunca se suscribe no recibe ningún mensaje, y eso es el comportamiento esperado, no un feed caído.
+</Warning>
+
+Las suscripciones usan los mismos comandos y las mismas claves que el [feed de precios](/es/pages/streaming/price-feed#subscriptions), así que un cliente que ya habla con ese feed no necesita conceptos nuevos, con una diferencia que conviene conocer si vienes de ese feed: aquel difunde todo por defecto y este no, y aquel tiene un catch-all `subscribeAll` y este no tiene ninguno.
+
+### Suscribirse por gameID, liga o deporte {#subscribe-by-gameid-league-or-sport}
+
+Instala un filtro. Los `gameIDs` son cadenas hexadecimales ObjectID de Mongo de 24 caracteres; los `leagueIDs` son códigos cortos como `NBA` / `MLB` / `EPL`; los `sportIDs` son tokens en minúsculas como `basketball` / `baseball` / `soccer`.
+
+<CodeGroup>
+```json Reemplazar (recomendado)
+{
+  "type": "subscribe",
+  "gameIDs": ["62619dce25e2fb049a71cc2e"],
+  "leagueIDs": ["NBA"],
+  "sportIDs": [],
+  "replace": true
+}
+```
+```json Aditivo
+{
+  "type": "subscribe",
+  "gameIDs": [],
+  "leagueIDs": ["MLB"],
+  "sportIDs": [],
+  "replace": false
+}
+```
+</CodeGroup>
+
+- `replace: true` borra las suscripciones existentes de esta conexión e instala las listas nuevas.
+- `replace: false` añade las claves nuevas a aquello a lo que la conexión ya está suscrita.
+
+Suscribirse con `replace: true` dispara además una instantánea nueva de los juegos a los que acabas de suscribirte, así que al restringir el flujo tus tarjetas nuevas se rellenan de inmediato y no en su siguiente cambio.
+
+**Las instantáneas tienen un ritmo** por conexión: hasta tres a la vez y después una por segundo. Una suscripción con `replace: true` que supera ese margen no se rechaza ni se descarta. Su instantánea se aplaza y, cuando se envía, cubre tus suscripciones tal como estén en ese momento.
+
+### Cancelar suscripción {#unsubscribe}
+
+Quita claves concretas. Lo que quede es lo que la conexión sigue recibiendo; si quitas la última clave, deja de recibir nada.
+
+<CodeGroup>
+```json JSON
+{
+  "type": "unsubscribe",
+  "gameIDs": [],
+  "leagueIDs": ["MLB"],
+  "sportIDs": []
+}
+```
+</CodeGroup>
+
+### Semántica de enrutado {#routing-semantics}
+
+- Una suscripción por `gameID` también recibe actualizaciones de cualquier juego cuyo `parentGameID` coincida con él. El mercado en vivo de un juego publica estado propio (consulta [Mercados hijo](#child-markets)), así que suscribirte al `gameID` de un juego también te entrega los mensajes de su mercado en vivo.
+- Los IDs de liga no distinguen mayúsculas — `mlb` y `MLB` son equivalentes.
+- Los IDs de deporte no distinguen mayúsculas — `baseball` y `Baseball` son equivalentes.
+- Las cadenas vacías dentro de los arrays se ignoran.
+- `subscribe` con `replace: false` **y** arrays vacíos no tiene efecto.
+- `subscribe` con `replace: true` **y** arrays vacíos es la vía de «borrar todas mis suscripciones»: la conexión queda con cero suscripciones y no recibe nada hasta que vuelvas a suscribirte.
+- `subscribeAll` **no** es un comando en este feed. Enviarlo no hace nada y no se confirma.
+
+## Mensajes {#messages}
+
+Cada mensaje en `/v1/score` llega como una 2-tupla `[type, payload]`.
+
+**Ignora los tipos de mensaje que no reconozcas.** Se añadirán tipos nuevos a este feed sin cambiar de versión; un cliente que da por supuesto un conjunto fijo se romperá cuando llegue uno. Haz un switch sobre `type` y descarta el caso por defecto.
+
+### `gameState` {#gamestate}
+
+Se emite cada vez que cambia el estado observado de un juego. Un mensaje por juego y por cambio — el feed no repite un estado que no ha cambiado, así que un juego tranquilo es normal y no es señal de una conexión muerta.
+
+Si tu conexión se queda atrás, el feed envía el estado más reciente de cada juego en lugar de cada estado intermedio: un mensaje que todavía espera a ser enviado se sustituye por uno más reciente del mismo juego.
+
+<CodeGroup>
+```json JSON
+[
+  "gameState",
+  {
+    "gameID": "62619dce25e2fb049a71cc2e",
+    "parentGameID": null,
+    "league": "NBA",
+    "sport": "basketball",
+    "status": "LIVE",
+    "detail": "6:12 - 3rd",
+    "period": 3,
+    "clock": "6:12",
+    "clockSeconds": 372,
+    "homeScore": 78,
+    "awayScore": 71,
+    "stoppage": null,
+    "ts": 1791830400000
+  }
+]
+```
+</CodeGroup>
+
+| Campo | Tipo | Notas |
+| --- | --- | --- |
+| `gameID` | string | hex ObjectID de 24 caracteres |
+| `parentGameID` | string o null | `null` en los mensajes propios de un juego; el `gameID` del padre en los mensajes de un mercado en vivo (consulta [Mercados hijo](#child-markets)) |
+| `league` | string | código corto, p. ej. `NBA` |
+| `sport` | string | token en minúsculas, p. ej. `basketball` |
+| `status` | string | ver más abajo |
+| `detail` | string o null | la línea propia del marcador, p. ej. `"Bot 7th"`, `"6:12 - 3rd"` |
+| `period` | integer o null | cuarto, inning, periodo o mitad |
+| `clock` | string o null | tal como se muestra |
+| `clockSeconds` | integer o null | el mismo reloj en segundos, para hacer cálculos |
+| `homeScore` | integer o null | |
+| `awayScore` | integer o null | |
+| `stoppage` | object o null | `{ "type": …, "team": …, "since": … }`; `since` son **milisegundos desde epoch**, como `ts`, y se omite cuando el proveedor no informó ninguno |
+| `ts` | integer | milisegundos desde epoch, cuando se observó el estado |
+| `snapshot` | boolean | presente y `true` solo en los mensajes de instantánea |
+
+`status` es uno de `SCHEDULED`, `LIVE`, `HALFTIME`, `END_PERIOD`, `DELAYED`, `SUSPENDED`, `FINAL`, `CANCELLED`, `POSTPONED`, `UNKNOWN`. Trata un estado que no reconozcas como `UNKNOWN` en lugar de descartar el mensaje: el marcador y el reloj siguen siendo válidos.
+
+#### Bloques por deporte {#sport-blocks}
+
+Un mensaje lleva como máximo un bloque por deporte, y solo el del deporte al que corresponde. Un bloque solo está presente cuando el feed dispone de ese detalle.
+
+<CodeGroup>
+```json Béisbol
+[
+  "gameState",
+  {
+    "gameID": "62619dce25e2fb049a71cc2e",
+    "league": "MLB",
+    "sport": "baseball",
+    "status": "LIVE",
+    "detail": "Bot 7th",
+    "period": 7,
+    "homeScore": 3,
+    "awayScore": 2,
+    "ts": 1791830400000,
+    "baseball": {
+      "balls": 2,
+      "strikes": 1,
+      "outs": 1,
+      "onFirst": true,
+      "onSecond": false,
+      "onThird": true,
+      "isTopInning": false,
+      "inningState": "Bottom",
+      "batterID": "4596448",
+      "batterName": "Bucky Irving",
+      "pitcherID": "2577417",
+      "pitcherName": "Dak Prescott"
+    }
+  }
+]
+```
+```json Fútbol americano
+[
+  "gameState",
+  {
+    "gameID": "685e21aa0be1b7d5a3f9c4d2",
+    "league": "NFL",
+    "sport": "football",
+    "status": "LIVE",
+    "detail": "2:41 - 2nd",
+    "period": 2,
+    "clock": "2:41",
+    "clockSeconds": 161,
+    "homeScore": 14,
+    "awayScore": 10,
+    "ts": 1791830400000,
+    "football": {
+      "down": 3,
+      "distance": 7,
+      "yardLine": 42,
+      "isRedZone": false,
+      "possessionHome": true,
+      "lastPlayText": "B.Robinson up the middle to LAR 42 for 3 yards"
+    }
+  }
+]
+```
+```json Hockey
+[
+  "gameState",
+  {
+    "gameID": "7a1e44cc0be1b7d5a3f9c900",
+    "league": "NHL",
+    "sport": "hockey",
+    "status": "LIVE",
+    "detail": "12:08 - 2nd",
+    "period": 2,
+    "clock": "12:08",
+    "clockSeconds": 728,
+    "homeScore": 1,
+    "awayScore": 2,
+    "ts": 1791830400000,
+    "hockey": {
+      "powerPlay": "home"
+    }
+  }
+]
+```
+</CodeGroup>
+
+`yardLine` se mide desde la línea de gol del equipo local. Usa `possessionHome` para deducir en qué dirección avanza el equipo que tiene la posesión.
+
+## Mercados hijo {#child-markets}
+
+El mercado en vivo de un juego, su primera mitad y su segunda mitad son juegos distintos en nuestro sistema, cada uno con su propio `gameID` y su propio ID de liga — `NBA-LIVE`, `NFL-1H`, `NBA-2H`.
+
+**Un mercado en vivo publica estado.** Cada estado que publica su juego padre se publica de nuevo bajo el mercado en vivo, con el `gameID` y la liga propios del mercado en vivo (`NBA-LIVE`) y con `parentGameID` igual al `gameID` del padre. El marcador, el reloj y el periodo son los del padre.
+
+**Los mercados de primera mitad, segunda mitad y props no publican nada.** Suscribirse a uno de sus `gameID` o IDs de liga no recibe nada en absoluto — y "nada" es exactamente el aspecto que tiene un juego en calma.
+
+Para mostrar un marcador junto a cualquier mercado hijo, suscríbete a su **padre**: el `gameID` del padre o la liga padre (`NBA`, no `NBA-LIVE`). Muestra el estado del padre en la tarjeta del hijo. Eso funciona para cualquier tipo de mercado hijo.
+
+<Warning>
+Suscribirse a `NFL-1H`, `NBA-2H` o a otro ID de liga de mitad o de props se acepta en silencio y no entrega ningún mensaje. Usa el ID de la liga padre.
+</Warning>
+
+## Errores comunes {#pitfalls}
+
+**Ausente significa desconocido, nunca cero.** Un campo que el feed no ha podido determinar se omite o llega como null; nunca se envía como `0`. Esto importa sobre todo en la cuenta de béisbol: `balls`, `strikes` y `outs` llegan juntos o no llegan en absoluto, así que una cuenta ausente no debe mostrarse como «0-0, 0 outs». Trata `null` y la ausencia del campo de la misma manera.
+
+**Un juego tranquilo no es un feed muerto.** El feed publica cambios. Una interrupción por lluvia, el descanso o una parada de juego no produce ningún mensaje, a veces durante muchos minutos. No uses «hace rato que no llega ningún mensaje» como comprobación de vida de un juego: usa `ping`/`pong` para la conexión y `status` para el juego.
+
+**`parentGameID` es `null` en los mensajes propios de un juego.** Solo lleva un valor en los mensajes de un mercado en vivo, donde es el `gameID` del padre (consulta [Mercados hijo](#child-markets)). Una suscripción al `gameID` de un padre recibe ambos, bajo dos `gameID` distintos con el mismo estado, así que indexa tu tablero por el `gameID` que muestras.
+
+**Los marcadores son enteros, no cadenas.** A diferencia de algunos campos del feed de precios, `homeScore` y `awayScore` son números JSON.
+
+**Gana el más reciente.** Compara `ts` antes de aplicar un mensaje. El orden no está garantizado al reconectar, y una instantánea puede llegar junto a frames en tiempo real: un frame más antiguo que el estado que ya tienes debe descartarse en lugar de aplicarse.
+
+**No deduzcas el reloj por tu cuenta.** `clock` es lo que muestra el marcador y solo cambia cuando el proveedor publica un valor nuevo, lo que ocurre aproximadamente una vez por jugada y no una vez por segundo. Descontar el tiempo localmente entre mensajes se desviará y será incorrecto siempre que el juego esté parado.

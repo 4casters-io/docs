@@ -2,13 +2,16 @@
 title: '4casters 推送 API'
 ---
 
-4casters 推送 API 透過原始 WebSocket 連線投遞即時的使用者和市場更新。
+4casters 推送 API 透過原始 WebSocket 連線投遞即時的使用者、市場和賽事更新。
 
 ## 端點 {#endpoints}
 - **使用者推送**：`wss://streaming-api.4casters.io/v2/user`
 - **行情推送**：`wss://streaming-api.4casters.io/price-stream`
+- **比分推送**：`wss://streaming-api.4casters.io/v1/score`
 
 行情推送預設廣播全部市場更新。用戶端可以選擇將推送收窄到特定賽事、聯賽或運動項目 — 見 [訂閱](/zh-Hant/pages/streaming/price-feed#subscriptions)。
+
+比分推送廣播即時的賽事狀態 — 比分、節次、比賽時鐘，以及對各個運動項目而言關鍵的那部分細節。它使用與行情推送相同的訂閱命令，並且在你連線時額外傳送每一場已訂閱的進行中賽事的當前狀態 — 見 [連線時的快照](/zh-Hant/pages/streaming/score-feed#snapshot-on-connect)。
 
 ## 認證 {#auth}
 
