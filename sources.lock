@@ -5,11 +5,11 @@
       "name": "core-api",
       "url": "https://api.4casters.io/openapi.json",
       "file": "sources/core-api.openapi.json",
-      "hash": "698e7215309c5a2181674c7b15741bf292503d69b7b794ee112f2df58e0111d4",
-      "observedAt": "2026-10-15T10:56:20.693Z",
+      "hash": "047273822cea3a1f29e1c5708118a652645c5ea774abfba32d92dfbe0d212a98",
+      "observedAt": "2026-10-16T21:57:52.019Z",
       "pinned": false
     }
   ],
-  "combined": "a1ff61cdd9edba96f96ec20e2ec67be00d4364ffc66b7b33a1afb013ee354ba4",
-  "snapshotAt": "2026-10-15T10:56:20.693Z"
+  "combined": "d68a83a01b840f742813a8d6df09d36bedf4b455fe44b9ad9f4aaa0dac5687b8",
+  "snapshotAt": "2026-10-16T21:57:52.019Z"
 }
