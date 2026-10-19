@@ -445,10 +445,13 @@ Orders placed on a game marked as live follow these rules:
 1. If the order does not match any existing liquidity, it is placed immediately.
 2. If the order does match existing liquidity, it incurs a delay period before it is executed.
 3. Different leagues have different live delay periods:
-    - NFL, UFCMMA, NCAAF — 3 seconds.
-    - NCAAB, NBA — 5 seconds.
-    - ATP, WTA — 8 seconds.
-    - Default — 10 seconds.
+    - NFL, NCAAF, NBA, WNBA, NCAAB, MLB, NHL: 0.5 seconds.
+    - Top-tier soccer (Premier League, Champions League, World Cup and the other major competitions), ATP, WTA, CFL: 2 seconds.
+    - UFCMMA: 3 seconds.
+    - EURO-CUP: 5 seconds.
+    - Default: 10 seconds.
+
+    Live half, period and player-prop markets use their parent league's delay. These values are operational settings and can change without notice.
 4. After the delay, the order attempts to execute:
     - If the odds improve, it matches instantly.
     - If the odds decrease, it does not match.

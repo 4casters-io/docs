@@ -445,10 +445,13 @@ As ordens enviadas em um evento marcado como live seguem estas regras:
 1. Se a ordem não casar com nenhuma liquidez existente, é enviada imediatamente.
 2. Se a ordem casar com liquidez existente, incorre em um período de atraso antes de executar.
 3. Ligas diferentes têm períodos de atraso ao vivo diferentes:
-    - NFL, UFCMMA, NCAAF — 3 segundos.
-    - NCAAB, NBA — 5 segundos.
-    - ATP, WTA — 8 segundos.
-    - Padrão — 10 segundos.
+    - NFL, NCAAF, NBA, WNBA, NCAAB, MLB, NHL: 0.5 segundo.
+    - Futebol de primeira linha (Premier League, Champions League, Copa do Mundo e as demais competições principais), ATP, WTA, CFL: 2 segundos.
+    - UFCMMA: 3 segundos.
+    - EURO-CUP: 5 segundos.
+    - Padrão: 10 segundos.
+
+    Os mercados ao vivo de tempos, períodos e props de jogadores usam o atraso da liga principal. Esses valores são configurações operacionais e podem mudar sem aviso.
 4. Após o atraso, a ordem tenta executar:
     - Se as odds melhoram, casa na hora.
     - Se as odds pioram, não casa.
