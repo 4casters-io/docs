@@ -356,10 +356,13 @@ Las órdenes colocadas en un juego marcado como live siguen estas reglas:
 1. Si la orden no cruza ninguna liquidez existente, se coloca de inmediato.
 2. Si la orden sí cruza liquidez existente, incurre en un retraso antes de la ejecución.
 3. Distintas ligas tienen distintos periodos de retraso en vivo:
-    - **NFL, UFCMMA, NCAAF** — 3 segundos.
-    - **NCAAB, NBA** — 5 segundos.
-    - **ATP, WTA** — 8 segundos.
-    - **Por defecto** — 10 segundos.
+    - **NFL, NCAAF, NBA, WNBA, NCAAB, MLB, NHL**: 0.5 segundos.
+    - **Fútbol de primer nivel (Premier League, Champions League, Mundial y las demás competiciones principales), ATP, WTA, CFL**: 2 segundos.
+    - **UFCMMA**: 3 segundos.
+    - **EURO-CUP**: 5 segundos.
+    - **Por defecto**: 10 segundos.
+
+    Los mercados en vivo de mitades, periodos y props de jugadores usan el retraso de su liga principal. Estos valores son ajustes operativos y pueden cambiar sin aviso.
 4. Tras el retraso, la orden intenta ejecutarse:
     - Si las cuotas mejoran, cruza al instante.
     - Si las cuotas empeoran, no cruza.
