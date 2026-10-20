@@ -305,6 +305,8 @@ A message carries at most one sport block, and only for the sport it applies to.
 
 `yardLine` is measured from the home team's goal line. Use `possessionHome` to work out which direction the team in possession is moving.
 
+`down` is 1 to 4. Before kickoff and between plays (after a score, at a timeout) there is no down, so `down`, `distance`, `yardLine` and `isRedZone` are absent; `lastPlayText` still arrives. A real down can also arrive without a `yardLine` when the provider does not know where the ball is.
+
 ## Child markets
 
 A game's live market, first half and second half are separate games in our system, each with its own `gameID` and its own league ID — `NBA-LIVE`, `NFL-1H`, `NBA-2H`.

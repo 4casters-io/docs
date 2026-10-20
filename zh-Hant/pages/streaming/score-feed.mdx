@@ -305,6 +305,8 @@ connectScoreFeed();
 
 `yardLine` 自主隊的球門線起算。請用 `possessionHome` 判斷持球一方的推進方向。
 
+`down` 的取值為 1 到 4。開球之前以及兩次進攻之間（得分之後、暫停時）沒有 down，因此 `down`、`distance`、`yardLine` 和 `isRedZone` 都不會出現；`lastPlayText` 仍會照常推送。當資料來源不知道球的位置時，真實的 down 也可能不帶 `yardLine`。
+
 ## 子市場 {#child-markets}
 
 一場賽事的滾球市場、上半場和下半場在我們的系統中是各自獨立的賽事，各有自己的 `gameID` 和自己的聯賽 ID —— `NBA-LIVE`、`NFL-1H`、`NBA-2H`。

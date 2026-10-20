@@ -305,6 +305,8 @@ Un mensaje lleva como máximo un bloque por deporte, y solo el del deporte al qu
 
 `yardLine` se mide desde la línea de gol del equipo local. Usa `possessionHome` para deducir en qué dirección avanza el equipo que tiene la posesión.
 
+`down` va de 1 a 4. Antes del saque inicial y entre jugadas (tras una anotación, en un tiempo muerto) no hay down, así que `down`, `distance`, `yardLine` e `isRedZone` no aparecen; `lastPlayText` sigue llegando. Un down real también puede llegar sin `yardLine` cuando el proveedor no sabe dónde está el balón.
+
 ## Mercados hijo {#child-markets}
 
 El mercado en vivo de un juego, su primera mitad y su segunda mitad son juegos distintos en nuestro sistema, cada uno con su propio `gameID` y su propio ID de liga — `NBA-LIVE`, `NFL-1H`, `NBA-2H`.
