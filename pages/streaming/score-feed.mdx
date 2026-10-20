@@ -67,7 +67,7 @@ The server pings too, about every 25 seconds, and closes a connection that leave
 
 ## Connection limits and close codes
 
-Keep to at most **10** open score-feed connections per account. Past that, a new connection is refused with HTTP `429` before the WebSocket upgrade.
+Keep to at most **20** open score-feed connections per account. Past that, a new connection is refused with HTTP `429` before the WebSocket upgrade.
 
 | When | What you get | What to do |
 | --- | --- | --- |
@@ -77,6 +77,7 @@ Keep to at most **10** open score-feed connections per account. Past that, a new
 | A deploy closes your connection | close code `1001` | Reconnect; you get a fresh snapshot |
 | Your session ended (logout or revocation) | close code `1008`, reason `session revoked` | Sign in again before reconnecting |
 | Two server pings went unanswered | close code `4002`, reason `pong timeout` | Reconnect, and read messages promptly |
+| A message you sent was larger than 64 KiB | close code `1009` (message too big) | Keep each command under 64 KiB; that is about 2,400 `gameIDs` |
 
 ## Snapshot on connect
 

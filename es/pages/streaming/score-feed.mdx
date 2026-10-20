@@ -67,7 +67,7 @@ El servidor también envía pings, aproximadamente cada 25 segundos, y cierra co
 
 ## Límites de conexión y códigos de cierre {#connection-limits-and-close-codes}
 
-Mantén como máximo **10** conexiones abiertas al feed de puntuaciones por cuenta. A partir de ahí, una conexión nueva se rechaza con HTTP `429` antes de la actualización a WebSocket.
+Mantén como máximo **20** conexiones abiertas al feed de puntuaciones por cuenta. A partir de ahí, una conexión nueva se rechaza con HTTP `429` antes de la actualización a WebSocket.
 
 | Cuándo | Qué recibes | Qué hacer |
 | --- | --- | --- |
@@ -77,6 +77,7 @@ Mantén como máximo **10** conexiones abiertas al feed de puntuaciones por cuen
 | Un despliegue cierra tu conexión | código de cierre `1001` | Reconéctate; recibes una instantánea nueva |
 | Tu sesión terminó (cierre de sesión o revocación) | código de cierre `1008`, motivo `session revoked` | Inicia sesión de nuevo antes de reconectarte |
 | Dos pings del servidor quedaron sin respuesta | código de cierre `4002`, motivo `pong timeout` | Reconéctate y lee los mensajes sin demora |
+| Un mensaje que enviaste superaba los 64 KiB | código de cierre `1009` (mensaje demasiado grande) | Mantén cada comando por debajo de 64 KiB; caben unos 2.400 `gameIDs` |
 
 ## Instantáneas al conectar {#snapshot-on-connect}
 
