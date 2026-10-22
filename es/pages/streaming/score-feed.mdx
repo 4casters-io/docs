@@ -92,8 +92,7 @@ Una conexión recién abierta no tiene suscripciones, así que **suscríbete pri
 - Tras la instantánea, las actualizaciones en tiempo real llegan por el mismo socket. No hay un mensaje aparte de «instantánea completa»: trata todos los mensajes igual, lleven o no el indicador.
 - Si te reconectas, recibes una instantánea nueva. Reconstruir el estado a partir de ella es la forma admitida de recuperarse de una conexión caída.
 - **Una instantánea suele llegar antes que las actualizaciones en tiempo real, pero no es una barrera ni un reinicio del tablero.**
-    - Si vuelves a suscribirte más rápido de lo que permite el [ritmo de instantáneas](#subscribe-by-gameid-league-or-sport), las actualizaciones del tablero nuevo pueden llegar antes que su instantánea.
-    - El mensaje de instantánea de un juego puede ser sustituido por un mensaje en tiempo real más reciente del mismo juego, de modo que ese juego nunca llega con el indicador.
+    - El mensaje de instantánea de un juego nunca es más antiguo que un mensaje en tiempo real que ya tengas de ese juego.
     - Justo después de un despliegue, una instantánea puede ser parcial si el servidor aún no ha terminado de cargar el estado, y nada indica que lo fue.
 
   Aplica cada mensaje según la regla de que [gana el más reciente](#pitfalls) y ninguno de estos casos deja mal tu tablero.
@@ -138,8 +137,6 @@ Instala un filtro. Los `gameIDs` son cadenas hexadecimales ObjectID de Mongo de 
 
 Suscribirse con `replace: true` dispara además una instantánea nueva de los juegos a los que acabas de suscribirte, así que al restringir el flujo tus tarjetas nuevas se rellenan de inmediato y no en su siguiente cambio.
 
-**Las instantáneas tienen un ritmo** por conexión: hasta tres a la vez y después una por segundo. Una suscripción con `replace: true` que supera ese margen no se rechaza ni se descarta. Su instantánea se aplaza y, cuando se envía, cubre tus suscripciones tal como estén en ese momento.
-
 ### Cancelar suscripción {#unsubscribe}
 
 Quita claves concretas. Lo que quede es lo que la conexión sigue recibiendo; si quitas la última clave, deja de recibir nada.
@@ -157,7 +154,7 @@ Quita claves concretas. Lo que quede es lo que la conexión sigue recibiendo; si
 
 ### Semántica de enrutado {#routing-semantics}
 
-- Una suscripción por `gameID` también recibe actualizaciones de cualquier juego cuyo `parentGameID` coincida con él. El mercado en vivo de un juego publica estado propio (consulta [Mercados hijo](#child-markets)), así que suscribirte al `gameID` de un juego también te entrega los mensajes de su mercado en vivo.
+- El mercado en vivo de un juego publica su propia copia de cada estado (consulta [Mercados hijo](#child-markets)), y esa copia solo llega a quienes se suscriben al `gameID` propio del mercado en vivo o a su liga en vivo (`NBA-LIVE`), nunca a quienes se suscriben al `gameID` del padre, a la liga padre o al deporte.
 - Los IDs de liga no distinguen mayúsculas — `mlb` y `MLB` son equivalentes.
 - Los IDs de deporte no distinguen mayúsculas — `baseball` y `Baseball` son equivalentes.
 - Las cadenas vacías dentro de los arrays se ignoran.
@@ -175,7 +172,7 @@ Cada mensaje en `/v1/score` llega como una 2-tupla `[type, payload]`.
 
 Se emite cada vez que cambia el estado observado de un juego. Un mensaje por juego y por cambio — el feed no repite un estado que no ha cambiado, así que un juego tranquilo es normal y no es señal de una conexión muerta.
 
-Si tu conexión se queda atrás, el feed envía el estado más reciente de cada juego en lugar de cada estado intermedio: un mensaje que todavía espera a ser enviado se sustituye por uno más reciente del mismo juego.
+Si tu conexión se queda muy atrás (más de 1.000 mensajes esperando a enviarse), los mensajes nuevos para ella se descartan hasta que se ponga al día, y nada marca el hueco. Cada juego afectado se actualiza con su siguiente cambio, o de inmediato con una suscripción `replace: true`, que envía una instantánea nueva.
 
 <CodeGroup>
 ```json JSON
@@ -311,7 +308,7 @@ Un mensaje lleva como máximo un bloque por deporte, y solo el del deporte al qu
 
 El mercado en vivo de un juego, su primera mitad y su segunda mitad son juegos distintos en nuestro sistema, cada uno con su propio `gameID` y su propio ID de liga — `NBA-LIVE`, `NFL-1H`, `NBA-2H`.
 
-**Un mercado en vivo publica estado.** Cada estado que publica su juego padre se publica de nuevo bajo el mercado en vivo, con el `gameID` y la liga propios del mercado en vivo (`NBA-LIVE`) y con `parentGameID` igual al `gameID` del padre. El marcador, el reloj y el periodo son los del padre.
+**Un mercado en vivo publica estado.** Cada estado que publica su juego padre se publica de nuevo bajo el mercado en vivo, con el `gameID` y la liga propios del mercado en vivo (`NBA-LIVE`) y con `parentGameID` igual al `gameID` del padre. El marcador, el reloj y el periodo son los del padre. Esa copia solo llega a quienes se suscriben al `gameID` propio del mercado en vivo o a su liga (`NBA-LIVE`); una suscripción al `gameID`, la liga o el deporte del padre recibe solo los mensajes del padre, uno por cambio.
 
 **Los mercados de primera mitad, segunda mitad y props no publican nada.** Suscribirse a uno de sus `gameID` o IDs de liga no recibe nada en absoluto — y "nada" es exactamente el aspecto que tiene un juego en calma.
 
@@ -327,7 +324,7 @@ Suscribirse a `NFL-1H`, `NBA-2H` o a otro ID de liga de mitad o de props se acep
 
 **Un juego tranquilo no es un feed muerto.** El feed publica cambios. Una interrupción por lluvia, el descanso o una parada de juego no produce ningún mensaje, a veces durante muchos minutos. No uses «hace rato que no llega ningún mensaje» como comprobación de vida de un juego: usa `ping`/`pong` para la conexión y `status` para el juego.
 
-**`parentGameID` es `null` en los mensajes propios de un juego.** Solo lleva un valor en los mensajes de un mercado en vivo, donde es el `gameID` del padre (consulta [Mercados hijo](#child-markets)). Una suscripción al `gameID` de un padre recibe ambos, bajo dos `gameID` distintos con el mismo estado, así que indexa tu tablero por el `gameID` que muestras.
+**`parentGameID` es `null` en los mensajes propios de un juego.** Solo lleva un valor en los mensajes de un mercado en vivo, donde es el `gameID` del padre (consulta [Mercados hijo](#child-markets)). Esos mensajes solo llegan a quienes se suscriben al propio mercado en vivo, así que una suscripción al padre recibe cada cambio una sola vez, bajo el `gameID` del padre.
 
 **Los marcadores son enteros, no cadenas.** A diferencia de algunos campos del feed de precios, `homeScore` y `awayScore` son números JSON.
 
