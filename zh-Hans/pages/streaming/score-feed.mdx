@@ -1,0 +1,333 @@
+比分推送通过原始 WebSocket 连接以 JSON 消息投递实时的赛事状态 — 比分、节次、比赛时钟，以及对各个运动项目而言关键的那部分细节。
+
+<CodeGroup>
+```javascript JavaScript
+// score_feed_quickstart.js
+const WebSocket = require('ws');
+const token = process.env.FOURCASTERS_TOKEN;
+
+function connectScoreFeed() {
+  const ws = new WebSocket('wss://streaming-api.4casters.io/v1/score', {
+    headers: { Authorization: token },
+  });
+
+  let pingTimer; let lastPong = Date.now();
+
+  ws.on('open', () => {
+    console.log('score feed connected');
+
+    // REQUIRED. A connection starts with no subscriptions and receives
+    // nothing until it asks: there is no "everything" default on this feed.
+    ws.send(JSON.stringify({
+      type: 'subscribe',
+      gameIDs: [],
+      leagueIDs: ['NBA'],
+      sportIDs: [],
+      replace: true,
+    }));
+
+    pingTimer = setInterval(() => {
+      if (ws.readyState === WebSocket.OPEN) ws.ping();
+      if (Date.now() - lastPong > 30000) {
+        console.warn('score feed: missed pong >30s, closing');
+        ws.terminate();
+      }
+    }, 10000);
+  });
+
+  ws.on('pong', () => { lastPong = Date.now(); });
+
+  ws.on('message', (buf) => {
+    try {
+      const [type, payload] = JSON.parse(buf.toString());
+      if (type !== 'gameState') return; // ignore types you don't know
+      console.log('game state:', JSON.stringify(payload, null, 2));
+    } catch { console.log('score feed (raw):', buf.toString()); }
+  });
+
+  ws.on('error', (e) => console.error('score feed error:', e.message));
+
+  ws.on('close', (code, reason) => {
+    console.log(`score feed closed: ${code} ${reason}`);
+    clearInterval(pingTimer);
+    setTimeout(connectScoreFeed, 1000);
+  });
+}
+connectScoreFeed();
+```
+</CodeGroup>
+
+## Ping/Pong {#pingpong}
+
+比分推送支持标准 WebSocket `ping/pong`。你可以按间隔主动调用 `ping()`，并通过跟踪 `pong` 来确认连接存活。
+
+服务器也会发送 ping，大约每 25 秒一次；若一个连接有两次 ping 未回应，服务器会以关闭码 `4002`（`pong timeout`）关闭它。标准 WebSocket 客户端会自动回应 ping。
+
+**消息到达后请及时读取。** pong 会排在你尚未读取的消息之后，因此读取速度慢于推送发送速度的客户端，可能错过它自己的 30 秒 pong 期限，从而反复重连。请把耗时的处理放在套接字的读取路径之外。
+
+## 连接限制与关闭码 {#connection-limits-and-close-codes}
+
+每个账户同时打开的比分推送连接请不要超过 **20** 个。超过之后，新的连接会在 WebSocket 升级之前被 HTTP `429` 拒绝。
+
+| 情况 | 你会收到 | 应对方式 |
+| --- | --- | --- |
+| 没有有效的 token | 升级之前返回 HTTP `401` | 先修正 token 再重试 |
+| 你的账户连接过多 | 升级之前返回 HTTP `429` | 关闭不再使用的连接 |
+| 服务器正在关闭 | 升级之前返回 HTTP `503` | 稍等片刻后重连 |
+| 部署关闭了你的连接 | 关闭码 `1001` | 重新连接；你会收到一份新的快照 |
+| 你的会话已结束（登出或被撤销） | 关闭码 `1008`，原因 `session revoked` | 重新登录后再连接 |
+| 有两次服务器 ping 未回应 | 关闭码 `4002`，原因 `pong timeout` | 重新连接，并及时读取消息 |
+| 你发送的消息超过 64 KiB | 关闭码 `1009`（消息过大） | 每条命令保持在 64 KiB 以内，约可容纳 2,400 个 `gameIDs` |
+
+## 连接时的快照 {#snapshot-on-connect}
+
+当你订阅时，推送会发送你的订阅所涵盖的每一场进行中赛事的当前状态。每条快照消息都带有 `"snapshot": true`。
+
+之所以有这份快照，是因为该推送发布的是**变化**，而不是心跳。若没有快照，在中场休息时连上的客户端在某场赛事下一次发生变化之前对它一无所知 — 而这可能是好几分钟。
+
+新建立的连接没有任何订阅，因此请**先订阅**：真正有用的快照是带 `replace: true` 的订阅命令所返回的那一份。订阅某个联赛看板，其当前状态会立即到达。
+
+- 快照消息与实时消息使用相同的 `[type, payload]` 结构，唯一的区别是 `snapshot` 标志。
+- 已经结束的赛事不包含在内。
+- 快照之后，实时更新在同一个套接字上继续到达。没有单独的「快照完成」消息：无论消息是否带有该标志，都按同样的方式处理。
+- 若你重新连接，会收到一份新的快照。从它重建状态是从断线中恢复的受支持方式。
+- **快照通常先于实时更新到达，但它既不是屏障，也不是看板重置。**
+    - 某场赛事的快照消息绝不会比你已收到的该赛事实时消息更旧。
+    - 部署刚完成时，如果服务器尚未加载完状态，快照可能是不完整的，而且不会有任何提示。
+
+  按照[以最新为准](#pitfalls)的规则处理每一条消息，以上任何一种情况都不会让你的看板出错。
+
+## 订阅 {#subscriptions}
+
+**连接建立后没有任何订阅，在主动请求之前不会收到任何消息。**请在套接字进入 `open` 后，以 JSON 文本帧发送下列命令之一；命令在该连接的生命周期内生效。
+
+<Warning>
+没有任何方式可以订阅全部赛事。请只订阅你正在展示的内容 —— 一个联赛看板、一个滚球标签页，或单场赛事。连接后从不订阅的客户端收不到任何消息，这是预期行为，而不是推送失效。
+</Warning>
+
+订阅使用与 [行情推送](/zh-Hans/pages/streaming/price-feed#subscriptions) 相同的命令和相同的键，因此已经对接该推送的客户端无需掌握任何新概念；但若你用过那个推送，有一处差异值得注意：它默认广播全部内容而本推送不会，它有 `subscribeAll` 这个 catch-all 而本推送没有。
+
+### 按 gameID、联赛或运动项目订阅 {#subscribe-by-gameid-league-or-sport}
+
+安装过滤器。`gameIDs` 为 24 位 Mongo ObjectID 十六进制字符串；`leagueIDs` 为短代码，如 `NBA` / `MLB` / `EPL`；`sportIDs` 为小写标识，如 `basketball` / `baseball` / `soccer`。
+
+<CodeGroup>
+```json 替换（推荐）
+{
+  "type": "subscribe",
+  "gameIDs": ["62619dce25e2fb049a71cc2e"],
+  "leagueIDs": ["NBA"],
+  "sportIDs": [],
+  "replace": true
+}
+```
+```json 追加
+{
+  "type": "subscribe",
+  "gameIDs": [],
+  "leagueIDs": ["MLB"],
+  "sportIDs": [],
+  "replace": false
+}
+```
+</CodeGroup>
+
+- `replace: true` 清除该连接上任何现有订阅，并安装新列表。
+- `replace: false` 将新键追加到该连接已订阅的集合中。
+
+带 `replace: true` 的 subscribe 还会为你刚刚订阅的赛事触发一份新的快照，因此收窄推送会立即填满你新的卡片，而不必等到它们下一次发生变化。
+
+### 取消订阅 {#unsubscribe}
+
+移除指定键。剩下的键就是该连接仍会收到的内容；移除最后一个键后，它将不再收到任何消息。
+
+<CodeGroup>
+```json JSON
+{
+  "type": "unsubscribe",
+  "gameIDs": [],
+  "leagueIDs": ["MLB"],
+  "sportIDs": []
+}
+```
+</CodeGroup>
+
+### 路由语义 {#routing-semantics}
+
+- 赛事的滚球市场会为每个状态发布自己的一份副本（参见[子市场](#child-markets)），这份副本只会送达订阅了该滚球市场自身 `gameID` 或其滚球联赛（`NBA-LIVE`）的客户端，订阅父赛事 `gameID`、父联赛或运动项目的客户端不会收到。
+- 联赛 ID 不区分大小写 — `mlb` 与 `MLB` 等价。
+- 运动项目 ID 不区分大小写 — `baseball` 与 `Baseball` 等价。
+- 数组中的空字符串会被忽略。
+- `subscribe` 在 `replace: false` **且** 数组全部为空时为无操作。
+- `subscribe` 在 `replace: true` **且** 数组全部为空时，是「清除我的全部订阅」路径 — 连接的订阅归零，在你再次订阅之前不会收到任何消息。
+- `subscribeAll` 在本推送中**不是**命令。发送它不会有任何效果，也不会得到确认。
+
+## 消息 {#messages}
+
+`/v1/score` 上的每条消息都以二元组 `[type, payload]` 到达。
+
+**忽略你不认识的消息类型。**该推送会在不改变版本的情况下新增消息类型；假定类型集合固定的客户端在新类型到来时会出错。请对 `type` 做分支判断，并跳过默认分支。
+
+### `gameState` {#gamestate}
+
+赛事的观测状态发生变化时发出。每场赛事每次变化一条消息 — 推送不会重复发送未发生变化的状态，因此一场安静的赛事是正常的，并不表示连接已失效。
+
+如果你的连接严重落后（等待发送的消息超过 1,000 条），在它追上之前，新的消息会被丢弃，且不会标记这段缺口。每场受影响的赛事会在下一次变化时更新，或者通过一次 `replace: true` 订阅立即更新，该订阅会发送新的快照。
+
+<CodeGroup>
+```json JSON
+[
+  "gameState",
+  {
+    "gameID": "62619dce25e2fb049a71cc2e",
+    "parentGameID": null,
+    "league": "NBA",
+    "sport": "basketball",
+    "status": "LIVE",
+    "detail": "6:12 - 3rd",
+    "period": 3,
+    "clock": "6:12",
+    "clockSeconds": 372,
+    "homeScore": 78,
+    "awayScore": 71,
+    "stoppage": null,
+    "ts": 1791830400000
+  }
+]
+```
+</CodeGroup>
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `gameID` | string | 24 位 ObjectID 十六进制 |
+| `parentGameID` | string 或 null | 赛事自身的消息中为 `null`；滚球市场的消息中为父赛事的 `gameID`（参见[子市场](#child-markets)） |
+| `league` | string | 短代码，如 `NBA` |
+| `sport` | string | 小写标识，如 `basketball` |
+| `status` | string | 见下文 |
+| `detail` | string 或 null | 记分牌自身给出的那行文本，如 `"Bot 7th"`、`"6:12 - 3rd"` |
+| `period` | integer 或 null | 节、局、小节或半场 |
+| `clock` | string 或 null | 按显示值给出 |
+| `clockSeconds` | integer 或 null | 同一时钟的秒数形式，便于做计算 |
+| `homeScore` | integer 或 null | |
+| `awayScore` | integer 或 null | |
+| `stoppage` | object 或 null | `{ "type": …, "team": …, "since": … }`；`since` 是**自 epoch 起的毫秒数**，与 `ts` 相同；当数据源未提供时该字段被省略 |
+| `ts` | integer | 观测到该状态的时刻，Unix 毫秒时间戳 |
+| `snapshot` | boolean | 仅在快照消息上出现，且恒为 `true` |
+
+`status` 为 `SCHEDULED`、`LIVE`、`HALFTIME`、`END_PERIOD`、`DELAYED`、`SUSPENDED`、`FINAL`、`CANCELLED`、`POSTPONED`、`UNKNOWN` 之一。遇到不认识的状态，请当作 `UNKNOWN` 处理，而不要丢弃该消息 — 其中的比分和时钟仍然可用。
+
+#### 运动项目字段块 {#sport-blocks}
+
+一条消息最多携带一个运动项目字段块，且仅针对它所适用的那个运动项目。只有当推送掌握该细节时，字段块才会出现。
+
+<CodeGroup>
+```json 棒球
+[
+  "gameState",
+  {
+    "gameID": "62619dce25e2fb049a71cc2e",
+    "league": "MLB",
+    "sport": "baseball",
+    "status": "LIVE",
+    "detail": "Bot 7th",
+    "period": 7,
+    "homeScore": 3,
+    "awayScore": 2,
+    "ts": 1791830400000,
+    "baseball": {
+      "balls": 2,
+      "strikes": 1,
+      "outs": 1,
+      "onFirst": true,
+      "onSecond": false,
+      "onThird": true,
+      "isTopInning": false,
+      "inningState": "Bottom",
+      "batterID": "4596448",
+      "batterName": "Bucky Irving",
+      "pitcherID": "2577417",
+      "pitcherName": "Dak Prescott"
+    }
+  }
+]
+```
+```json 美式橄榄球
+[
+  "gameState",
+  {
+    "gameID": "685e21aa0be1b7d5a3f9c4d2",
+    "league": "NFL",
+    "sport": "football",
+    "status": "LIVE",
+    "detail": "2:41 - 2nd",
+    "period": 2,
+    "clock": "2:41",
+    "clockSeconds": 161,
+    "homeScore": 14,
+    "awayScore": 10,
+    "ts": 1791830400000,
+    "football": {
+      "down": 3,
+      "distance": 7,
+      "yardLine": 42,
+      "isRedZone": false,
+      "possessionHome": true,
+      "lastPlayText": "B.Robinson up the middle to LAR 42 for 3 yards"
+    }
+  }
+]
+```
+```json 冰球
+[
+  "gameState",
+  {
+    "gameID": "7a1e44cc0be1b7d5a3f9c900",
+    "league": "NHL",
+    "sport": "hockey",
+    "status": "LIVE",
+    "detail": "12:08 - 2nd",
+    "period": 2,
+    "clock": "12:08",
+    "clockSeconds": 728,
+    "homeScore": 1,
+    "awayScore": 2,
+    "ts": 1791830400000,
+    "hockey": {
+      "powerPlay": "home"
+    }
+  }
+]
+```
+</CodeGroup>
+
+`yardLine` 自主队的球门线起算。请用 `possessionHome` 判断持球一方的推进方向。
+
+`down` 的取值为 1 到 4。开球之前以及两次进攻之间（得分之后、暂停时）没有 down，因此 `down`、`distance`、`yardLine` 和 `isRedZone` 都不会出现；`lastPlayText` 仍会照常推送。当数据源不知道球的位置时，真实的 down 也可能不带 `yardLine`。
+
+## 子市场 {#child-markets}
+
+一场赛事的滚球市场、上半场和下半场在我们的系统中是各自独立的赛事，各有自己的 `gameID` 和自己的联赛 ID —— `NBA-LIVE`、`NFL-1H`、`NBA-2H`。
+
+**滚球市场会发布状态。**父赛事发布的每一个状态都会在滚球市场下再发布一次，使用滚球市场自己的 `gameID` 和联赛（`NBA-LIVE`），并且 `parentGameID` 为父赛事的 `gameID`。比分、时钟和节次都是父赛事的。这份副本只会送达订阅了滚球市场自身 `gameID` 或其联赛（`NBA-LIVE`）的客户端；订阅父赛事的 `gameID`、联赛或运动项目只会收到父赛事的消息，每次变化一条。
+
+**上半场、下半场和 props 市场不发布任何内容。**订阅它们的 `gameID` 或联赛 ID 将完全收不到任何消息 —— 而"收不到任何消息"正是一场平静赛事的表现。
+
+要在任何子市场旁显示比分，请订阅其**父赛事**：父赛事的 `gameID`，或父联赛（`NBA`，而不是 `NBA-LIVE`）。在子市场的卡片上显示父赛事的状态。这适用于所有类型的子市场。
+
+<Warning>
+订阅 `NFL-1H`、`NBA-2H` 或其他半场或 props 联赛 ID 都会被静默接受，但不会收到任何消息。请使用父联赛 ID。
+</Warning>
+
+## 常见陷阱 {#pitfalls}
+
+**缺失意味着未知，绝不等于零。**推送无法确定的字段会被省略或为 null — 绝不会以 `0` 的形式下发。这一点在棒球的球数上最为关键：`balls`、`strikes` 和 `outs` 要么一起到达，要么都不到达，因此缺失的球数绝不能渲染成 `"0-0, 0 out"`。请把 `null` 与字段缺失同等对待。
+
+**安静的赛事不等于推送已死。**该推送发布的是变化。雨天延误、中场休息或比赛中断期间完全不会产生消息，有时会持续好几分钟。不要把「最近没有消息」当作某场赛事的存活判据 — 连接用 `ping`/`pong` 判断，赛事用 `status` 判断。
+
+**赛事自身的消息中 `parentGameID` 为 `null`。**只有滚球市场的消息才带有值，即父赛事的 `gameID`（参见[子市场](#child-markets)）。这些消息只会送达订阅了该滚球市场本身的客户端，因此订阅父赛事时，每次变化只会以父赛事的 `gameID` 收到一次。
+
+**比分是整数，不是字符串。**与行情推送上的某些字段不同，`homeScore` 和 `awayScore` 是 JSON 数字。
+
+**最新者优先。**应用一条消息之前先比较 `ts`。跨重连不保证顺序，而快照也可能与实时帧交错到达 — 比你已持有的状态更旧的帧应当丢弃，而不是应用。
+
+**不要自行推算时钟。**`clock` 是记分牌显示的值，只在数据提供方发布新值时才变化，频率大约是每次进攻一次，而不是每秒一次。在两条消息之间本地倒计时会产生偏差，并且在比赛暂停时一定是错的。
