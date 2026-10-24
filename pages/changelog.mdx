@@ -14,6 +14,18 @@ Conventions:
 
 ---
 
+<Update label="2026-10-24" tags={["REST API", "Orders API"]}>
+  ### Added
+  - **Per-account limits on placing orders.**
+    - Each account has a burst and a sustained rate, counted in orders, not requests. REST and the Orders API WebSocket share one budget.
+    - Standard accounts get 200 orders of burst and 20 / second sustained. Market makers get 2,000 and 150 / second.
+    - Over the limit, REST returns `429` with `Retry-After`, and the WebSocket returns `error_type` `rate_limited` with `retryAfterMs`.
+    - Limits are measured now and **enforced from later this week**. See [Rate limiting](/pages/rest/introduction#rate-limiting).
+
+  ### Changed
+  - **Cancels are never rate limited per account.** `cancelByReference` and `pauseOrders` no longer go through the legacy queue limiter (15 / second, `429` past 50 queued requests).
+</Update>
+
 <Update label="2026-08-13" tags={["REST API", "Orders API"]}>
   ### Added
   - **`fillOrKill` order type.** All-or-nothing taker order: the entire `bet` must match immediately or the whole order is rejected and any partial fills are rolled back, so you are never left partially filled. Supported on both the REST and WebSocket place endpoints. See [Order types](/pages/rest/orders/place-order#order-types).

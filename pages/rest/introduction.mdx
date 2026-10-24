@@ -34,13 +34,54 @@ HTTP-level errors (`4xx`, `5xx`) are returned as `{ "error": "<message>" }`.
 
 ## Rate limiting
 
-Three layers of rate limiting apply:
+### Order placement, per account
 
-- **Global, per IP** — every request to the API counts against a per-IP budget of **3,000 requests per rolling 60-second window** (a sustained ~50 requests/second). Exceeding it returns `429` with a `Retry-After` header (seconds) and body `{ "error": "Too many requests. Please try again later." }`.
-- **Authentication routes** (`/user/login`, password reset, signup) have additional per-IP and per-account throttling.
-- **Place / edit / cancel routes** are additionally rate-limited per account.
+Placing new orders is limited **per account**. The REST API and the [Orders API WebSocket](/pages/websocket/introduction) share one budget: orders sent over either one draw from the same allowance.
 
-Read endpoints have no per-account limit — only the global per-IP ceiling applies.
+- **Orders are counted, not requests.** A batch of 50 orders uses 50.
+- **Each account has a burst and a sustained rate.** An idle account can send up to its burst at once. After that it can keep placing at the sustained rate. Unused capacity refills continuously, up to the burst.
+
+| Tier | Burst | Sustained |
+|---|---|---|
+| Standard | 200 orders | 20 orders / second |
+| Market maker | 2,000 orders | 150 orders / second |
+
+Market-maker limits are assigned per account. Contact support if you provide liquidity and need them.
+
+- **A batch is accepted or rejected whole.** If it doesn't fit in what's left of your budget, none of its orders are placed, and nothing is charged against your budget.
+- **Batches are capped at 1,000 orders.** A batch bigger than your burst can never fit, so split it.
+
+**Cancels are never rate limited per account.** That covers cancel, cancel multiple, cancel all, cancel all for game or league, cancel by reference, and pause orders. Edits and replaces aren't limited per account either, since an edit includes a cancel. You can always pull your orders, however fast you're placing them.
+
+#### When you exceed it
+
+- **REST:** `429` with a `Retry-After` header (seconds), and this body:
+
+```json
+{
+  "error": {
+    "message": "rate limited",
+    "code": 429,
+    "details": { "code": "rate_limited", "retryAfterMs": 350, "retryAfterSeconds": 1 }
+  }
+}
+```
+
+- **WebSocket:** the connection stays open. The response holds a single `data[]` entry for the whole request, with `error_type` `rate_limited`. See [Place order error responses](/pages/websocket/place-order#error-responses).
+
+`retryAfterMs` is how long until your batch would fit. A value of `-1` means the batch is larger than your burst or the 1,000-order cap and will never fit, so split it. Rejected requests are not processed, and you can safely resend them.
+
+### Global, per IP (REST)
+
+Every REST request counts against a per-IP budget of **3,000 requests per rolling 60-second window**, a sustained ~50 requests/second. That includes cancel requests. Exceeding it returns `429` with a `Retry-After` header (seconds) and body `{ "error": "Too many requests. Please try again later." }`.
+
+High-frequency clients should use the [Orders API WebSocket](/pages/websocket/introduction) for placing and cancelling, because messages on an open connection don't count against this budget.
+
+### Authentication
+
+`/user/login`, password reset and signup have extra per-IP and per-account throttling.
+
+Read endpoints have no per-account limit. Only the global per-IP ceiling applies.
 
 ## Timeouts
 

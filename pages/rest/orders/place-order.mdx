@@ -367,6 +367,10 @@ Orders placed on a game marked as live follow these rules:
     - If the odds improve, it matches instantly.
     - If the odds decrease, it does not match.
 
+## Rate limits
+
+New orders draw from your account's placement budget, which is shared with the Orders API WebSocket. Each order in the batch counts. A batch that doesn't fit is rejected whole with `429` and a `Retry-After` header, and none of its orders are placed. Cancels are never rate limited. See [Rate limiting](/pages/rest/introduction#rate-limiting).
+
 ## Per-order errors
 
 <Snippet file="types/order-error.mdx" />
