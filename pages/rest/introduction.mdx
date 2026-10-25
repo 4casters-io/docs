@@ -51,7 +51,9 @@ Market-maker limits are assigned per account. Contact support if you provide liq
 - **A batch is accepted or rejected whole.** If it doesn't fit in what's left of your budget, none of its orders are placed, and nothing is charged against your budget.
 - **Batches are capped at 1,000 orders.** A batch bigger than your burst can never fit, so split it.
 
-**Cancels are never rate limited per account.** That covers cancel, cancel multiple, cancel all, cancel all for game or league, cancel by reference, and pause orders. Edits and replaces aren't limited per account either, since an edit includes a cancel. You can always pull your orders, however fast you're placing them.
+**Cancels never count against the placement budget.** That covers cancel, cancel multiple, cancel all, cancel all for game or league, cancel by reference, and pause orders. Edits and replaces don't count either, since an edit includes a cancel. However fast you're placing, the placement limit never stops you pulling your orders.
+
+REST cancels do go through a per-account cancel queue, which runs up to 15 cancel requests per second. A cancel is rejected with `429` when more than 50 are already queued, and with `423` while a cancel-all for your account is still running. A single cancel-all or cancel-multiple request is the fastest way to pull many orders. Cancels on the [Orders API WebSocket](/pages/websocket/introduction) don't go through this queue.
 
 #### When you exceed it
 
@@ -73,7 +75,14 @@ Market-maker limits are assigned per account. Contact support if you provide liq
 
 ### Global, per IP (REST)
 
-Every REST request counts against a per-IP budget of **3,000 requests per rolling 60-second window**, a sustained ~50 requests/second. That includes cancel requests. Exceeding it returns `429` with a `Retry-After` header (seconds) and body `{ "error": "Too many requests. Please try again later." }`.
+Every REST request counts against two per-IP budgets, and that includes cancel requests:
+
+| Window | Limit | Average | Over it |
+|---|---|---|---|
+| Burst | **1,000 requests per 10 seconds** | 100/s | `429` until the 10-second window ends |
+| Sustained | **30,000 requests per 10 minutes** | 50/s | The IP is blocked for 10 minutes. Each repeat within 24 hours doubles the block (20, 40, 80 minutes...), up to 24 hours. |
+
+Both return `429` with a `Retry-After` header (seconds) and body `{ "error": "Too many requests. Please try again later." }`. Honor `Retry-After`: retrying through a block does not shorten it.
 
 High-frequency clients should use the [Orders API WebSocket](/pages/websocket/introduction) for placing and cancelling, because messages on an open connection don't count against this budget.
 

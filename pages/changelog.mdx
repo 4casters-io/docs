@@ -21,9 +21,10 @@ Conventions:
     - Standard accounts get 200 orders of burst and 20 / second sustained. Market makers get 2,000 and 150 / second.
     - Over the limit, REST returns `429` with `Retry-After`, and the WebSocket returns `error_type` `rate_limited` with `retryAfterMs`.
     - Limits are measured now and **enforced from later this week**. See [Rate limiting](/pages/rest/introduction#rate-limiting).
+    - Cancels, edits and replaces never count against this budget.
 
   ### Changed
-  - **Cancels are never rate limited per account.** `cancelByReference` and `pauseOrders` no longer go through the legacy queue limiter (15 / second, `429` past 50 queued requests).
+  - **Per-IP limit on REST.** The single 3,000 requests per 60 seconds limit is replaced by 1,000 requests per 10 seconds plus 30,000 per 10 minutes. Crossing the 10-minute limit blocks the IP for 10 minutes, doubling on each repeat within 24 hours, up to 24 hours.
 </Update>
 
 <Update label="2026-08-13" tags={["REST API", "Orders API"]}>
