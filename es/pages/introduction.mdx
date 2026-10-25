@@ -29,7 +29,7 @@ description: 'Acceso programático al intercambio de apuestas peer-to-peer de 4c
 
 ## Autenticación {#authentication}
 
-**No hay claves de API.** Te autenticas con el mismo nombre de usuario y contraseña con los que inicias sesión en 4casters.io, y las tres APIs comparten el único token que devuelve el inicio de sesión. Las claves de API están planificadas; consulta [Autenticación](/es/pages/authentication) para conocer el estado actual.
+Existen dos credenciales. Un **token de inicio de sesión** se obtiene con `POST /user/login` usando tu nombre de usuario y contraseña, dura 30 días y lo aceptan las tres APIs. Una **[clave de API](/pages/rest/api-keys)** (en inglés), creada desde la página de tu cuenta, es la credencial para programas: sin inicio de sesión, sin rotación, con rangos de IP opcionales (IPv4 o IPv6) y caducidad, revocable por separado. Las claves de API funcionan en la API REST; las APIs WebSocket usan el token de inicio de sesión.
 
 1. Llama a [`POST /user/login`](/es/pages/rest/authentication) en la API REST con tu nombre de usuario y contraseña.
 2. Envía el token devuelto en cada solicitud posterior:

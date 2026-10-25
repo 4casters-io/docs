@@ -15,7 +15,8 @@ from the token — **no username in the URL**.
 
 ### Get a token
 
-There is no separate API key. Log in with your 4Casters username and password
+This API takes a **login token**, not an [API key](/pages/rest/api-keys) (keys
+work on the REST API only). Log in with your 4Casters username and password
 by calling the `/user/login` endpoint of the 4Casters REST API. The response
 includes a token you can use here. See [Authentication](/pages/authentication)
 for token lifetime and rotation.

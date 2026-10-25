@@ -29,7 +29,7 @@ description: 'Programmatic access to the 4casters peer-to-peer betting exchange'
 
 ## Authentication
 
-**There are no API keys.** You authenticate with the same username and password you use to log in at 4casters.io, and all three APIs share the one token that login returns. API keys are planned; see [Authentication](/pages/authentication) for the current state.
+Two credentials exist. A **login token** comes from `POST /user/login` with your username and password, lasts 30 days, and is accepted by all three APIs. An **[API key](/pages/rest/api-keys)**, created on your account page, is the credential for programs: no login step, no rotation, optional IP ranges (IPv4 or IPv6) and expiry, revocable on its own. API keys work on the REST API; the WebSocket APIs take the login token.
 
 1. Call [`POST /user/login`](/pages/rest/authentication) on the REST API with your username and password.
 2. Send the returned token on every subsequent request:

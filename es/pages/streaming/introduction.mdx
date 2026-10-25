@@ -18,7 +18,8 @@ a partir del token: **sin nombre de usuario en la URL**.
 
 ### Obtener un token {#get-a-token}
 
-No hay una clave de API aparte. Inicia sesión con tu nombre de usuario y contraseña
+Esta API usa un **token de inicio de sesión**, no una [clave de API](/pages/rest/api-keys)
+(las claves funcionan solo en la API REST). Inicia sesión con tu nombre de usuario y contraseña
 de 4Casters llamando al endpoint `/user/login` de la API REST de 4Casters. La respuesta
 incluye un token que puedes usar aquí. Consulta [Autenticación](/es/pages/authentication)
 para la vida útil y la rotación del token.

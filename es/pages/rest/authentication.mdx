@@ -5,7 +5,7 @@ openapi: 'POST /user/login'
 ---
 
 <Note>
-**Sin claves de API.** 4casters todavía no emite claves de API. Inicia sesión con el nombre de usuario y la contraseña de tu cuenta, exactamente como lo harías en el sitio web, y usa el token devuelto. Consulta la [descripción general de autenticación](/es/pages/authentication) para ver cómo se usa el token en las tres APIs y cómo manejar su vida útil de 30 días.
+**Aquí funcionan dos credenciales.** Un **token de inicio de sesión** (abajo) es lo que usa el sitio web: se obtiene con tu contraseña, vale 30 días y lo aceptan todas las APIs de 4casters. Una **[clave de API](/pages/rest/api-keys)** (documentación en inglés) es una credencial de larga duración que creas en la página de tu cuenta para programas: sin inicio de sesión, sin rotación, con rangos de IP y caducidad opcionales, revocable una a una. Las claves funcionan solo en la API REST.
 </Note>
 
 Para usar cualquier ruta autenticada necesitas un token de autenticación. Los tokens se obtienen al iniciar sesión y son válidos durante **30 días**, tras lo cual se requiere un nuevo inicio de sesión.
