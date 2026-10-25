@@ -1,0 +1,123 @@
+---
+title: 'API keys'
+description: 'Long-lived credentials for programs, managed from your account page'
+---
+
+An API key is a credential you create for a program. It authenticates as your account against the REST API, does not expire unless you give it an expiry, is never rotated under you, and can be restricted to the network addresses you choose. You can hold any number of keys and revoke each one independently, so one leaked key costs you one key, not your password.
+
+<Info>
+API keys work on the **REST API** (`api.4casters.io`). The Orders WebSocket and the Streaming WebSocket still take a [login token](/pages/authentication).
+</Info>
+
+## Create a key
+
+1. Sign in at [4casters.io](https://4casters.io) and open **My Account → Security → API Keys → Manage** (or go straight to [4casters.io/account/api-keys](https://4casters.io/account/api-keys)).
+2. Click **Create Key**, give it a name, and optionally restrict it to IP ranges and give it an expiry.
+3. Copy the key from the confirmation. **It is shown once.** 4casters stores only a hash of it; if you lose it, revoke it and create another.
+
+Creating, changing and revoking keys requires a logged-in session on the website. A key cannot create or revoke keys.
+
+## Anatomy of a key
+
+```
+4ck_Wk15VXFX_T4MPcp8Ij2IODI7OFFIlQsHmvvzJ3Nj8C-StfVe3h0k
+└┬┘ └──┬───┘ └──────────────────────┬──────────────────────┘
+prefix  id                        token
+```
+
+| Part | Example | What it is |
+| --- | --- | --- |
+| **prefix** | `4ck_` | Marks the string as a 4casters key. |
+| **Key ID** | `4ck_Wk15VXFX` | Identifies the key. Not secret: it is what the account page lists and what you should quote in support requests. |
+| **token** | `T4MPcp8Ij2IODI7OFFIlQsHmvvzJ3Nj8C-StfVe3h0k` | The secret. 32 random bytes, base64url. |
+
+Treat the whole string as the credential. Keep it out of source control, client-side code and logs.
+
+## Use a key
+
+Send the key in the `Authorization` header, exactly where a login token goes. The `Bearer ` prefix is optional.
+
+<CodeGroup>
+```bash curl
+curl https://api.4casters.io/user/getMe \
+  -H "Authorization: 4ck_Wk15VXFX_T4MPcp8Ij2IODI7OFFIlQsHmvvzJ3Nj8C-StfVe3h0k"
+```
+
+```javascript JavaScript
+const res = await fetch('https://api.4casters.io/user/getMe', {
+  headers: { Authorization: process.env.FOURCASTERS_API_KEY },
+});
+const { data } = await res.json();
+```
+
+```python Python
+import os, requests
+
+res = requests.get(
+    "https://api.4casters.io/user/getMe",
+    headers={"Authorization": os.environ["FOURCASTERS_API_KEY"]},
+)
+data = res.json()["data"]
+```
+</CodeGroup>
+
+There is no login step and nothing to refresh. A key keeps working until you revoke it or it reaches its expiry.
+
+## Allowed IPs
+
+A key can be restricted to a list of client addresses, as IPv4 or IPv6 addresses or CIDR ranges. A request from any other address is refused with `403 ApiKeyIpNotAllowed`, on every request, so a key that leaves its network stops working at once. An empty list means the key works from anywhere.
+
+| Entry | Matches |
+| --- | --- |
+| `203.0.113.9` | That one IPv4 address. |
+| `10.0.0.0/8` | Every IPv4 address from `10.0.0.0` to `10.255.255.255`. |
+| `2001:db8:1234::/64` | Every IPv6 address in that /64. Most providers hand a host a whole /64 and the host may rotate within it, so prefer the /64 to a single IPv6 address. |
+
+The address checked is the one your request reaches 4casters from, after our edge network. If your program runs behind NAT or a proxy, that is the proxy's public address. You can change a key's allowed IPs at any time from the account page; the key itself does not change.
+
+## Expiry
+
+Optional, chosen when the key is created: never, 30, 90 or 365 days. An expired key is refused with `401 ApiKeyExpired` and stays listed on the account page marked **Expired** until you revoke it.
+
+## What a key can and cannot do
+
+A key acts as your account on the exchange: it can read your bets and positions, read markets, place, edit and cancel orders, and everything else a login token can do on the REST API, **except** account administration. The following require a logged-in website session and answer `403 LoginSessionRequired` to a key:
+
+- Creating, renaming, changing or revoking API keys
+- Changing your password, name or phone number
+- Two-factor authentication setup
+- Withdrawals and withdrawal addresses
+
+Your account's other protections apply to keys too. A frozen account refuses its keys, and an account-level IP whitelist applies on top of each key's own allowed IPs.
+
+## Manage keys
+
+From **My Account → Security → API Keys**, each key's menu offers:
+
+- **Rename**
+- **Edit Allowed IPs**
+- **Revoke**. Takes effect on the next request. Anything still using the key gets `401 InvalidCredentials`.
+
+The list shows each key's name, Key ID, allowed IPs, creation date, last use (updated at most once a minute) and expiry.
+
+## Responses
+
+| Status | Body `error.message` | Meaning |
+| --- | --- | --- |
+| `401` | `InvalidCredentials` | Unknown, malformed or revoked key. |
+| `401` | `ApiKeyExpired` | The key passed its expiry. |
+| `403` | `ApiKeyIpNotAllowed` | The request came from outside the key's allowed IPs. |
+| `403` | `LoginSessionRequired` | The route needs a website login, not a key. |
+| `403` | `AccountFrozen` | The account is frozen. |
+
+## Login tokens or API keys?
+
+| | Login token | API key |
+| --- | --- | --- |
+| How you get it | `POST /user/login` with your password | Account page, once |
+| Lifetime | 30 days, then rotated in place | Until revoked, or a fixed expiry you choose |
+| Scope | REST, Orders WebSocket, Streaming WebSocket | REST |
+| Network restriction | Account-wide whitelist only | Per key, IPv4 and IPv6 CIDR |
+| Revocation | Logout, password change | Per key, instant |
+
+For anything that runs unattended, use a key.

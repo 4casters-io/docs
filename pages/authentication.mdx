@@ -1,13 +1,11 @@
 ---
 title: 'Authentication'
-description: 'There are no API keys. Your 4casters login is your API credential.'
+description: 'Log in for a token, or create an API key for your programs'
 ---
 
-<Warning>
-**4casters does not issue API keys today.** You authenticate against every 4casters API with the same username and password you use to sign in at [4casters.io](https://4casters.io). There is nothing to request, generate, or copy from your account settings.
-
-Dedicated API keys are on the roadmap. When they ship they will be announced in the [changelog](/pages/changelog) and this page will be updated. Until then, your login is the credential.
-</Warning>
+<Tip>
+**Running a program?** Create an **[API key](/pages/rest/api-keys)** from your account page instead of logging in with your password: it does not expire or rotate, can be pinned to your server's IP ranges (IPv4 or IPv6), and can be revoked on its own. Keys work on the REST API; the WebSocket APIs still take the login token described here.
+</Tip>
 
 ## How it works
 

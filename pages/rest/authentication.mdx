@@ -5,7 +5,7 @@ openapi: 'POST /user/login'
 ---
 
 <Note>
-**No API keys.** 4casters does not issue API keys yet. Log in with your account's username and password, exactly as you would on the website, and use the returned token. See the [Authentication overview](/pages/authentication) for how the token is used across all three APIs and how to handle its 30-day lifetime.
+**Two credentials work here.** A **login token** (below) is what the website uses: obtained with your password, valid 30 days, accepted by every 4casters API. An **[API key](/pages/rest/api-keys)** is a long-lived credential you create on your account page for programs: no login step, no rotation, optional IP ranges and expiry, revocable one at a time. Keys work on the REST API only.
 </Note>
 
 To use any authenticated route you need an auth token. Tokens are obtained by logging in and are valid for **30 days**, after which a fresh login is required.

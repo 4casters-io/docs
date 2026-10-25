@@ -45,7 +45,8 @@
                 "group": "Getting started",
                 "pages": [
                   "pages/rest/introduction",
-                  "pages/rest/authentication"
+                  "pages/rest/authentication",
+                  "pages/rest/api-keys"
                 ]
               },
               {
