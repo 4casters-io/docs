@@ -9,28 +9,20 @@ The 4casters Orders API supports real-time order placement, cancellation, and se
 
 ## Auth
 
-The connection authenticates with a 4Casters token. Send the token in the
-`Authorization` header on the WebSocket handshake. The server derives the user
-from the token — **no username in the URL**.
-
-### Get a token
-
-This API takes a **login token**, not an [API key](/pages/rest/api-keys) (keys
-work on the REST API only). Log in with your 4Casters username and password
-by calling the `/user/login` endpoint of the 4Casters REST API. The response
-includes a token you can use here. See [Authentication](/pages/authentication)
-for token lifetime and rotation.
-
-See [`POST /user/login` in the 4Casters REST API docs](/pages/rest/authentication).
+The connection authenticates with a 4casters credential in the `Authorization`
+header on the WebSocket handshake: an [API key](/pages/rest/api-keys) (create
+one on your account page; the right choice for a program) or a login token
+from [`POST /user/login`](/pages/rest/authentication). The server derives the
+user from the credential — **no username in the URL**. A refused credential
+fails the handshake with a `401` or `403`; see [Authentication](/pages/authentication).
 
 ### Connect
 
 <CodeGroup>
 ```javascript JavaScript
 const WebSocket = require('ws');
-const token = process.env.FOURCASTERS_TOKEN;
 const ws = new WebSocket('wss://orders-api.4casters.io/orders/ws', {
-  headers: { Authorization: token },
+  headers: { Authorization: process.env.FOURCASTERS_API_KEY },
 });
 ```
 </CodeGroup>

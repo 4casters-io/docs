@@ -24,7 +24,7 @@ https://api.4casters.io
 
 ## Authentication
 
-Almost every endpoint requires authentication. Log in once via [POST `/user/login`](/pages/rest/authentication), then send the returned auth token on every request — see [Authentication](/pages/rest/authentication) for details.
+Almost every endpoint requires authentication: one credential in the `Authorization` header. For a program, create an [API key](/pages/rest/api-keys) on your account page and send that. Otherwise log in once via [POST `/user/login`](/pages/rest/authentication) and send the returned token. The [Authentication overview](/pages/authentication) compares the two.
 
 ## Per-order errors vs HTTP errors
 
@@ -42,12 +42,13 @@ Requests that take longer than **15 seconds** server-side are aborted and return
 
 ## Real-time updates
 
-The REST API pairs with the [WebSocket Streaming API](/pages/streaming/introduction) for real-time orderbook ticks and per-account fill / settle events. The auth token returned by `/user/login` works for both.
+The REST API pairs with the [WebSocket Streaming API](/pages/streaming/introduction) for real-time orderbook ticks and per-account fill / settle events. The same credential, key or token, works for both.
 
 ## Endpoint index
 
 <CardGroup cols={2}>
-  <Card title="Authentication" href="/pages/rest/authentication">Log in and obtain an auth token.</Card>
+  <Card title="API keys"       href="/pages/rest/api-keys">Create a key for your program and use it everywhere.</Card>
+  <Card title="Log in"         href="/pages/rest/authentication">Exchange a password for a 30-day login token.</Card>
   <Card title="User"           href="/pages/rest/user/get-me">Account info, balance, bets, and orders.</Card>
   <Card title="Orders"         href="/pages/rest/orders/place-order">Place, edit, look up, and cancel orders.</Card>
   <Card title="Markets"        href="/pages/rest/markets/get-orderbook">Browse leagues, games, participants, and the orderbook.</Card>

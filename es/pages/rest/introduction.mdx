@@ -24,7 +24,7 @@ https://api.4casters.io
 
 ## Autenticación {#authentication}
 
-Casi todos los endpoints requieren autenticación. Inicia sesión una vez con [POST `/user/login`](/es/pages/rest/authentication) y luego envía el token de autenticación devuelto en cada solicitud: consulta [Autenticación](/es/pages/rest/authentication) para más detalles.
+Casi todos los endpoints requieren autenticación: una credencial en el encabezado `Authorization`. Para un programa, crea una [clave de API](/es/pages/rest/api-keys) en la página de tu cuenta y envíala. Si no, inicia sesión una vez con [POST `/user/login`](/es/pages/rest/authentication) y envía el token devuelto. La [descripción general de autenticación](/es/pages/authentication) compara ambas.
 
 ## Errores por orden frente a errores HTTP {#per-order-errors-vs-http-errors}
 
@@ -42,12 +42,13 @@ Las solicitudes que tardan más de **15 segundos** en el servidor se abortan y d
 
 ## Actualizaciones en tiempo real {#real-time-updates}
 
-La API REST se complementa con la [API de streaming WebSocket](/es/pages/streaming/introduction) para ticks del libro de órdenes en tiempo real y eventos de cruce / liquidación por cuenta. El token de autenticación que devuelve `/user/login` sirve para ambas.
+La API REST se complementa con la [API de streaming WebSocket](/es/pages/streaming/introduction) para ticks del libro de órdenes en tiempo real y eventos de cruce / liquidación por cuenta. La misma credencial, clave o token, sirve para ambas.
 
 ## Índice de endpoints {#endpoint-index}
 
 <CardGroup cols={2}>
-  <Card title="Autenticación" href="/es/pages/rest/authentication">Inicia sesión y obtén un token de autenticación.</Card>
+  <Card title="Claves de API" href="/es/pages/rest/api-keys">Crea una clave para tu programa y úsala en todas partes.</Card>
+  <Card title="Iniciar sesión" href="/es/pages/rest/authentication">Cambia una contraseña por un token de inicio de sesión de 30 días.</Card>
   <Card title="Usuario"           href="/es/pages/rest/user/get-me">Información de cuenta, saldo, apuestas y órdenes.</Card>
   <Card title="Órdenes"         href="/es/pages/rest/orders/place-order">Coloca, edita, consulta y cancela órdenes.</Card>
   <Card title="Mercados"        href="/es/pages/rest/markets/get-orderbook">Explora ligas, juegos, participantes y el libro de órdenes.</Card>

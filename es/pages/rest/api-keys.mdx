@@ -1,0 +1,132 @@
+---
+title: 'Claves de API'
+description: 'Credenciales de larga duración para programas, gestionadas desde la página de tu cuenta'
+---
+
+Una clave de API es una credencial que creas para un programa. Se autentica como tu cuenta en todas las APIs de 4casters, nunca caduca salvo que le des una caducidad, nunca se rota sin que lo sepas y puede restringirse a las direcciones de red que elijas. Puedes tener cualquier número de claves y revocar cada una por separado, así que una clave filtrada te cuesta una clave, no tu contraseña.
+
+Si estás decidiendo entre una clave y un token de inicio de sesión, empieza por [Autenticación](/es/pages/authentication).
+
+## Crear una clave {#create-a-key}
+
+1. Inicia sesión en [4casters.io](https://4casters.io) y abre **Mi cuenta → Seguridad → API Keys → Manage**, o ve directamente a [4casters.io/account/api-keys](https://4casters.io/account/api-keys).
+2. Pulsa **Create Key**. Dale un nombre, restríngela opcionalmente a rangos de IP y, si quieres, dale una caducidad.
+3. Copia la clave de la confirmación. **Se muestra una sola vez.** 4casters guarda solo un hash de ella; si la pierdes, revócala y crea otra.
+
+Crear, cambiar y revocar claves requiere una sesión iniciada en el sitio web. Una clave no puede crear ni revocar claves.
+
+## Anatomía de una clave {#anatomy-of-a-key}
+
+```
+4ck_Wk15VXFX_T4MPcp8Ij2IODI7OFFIlQsHmvvzJ3Nj8C-StfVe3h0k
+└──────┬───┘ └──────────────────────┬──────────────────────┘
+    Key ID                        secreto
+```
+
+| Parte | Ejemplo | Qué es |
+| --- | --- | --- |
+| **Key ID** | `4ck_Wk15VXFX` | Identifica la clave: el marcador `4ck_` (una clave de 4casters) más ocho caracteres. No es secreto. Es lo que lista la página de la cuenta y lo que debes citar en una solicitud de soporte. |
+| **secreto** | `T4MPcp8Ij2IODI7OFFIlQsHmvvzJ3Nj8C-StfVe3h0k` | 32 bytes aleatorios en base64url. Solo se guarda su hash. |
+
+Trata la cadena completa como la credencial. Mantenla fuera del control de versiones, del código del lado del cliente y de los logs.
+
+## Usar una clave {#use-a-key}
+
+Envía la clave en el encabezado `Authorization`, exactamente donde iría un token de inicio de sesión. El prefijo `Bearer ` es opcional. Nada más cambia: los mismos endpoints, los mismos mensajes, las mismas respuestas.
+
+<Tabs>
+  <Tab title="API REST">
+    <CodeGroup>
+    ```bash curl
+    curl https://api.4casters.io/user/getMe \
+      -H "Authorization: 4ck_Wk15VXFX_T4MPcp8Ij2IODI7OFFIlQsHmvvzJ3Nj8C-StfVe3h0k"
+    ```
+
+    ```javascript JavaScript
+    const res = await fetch('https://api.4casters.io/user/getMe', {
+      headers: { Authorization: process.env.FOURCASTERS_API_KEY },
+    });
+    const { data } = await res.json();
+    ```
+
+    ```python Python
+    import os, requests
+
+    res = requests.get(
+        "https://api.4casters.io/user/getMe",
+        headers={"Authorization": os.environ["FOURCASTERS_API_KEY"]},
+    )
+    data = res.json()["data"]
+    ```
+    </CodeGroup>
+  </Tab>
+  <Tab title="WebSocket de órdenes">
+    ```javascript
+    const WebSocket = require('ws');
+    const ws = new WebSocket('wss://orders-api.4casters.io/orders/ws', {
+      headers: { Authorization: process.env.FOURCASTERS_API_KEY },
+    });
+    ```
+    Una clave rechazada hace fallar el handshake con el estado HTTP de la [tabla de abajo](#responses). Consulta la [API de órdenes](/es/pages/websocket/introduction).
+  </Tab>
+  <Tab title="WebSocket de streaming">
+    ```javascript
+    const WebSocket = require('ws');
+    const ws = new WebSocket('wss://streaming-api.4casters.io/v2/user', {
+      headers: { Authorization: process.env.FOURCASTERS_API_KEY },
+    });
+    ```
+    Igual para `/price-stream`. Consulta la [API de streaming](/es/pages/streaming/introduction).
+  </Tab>
+</Tabs>
+
+No hay paso de inicio de sesión ni nada que renovar. Una clave sigue funcionando hasta que la revocas o alcanza su caducidad; un WebSocket abierto con una clave se cierra en menos de un minuto tras cualquiera de las dos cosas.
+
+## IPs permitidas {#allowed-ips}
+
+Una clave puede restringirse a una lista de direcciones de cliente: IPv4 o IPv6, direcciones sueltas o rangos CIDR, mezcladas libremente. Una solicitud desde cualquier otra dirección se rechaza con `403 ApiKeyIpNotAllowed`, en cada solicitud, así que una clave que sale de su red deja de funcionar de inmediato. Una lista vacía significa que la clave funciona desde cualquier sitio.
+
+| Entrada | Coincide con |
+| --- | --- |
+| `203.0.113.9` | Esa única dirección IPv4. |
+| `10.0.0.0/8` | Todas las direcciones IPv4 de `10.0.0.0` a `10.255.255.255`. |
+| `2001:db8:1234::/64` | Todas las direcciones IPv6 de ese /64. La mayoría de proveedores asignan a un host un /64 completo y el host puede rotar dentro de él, así que lista el /64 en lugar de una sola dirección IPv6. |
+
+La dirección comprobada es aquella desde la que tu solicitud llega a 4casters. Si tu programa está detrás de NAT o de un proxy, es la dirección pública del proxy. Puedes cambiar las IPs permitidas de una clave en cualquier momento desde la página de la cuenta; la clave en sí no cambia.
+
+## Caducidad {#expiry}
+
+Opcional, se elige al crear la clave: nunca, 30, 90 o 365 días. Una clave caducada se rechaza con `401 ApiKeyExpired` y sigue listada en la página de la cuenta marcada como **Expired** hasta que la revocas.
+
+## Qué puede y qué no puede hacer una clave {#what-a-key-can-and-cannot-do}
+
+Una clave actúa como tu cuenta en el exchange: leer tus apuestas y posiciones, leer mercados, colocar, editar y cancelar órdenes por REST o por el WebSocket de órdenes, suscribirse a los feeds de streaming y todo lo demás que puede hacer un token de inicio de sesión, **excepto** la administración de la cuenta. Esto requiere una sesión iniciada en el sitio web y responde `403 LoginSessionRequired` a una clave:
+
+- Crear, renombrar, cambiar o revocar claves de API
+- Cambiar tu contraseña, nombre o número de teléfono
+- Configurar la autenticación de dos factores
+- Retiros y direcciones de retiro
+
+Las demás protecciones de tu cuenta también se aplican a las claves: una cuenta congelada rechaza sus claves, y una lista blanca de IPs de toda la cuenta, donde exista, se aplica además de las IPs permitidas de cada clave.
+
+## Gestionar claves {#manage-keys}
+
+Desde **Mi cuenta → Seguridad → API Keys**, el menú de cada clave ofrece:
+
+- **Rename** (renombrar)
+- **Edit Allowed IPs** (editar IPs permitidas)
+- **Revoke** (revocar). Surte efecto en la siguiente solicitud, y cualquier WebSocket abierto con esa clave se cierra en menos de un minuto. Lo que siga usando la clave recibe `401 InvalidCredentials`.
+
+La lista muestra, para cada clave, su nombre, Key ID, IPs permitidas, fecha de creación, último uso (actualizado como mucho una vez por minuto) y caducidad.
+
+## Respuestas {#responses}
+
+Los mismos estados en REST (como respuesta HTTP) y en los WebSockets (como respuesta del handshake).
+
+| Estado | `error.message` | Significado |
+| --- | --- | --- |
+| `401` | `InvalidCredentials` | Clave desconocida, mal formada o revocada. |
+| `401` | `ApiKeyExpired` | La clave superó su caducidad. |
+| `403` | `ApiKeyIpNotAllowed` | La solicitud vino desde fuera de las IPs permitidas de la clave. |
+| `403` | `LoginSessionRequired` | La ruta necesita una sesión en el sitio web, no una clave. |
+| `403` | `AccountFrozen` | La cuenta está congelada. |

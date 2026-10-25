@@ -12,28 +12,20 @@ El feed de precios difunde todas las actualizaciones de mercado por defecto. Los
 
 ## Autenticación {#auth}
 
-Ambos feeds se autentican con un token de 4Casters. Envía el token en el
-encabezado `Authorization` del handshake WebSocket. El servidor deriva el usuario
-a partir del token: **sin nombre de usuario en la URL**.
-
-### Obtener un token {#get-a-token}
-
-Esta API usa un **token de inicio de sesión**, no una [clave de API](/pages/rest/api-keys)
-(las claves funcionan solo en la API REST). Inicia sesión con tu nombre de usuario y contraseña
-de 4Casters llamando al endpoint `/user/login` de la API REST de 4Casters. La respuesta
-incluye un token que puedes usar aquí. Consulta [Autenticación](/es/pages/authentication)
-para la vida útil y la rotación del token.
-
-Consulta [`POST /user/login` en la documentación de la API REST de 4Casters](/es/pages/rest/authentication).
+Ambos feeds se autentican con una credencial de 4casters en el encabezado
+`Authorization` del handshake WebSocket: una [clave de API](/es/pages/rest/api-keys)
+(créala en la página de tu cuenta; la opción correcta para un programa) o un token de
+inicio de sesión de [`POST /user/login`](/es/pages/rest/authentication). El servidor deriva el
+usuario a partir de la credencial: **sin nombre de usuario en la URL**. Una credencial
+rechazada hace fallar el handshake con un `401` o `403`; consulta [Autenticación](/es/pages/authentication).
 
 ### Conectar {#connect}
 
 <CodeGroup>
 ```javascript JavaScript
 const WebSocket = require('ws');
-const token = process.env.FOURCASTERS_TOKEN;
 const ws = new WebSocket('wss://streaming-api.4casters.io/v2/user', {
-  headers: { Authorization: token },
+  headers: { Authorization: process.env.FOURCASTERS_API_KEY },
 });
 ```
 </CodeGroup>

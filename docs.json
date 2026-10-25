@@ -150,7 +150,8 @@
                 "group": "Primeros pasos",
                 "pages": [
                   "es/pages/rest/introduction",
-                  "es/pages/rest/authentication"
+                  "es/pages/rest/authentication",
+                  "es/pages/rest/api-keys"
                 ]
               },
               {

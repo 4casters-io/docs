@@ -1,21 +1,59 @@
 ---
 title: 'Autenticación'
-description: 'Inicia sesión para obtener un token, o crea una clave de API para tus programas'
+description: 'Dos credenciales: una clave de API para programas, un token de inicio de sesión para todo lo demás'
 ---
 
-<Tip>
-**¿Ejecutas un programa?** Crea una **[clave de API](/pages/rest/api-keys)** (documentación en inglés) desde la página de tu cuenta en lugar de iniciar sesión con tu contraseña: no caduca ni rota, puede fijarse a los rangos de IP de tu servidor (IPv4 o IPv6) y puede revocarse por separado. Las claves funcionan en la API REST; las APIs WebSocket siguen usando el token de inicio de sesión que se describe aquí.
-</Tip>
+Todas las APIs de 4casters, REST y WebSocket por igual, se autentican de la misma forma: una credencial en el encabezado `Authorization`. Hay dos tipos de credencial, y la única decisión es cuál usar.
 
-## Cómo funciona {#how-it-works}
+| | Clave de API | Token de inicio de sesión |
+| --- | --- | --- |
+| **Pensada para** | Programas: bots, scripts, tareas de backend. | El sitio web y cualquier cosa de corta duración. |
+| **Cómo se obtiene** | Una vez, desde la página de tu cuenta. | `POST /user/login` con tu nombre de usuario y contraseña. |
+| **Vida útil** | Hasta que la revoques, o la caducidad que elegiste al crearla. | 30 días; después se rota en el lugar en la siguiente solicitud. |
+| **Restricción de red** | Por clave: direcciones o rangos CIDR IPv4 e IPv6. | Ninguna (puede acordarse una lista blanca para toda la cuenta a través de soporte). |
+| **Revocación** | Por clave, instantánea, desde la página de la cuenta. | Cerrar sesión, o un cambio de contraseña, revoca todos los tokens de inicio de sesión. |
+| **Puede administrar la cuenta** | No. La administración de la cuenta (claves, contraseña, 2FA, retiros) requiere una sesión en el sitio web. | Sí. |
 
-1. **Inicia sesión** con el nombre de usuario (o email) y la contraseña de tu cuenta mediante `POST /user/login` en la API REST.
-2. **Recibe un token** en la respuesta. Es una cadena hexadecimal de 256 caracteres.
-3. **Envía ese token** en cada solicitud REST y en cada handshake WebSocket. Las tres APIs aceptan el mismo token.
+**Si escribes código que se ejecuta sin supervisión, usa una clave de API.** Los tokens de inicio de sesión existen para que el sitio web pueda iniciar tu sesión; rotan, mueren con un cambio de contraseña y uno filtrado vale tanto como tu contraseña hasta que lo notes.
 
-No hay un registro aparte para el acceso a la API. Si puedes iniciar sesión en el sitio web, puedes usar la API.
+## Claves de API {#api-keys}
 
-## 1. Iniciar sesión {#1-log-in}
+Crea una en **Mi cuenta → Seguridad → API Keys** (o ve directamente a [4casters.io/account/api-keys](https://4casters.io/account/api-keys)): dale un nombre, restríngela opcionalmente a los rangos de IP de tus servidores y dale una caducidad, y copia la clave de la confirmación. Se muestra una sola vez.
+
+Una clave tiene esta forma: `4ck_Wk15VXFX_T4MPcp8Ij2IODI7OFFIlQsHmvvzJ3Nj8C-StfVe3h0k`. La primera parte, `4ck_Wk15VXFX`, es su **Key ID**: no es secreta, y es como la página de la cuenta se refiere a la clave. El resto es el secreto.
+
+Envíala exactamente donde iría un token de inicio de sesión:
+
+<Tabs>
+  <Tab title="API REST">
+    ```bash
+    curl https://api.4casters.io/user/getMe \
+      -H "Authorization: 4ck_Wk15VXFX_T4MPcp8Ij2IODI7OFFIlQsHmvvzJ3Nj8C-StfVe3h0k"
+    ```
+  </Tab>
+  <Tab title="WebSocket de órdenes">
+    ```javascript
+    const ws = new WebSocket('wss://orders-api.4casters.io/orders/ws', {
+      headers: { Authorization: process.env.FOURCASTERS_API_KEY },
+    });
+    ```
+  </Tab>
+  <Tab title="WebSocket de streaming">
+    ```javascript
+    const ws = new WebSocket('wss://streaming-api.4casters.io/v2/user', {
+      headers: { Authorization: process.env.FOURCASTERS_API_KEY },
+    });
+    ```
+  </Tab>
+</Tabs>
+
+No hay paso de inicio de sesión ni nada que renovar. La referencia completa, con IPs permitidas, caducidad, lo que una clave no puede hacer y todos los errores que puede producir, está en la [página de claves de API](/es/pages/rest/api-keys).
+
+## Tokens de inicio de sesión {#login-tokens}
+
+Un token de inicio de sesión es lo que el sitio web conserva después de que inicias sesión. Funciona en todas las APIs, así que sirve para un experimento rápido o un script puntual; para cualquier cosa que siga ejecutándose, prefiere una clave.
+
+### 1. Iniciar sesión {#1-log-in}
 
 `POST https://api.4casters.io/user/login`
 
@@ -56,7 +94,7 @@ token = res.json()["data"]["user"]["auth"]
 
 El campo `username` acepta tanto tu nombre de usuario como el email de la cuenta.
 
-El token está en `data.user.auth` en el cuerpo de la respuesta. El mismo valor también se establece como cookie `auth` firmada; las integraciones del lado del servidor deben capturar `data.user.auth` e ignorar la cookie.
+El token está en `data.user.auth` en el cuerpo de la respuesta: una cadena hexadecimal de 256 caracteres. El mismo valor también se establece como cookie `auth` firmada; las integraciones del lado del servidor deben capturar `data.user.auth` e ignorar la cookie.
 
 ```json
 {
@@ -71,13 +109,13 @@ El token está en `data.user.auth` en el cuerpo de la respuesta. El mismo valor 
 }
 ```
 
-La forma completa de la respuesta está documentada en la [página de autenticación REST](/es/pages/rest/authentication).
+La forma completa de la respuesta está documentada en la [página de inicio de sesión REST](/es/pages/rest/authentication).
 
 <Tip>
 Inicia sesión **una vez** y reutiliza el token. El inicio de sesión tiene límite de tasa por IP y por cuenta, y cada inicio de sesión exitoso emite un token nuevo. Volver a iniciar sesión no invalida los tokens que ya tienes.
 </Tip>
 
-## 2. Enviar el token {#2-send-the-token}
+### 2. Enviar el token {#2-send-the-token}
 
 <Tabs>
   <Tab title="API REST">
@@ -99,10 +137,10 @@ Inicia sesión **una vez** y reutiliza el token. El inicio de sesión tiene lím
     });
     ```
 
-    Consulta [API de órdenes](/es/pages/websocket/introduction).
+    Consulta la [API de órdenes](/es/pages/websocket/introduction).
   </Tab>
   <Tab title="WebSocket de streaming">
-    El mismo encabezado y el mismo token, tanto para el feed de usuario como para el feed de precios.
+    Mismo encabezado, mismo token, tanto para el feed de usuario como para el feed de precios.
 
     ```javascript
     const ws = new WebSocket('wss://streaming-api.4casters.io/v2/user', {
@@ -110,41 +148,43 @@ Inicia sesión **una vez** y reutiliza el token. El inicio de sesión tiene lím
     });
     ```
 
-    Consulta [API de streaming](/es/pages/streaming/introduction).
+    Consulta la [API de streaming](/es/pages/streaming/introduction).
   </Tab>
 </Tabs>
 
-## Vida útil del token {#token-lifetime}
+### Vida útil del token {#token-lifetime}
 
 | | |
 | --- | --- |
 | **Válido durante** | 30 días desde el inicio de sesión. |
-| **Después de 30 días** | La siguiente solicitud REST autenticada rota el token en el acto: el valor antiguo deja de funcionar de inmediato y el reemplazo se devuelve en el encabezado de respuesta `X-Auth-Token`. |
-| **Cerrar sesión** | `POST /user/logout` invalida el token usado para hacer esa llamada. Los demás tokens de la cuenta no se ven afectados. |
+| **Después de 30 días** | La siguiente solicitud REST autenticada rota el token en el lugar: el valor antiguo deja de funcionar de inmediato y el reemplazo se devuelve en el encabezado de respuesta `X-Auth-Token`. |
+| **Cerrar sesión** | `POST /user/logout` invalida el token usado en esa llamada. Los demás tokens de la cuenta no se ven afectados. |
+| **Cambio de contraseña** | Invalida todos los tokens de inicio de sesión de la cuenta. Las claves de API no se ven afectadas. |
 
-Para una integración de larga duración, haz una de estas dos cosas:
+Si tienes que funcionar con un token de inicio de sesión durante más de un mes, haz una de estas dos cosas:
 
 - **Vuelve a iniciar sesión ante cualquier `401`.** Lo más simple y robusto. Trata el `401` como "consigue un token nuevo", no como un error fatal.
-- **Vigila `X-Auth-Token`.** Siempre que ese encabezado esté presente en una respuesta, persiste su valor y úsalo a partir de entonces.
+- **Vigila `X-Auth-Token`.** Siempre que ese encabezado aparezca en una respuesta, guarda su valor y úsalo a partir de entonces.
 
-Un script que inicia sesión una vez, guarda el token y nunca mira los encabezados de respuesta funcionará exactamente 30 días y luego fallará con `401` en cada solicitud.
+Un script que inicia sesión una vez, guarda el token y nunca mira los encabezados de respuesta funcionará exactamente 30 días y luego fallará con `401` en todas las solicitudes. Una clave de API no tiene nada de esto.
 
-## Autenticación de dos factores {#two-factor-authentication}
-
-La autenticación de dos factores en 4casters protege los **retiros**, no el inicio de sesión. Activarla en tu cuenta no cambia cómo te autenticas en la API. `POST /user/login` nunca pide un código.
-
-## Errores de inicio de sesión {#login-errors}
+### Errores de inicio de sesión {#login-errors}
 
 | Estado | Significado | Qué hacer |
 | --- | --- | --- |
 | `400` | Falta `username` o `password` en el cuerpo. | Envía ambos como JSON. |
 | `401` | El nombre de usuario o la contraseña son incorrectos. | Revisa las credenciales. El mensaje es el mismo exista o no la cuenta. |
-| `403` | Cuenta baneada, cerrada o congelada. | Contacta a soporte. |
-| `428` | `CHALLENGE_REQUIRED`. Solo se devuelve mientras la plataforma está mitigando activamente un ataque de credential stuffing; se está exigiendo un desafío de verificación humana. | Sigue usando un token que ya tengas, o espera y reintenta. Los clientes automatizados no pueden resolver el desafío. |
-| `429` | Se superó el límite de tasa de inicio de sesión. | Espera los segundos indicados en `Retry-After` y reutiliza los tokens existentes en lugar de volver a iniciar sesión. |
+| `403` | Cuenta baneada, cerrada o congelada. | Contacta con soporte. |
+| `428` | `CHALLENGE_REQUIRED`. Solo se devuelve mientras la plataforma mitiga activamente un ataque de credential stuffing; se exige un desafío de verificación humana. | Sigue usando una credencial que ya tengas, o espera y reintenta. Los clientes automatizados no pueden resolver el desafío. Una clave de API nunca recibe el desafío. |
+| `429` | Límite de tasa de inicio de sesión superado. | Espera los segundos de `Retry-After` y reutiliza los tokens existentes en lugar de volver a iniciar sesión. |
 
-## Mantener las credenciales a salvo {#keeping-credentials-safe}
+## Autenticación de dos factores {#two-factor-authentication}
 
-- Guarda el nombre de usuario y la contraseña en variables de entorno o en un gestor de secretos, nunca en el control de versiones.
-- Trata el token como una contraseña. Cualquiera que lo tenga puede colocar órdenes y leer tu cuenta.
-- Considera una cuenta dedicada para el trading automatizado, de modo que una credencial de bot filtrada no exponga tu saldo principal. Las cuentas se abren igual que cualquier cuenta de usuario.
+La autenticación de dos factores en 4casters protege los **retiros**, no el inicio de sesión. Activarla en tu cuenta no cambia cómo te autenticas contra la API: `POST /user/login` nunca pide un código, y las claves de API no se ven afectadas.
+
+## Proteger las credenciales {#keeping-credentials-safe}
+
+- Guarda claves, nombres de usuario y contraseñas en variables de entorno o en un gestor de secretos, nunca en el control de versiones.
+- Trata una clave o un token como una contraseña. Cualquiera que lo tenga puede colocar órdenes y leer tu cuenta.
+- Dale a cada programa su propia clave de API, con el nombre del programa, y restríngela a las direcciones desde las que se ejecuta. Si una se filtra, revoca esa.
+- Considera una cuenta dedicada para el trading automatizado, de modo que una credencial filtrada no exponga tu saldo principal. Las cuentas se abren igual que cualquier cuenta de usuario.

@@ -26,6 +26,11 @@ Convenciones:
   - **Límite por IP en REST.** 3,000 / 60 segundos pasa a ser 1,000 / 10 segundos más 30,000 / 10 minutos. Superar el límite de 10 minutos bloquea la IP durante 10 minutos; el bloqueo se duplica con cada repetición en 24 horas, hasta 24 horas.
 </Update>
 
+<Update label="2026-10-25" tags={["API REST", "API de órdenes", "API de streaming"]}>
+  ### Añadido
+  - **Claves de API.** Crea credenciales de larga duración para tus programas desde **Mi cuenta → Seguridad → API Keys**. Una clave se envía en el encabezado `Authorization` exactamente como un token de inicio de sesión y la aceptan la API REST y las dos APIs WebSocket. Las claves nunca rotan, pueden restringirse a direcciones o rangos CIDR IPv4/IPv6, pueden tener caducidad y se revocan una a una. La administración de la cuenta (claves, contraseña, 2FA, retiros) sigue requiriendo una sesión en el sitio web. Consulta [Claves de API](/es/pages/rest/api-keys).
+</Update>
+
 <Update label="2026-08-13" tags={["API REST", "API de órdenes"]}>
   ### Añadido
   - **Tipo de orden `fillOrKill`.** Orden taker de todo o nada: todo el `bet` debe cruzarse de inmediato o se rechaza la orden completa y se revierten los cruces parciales, de modo que nunca quedas parcialmente cruzado. Compatible tanto en el endpoint REST como en el WebSocket de colocación. Consulta [Tipos de orden](/es/pages/rest/orders/place-order#order-types).
