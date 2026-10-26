@@ -20,7 +20,7 @@ Every 4casters API, REST and WebSocket alike, authenticates the same way: one cr
 
 Create one at **My Account → Security → API Keys** (or go straight to [4casters.io/account/api-keys](https://4casters.io/account/api-keys)): name it, optionally restrict it to your servers' IP ranges and give it an expiry, and copy the key from the confirmation. It is shown once.
 
-A key looks like `4ck_Wk15VXFX_T4MPcp8Ij2IODI7OFFIlQsHmvvzJ3Nj8C-StfVe3h0k`. The first part, `4ck_Wk15VXFX`, is its **Key ID**: not secret, and how the account page refers to the key. The rest is the secret.
+A key looks like `4ck_Wk15VXFX_T4MPcp8Ij2IODI7OFFIlQsHmvvzJ3Nj8C-StfVe3h0k1kH2SF`. The first part, `4ck_Wk15VXFX`, is its **Key ID**: not secret, and how the account page refers to the key. The rest is the secret.
 
 Send it exactly where a login token goes:
 
@@ -28,7 +28,7 @@ Send it exactly where a login token goes:
   <Tab title="REST API">
     ```bash
     curl https://api.4casters.io/user/getMe \
-      -H "Authorization: 4ck_Wk15VXFX_T4MPcp8Ij2IODI7OFFIlQsHmvvzJ3Nj8C-StfVe3h0k"
+      -H "Authorization: 4ck_Wk15VXFX_T4MPcp8Ij2IODI7OFFIlQsHmvvzJ3Nj8C-StfVe3h0k1kH2SF"
     ```
   </Tab>
   <Tab title="Orders WebSocket">

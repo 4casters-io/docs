@@ -18,15 +18,16 @@ Creating, changing and revoking keys takes a signed-in session on the website. A
 ## Anatomy of a key
 
 ```
-4ck_Wk15VXFX_T4MPcp8Ij2IODI7OFFIlQsHmvvzJ3Nj8C-StfVe3h0k
-└──────┬───┘ └──────────────────────┬──────────────────────┘
-    Key ID                        secret
+4ck_Wk15VXFX_T4MPcp8Ij2IODI7OFFIlQsHmvvzJ3Nj8C-StfVe3h0k1kH2SF
+└──────┬───┘ └──────────────────────┬──────────────────────┘└─┬──┘
+    Key ID                        secret                    check
 ```
 
 | Part | Example | What it is |
 | --- | --- | --- |
 | **Key ID** | `4ck_Wk15VXFX` | Identifies the key: the `4ck_` marker (a 4casters key) plus eight characters. Not secret. It is what the account page lists and what to quote in a support request. |
-| **secret** | `T4MPcp8Ij2IODI7OFFIlQsHmvvzJ3Nj8C-StfVe3h0k` | 32 random bytes, base64url. Only its hash is stored. |
+| **secret** | `T4MPcp8Ij2IODI7OFFIlQsHmvvzJ3Nj8C-StfVe3h0k` | 32 random bytes, base64url, 43 characters. Only the hash of the whole key is stored. |
+| **check** | `1kH2SF` | The CRC32 of everything before it, as six base62 characters. A mistyped or truncated key is refused before any lookup, and a secret scanner can recognise a real key with no false positives. Not a security feature. |
 
 Treat the whole string as the credential. Keep it out of source control, client-side code and logs.
 
@@ -39,7 +40,7 @@ Send the key in the `Authorization` header, exactly where a login token goes. Th
     <CodeGroup>
     ```bash curl
     curl https://api.4casters.io/user/getMe \
-      -H "Authorization: 4ck_Wk15VXFX_T4MPcp8Ij2IODI7OFFIlQsHmvvzJ3Nj8C-StfVe3h0k"
+      -H "Authorization: 4ck_Wk15VXFX_T4MPcp8Ij2IODI7OFFIlQsHmvvzJ3Nj8C-StfVe3h0k1kH2SF"
     ```
 
     ```javascript JavaScript

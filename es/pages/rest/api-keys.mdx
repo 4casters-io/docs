@@ -18,15 +18,16 @@ Crear, cambiar y revocar claves requiere una sesión iniciada en el sitio web. U
 ## Anatomía de una clave {#anatomy-of-a-key}
 
 ```
-4ck_Wk15VXFX_T4MPcp8Ij2IODI7OFFIlQsHmvvzJ3Nj8C-StfVe3h0k
-└──────┬───┘ └──────────────────────┬──────────────────────┘
-    Key ID                        secreto
+4ck_Wk15VXFX_T4MPcp8Ij2IODI7OFFIlQsHmvvzJ3Nj8C-StfVe3h0k1kH2SF
+└──────┬───┘ └──────────────────────┬──────────────────────┘└─┬──┘
+    Key ID                        secreto                  control
 ```
 
 | Parte | Ejemplo | Qué es |
 | --- | --- | --- |
 | **Key ID** | `4ck_Wk15VXFX` | Identifica la clave: el marcador `4ck_` (una clave de 4casters) más ocho caracteres. No es secreto. Es lo que lista la página de la cuenta y lo que debes citar en una solicitud de soporte. |
-| **secreto** | `T4MPcp8Ij2IODI7OFFIlQsHmvvzJ3Nj8C-StfVe3h0k` | 32 bytes aleatorios en base64url. Solo se guarda su hash. |
+| **secreto** | `T4MPcp8Ij2IODI7OFFIlQsHmvvzJ3Nj8C-StfVe3h0k` | 32 bytes aleatorios en base64url, 43 caracteres. Solo se guarda el hash de la clave completa. |
+| **control** | `1kH2SF` | El CRC32 de todo lo anterior, en seis caracteres base62. Una clave mal escrita o truncada se rechaza antes de cualquier búsqueda, y un escáner de secretos puede reconocer una clave real sin falsos positivos. No es una medida de seguridad. |
 
 Trata la cadena completa como la credencial. Mantenla fuera del control de versiones, del código del lado del cliente y de los logs.
 
@@ -39,7 +40,7 @@ Envía la clave en el encabezado `Authorization`, exactamente donde iría un tok
     <CodeGroup>
     ```bash curl
     curl https://api.4casters.io/user/getMe \
-      -H "Authorization: 4ck_Wk15VXFX_T4MPcp8Ij2IODI7OFFIlQsHmvvzJ3Nj8C-StfVe3h0k"
+      -H "Authorization: 4ck_Wk15VXFX_T4MPcp8Ij2IODI7OFFIlQsHmvvzJ3Nj8C-StfVe3h0k1kH2SF"
     ```
 
     ```javascript JavaScript

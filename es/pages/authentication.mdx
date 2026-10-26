@@ -20,7 +20,7 @@ Todas las APIs de 4casters, REST y WebSocket por igual, se autentican de la mism
 
 Crea una en **Mi cuenta → Seguridad → API Keys** (o ve directamente a [4casters.io/account/api-keys](https://4casters.io/account/api-keys)): dale un nombre, restríngela opcionalmente a los rangos de IP de tus servidores y dale una caducidad, y copia la clave de la confirmación. Se muestra una sola vez.
 
-Una clave tiene esta forma: `4ck_Wk15VXFX_T4MPcp8Ij2IODI7OFFIlQsHmvvzJ3Nj8C-StfVe3h0k`. La primera parte, `4ck_Wk15VXFX`, es su **Key ID**: no es secreta, y es como la página de la cuenta se refiere a la clave. El resto es el secreto.
+Una clave tiene esta forma: `4ck_Wk15VXFX_T4MPcp8Ij2IODI7OFFIlQsHmvvzJ3Nj8C-StfVe3h0k1kH2SF`. La primera parte, `4ck_Wk15VXFX`, es su **Key ID**: no es secreta, y es como la página de la cuenta se refiere a la clave. El resto es el secreto.
 
 Envíala exactamente donde iría un token de inicio de sesión:
 
@@ -28,7 +28,7 @@ Envíala exactamente donde iría un token de inicio de sesión:
   <Tab title="API REST">
     ```bash
     curl https://api.4casters.io/user/getMe \
-      -H "Authorization: 4ck_Wk15VXFX_T4MPcp8Ij2IODI7OFFIlQsHmvvzJ3Nj8C-StfVe3h0k"
+      -H "Authorization: 4ck_Wk15VXFX_T4MPcp8Ij2IODI7OFFIlQsHmvvzJ3Nj8C-StfVe3h0k1kH2SF"
     ```
   </Tab>
   <Tab title="WebSocket de órdenes">
