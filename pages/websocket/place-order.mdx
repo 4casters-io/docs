@@ -484,7 +484,7 @@ Errors are returned positionally in the `data` array, matching the index of the 
     - `rejected_liability` — user/account/liability constraints prevented posting or execution.
     - `rejected_order_type_rules` — order-type rules forbid execution (e.g., `fillAndKill` found no executable liquidity, so nothing could be filled and the order was rejected; `fillOrKill` could not be filled in full; `post` found matches when matches are not allowed; or `postArb` was rejected because your American odds differ from the resting order you would match by **more than 1%**).
     - `system_error` — transient/internal error; retry may succeed.
-    - `rate_limited` — your account's order-placement budget is used up. See [Rate limiting](/pages/rest/introduction#rate-limiting). This applies to the **whole request**: `data[]` has one entry, not one per order, and none of the orders were processed. Wait `retryAfterMs` and resend. `-1` means the batch can never fit, so split it.
+    - `rate_limited` — your account order budget is used up. Applies to the whole request: `data[]` has one entry and no orders were processed. Wait `retryAfterMs` and resend. `-1` means split the batch. See [Rate limiting](/pages/rest/introduction#rate-limiting).
 
 <CodeGroup>
 ```json Rate limited

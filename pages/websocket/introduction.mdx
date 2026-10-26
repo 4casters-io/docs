@@ -70,6 +70,6 @@ Server responses are JSON objects with `requestID` plus either `data` (success) 
 
 ## Rate limits
 
-Placing orders is limited per account, as orders per second with a burst allowance. The budget is shared with the REST API. Cancels, cancel-all, replaces and heartbeats are never rate limited. A rate-limited request is answered with `error_type` `rate_limited` and a `retryAfterMs`, and the connection stays open.
+Placing orders is limited per account, shared with REST. Enforced from 2026-11-02. Over the limit, you get `error_type` `rate_limited` with `retryAfterMs`, and the connection stays open. Cancels and heartbeats are never limited.
 
-See [Rate limiting](/pages/rest/introduction#rate-limiting) for the tiers and the full rules.
+See [Rate limiting](/pages/rest/introduction#rate-limiting).

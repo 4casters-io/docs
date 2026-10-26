@@ -34,30 +34,32 @@ HTTP-level errors (`4xx`, `5xx`) are returned as `{ "error": "<message>" }`.
 
 ## Rate limiting
 
-### Order placement, per account
+### Orders, per account
 
-Placing new orders is limited **per account**. The REST API and the [Orders API WebSocket](/pages/websocket/introduction) share one budget: orders sent over either one draw from the same allowance.
+Placing orders is limited per account. REST and the [Orders API WebSocket](/pages/websocket/introduction) share one budget.
 
-- **Orders are counted, not requests.** A batch of 50 orders uses 50.
-- **Each account has a burst and a sustained rate.** An idle account can send up to its burst at once. After that it can keep placing at the sustained rate. Unused capacity refills continuously, up to the burst.
+<Note>
+Limits are measured since 2026-10-26 and enforced from **Monday, 2026-11-02**.
+</Note>
 
 | Tier | Burst | Sustained |
 |---|---|---|
-| Standard | 200 orders | 20 orders / second |
-| Market maker | 2,000 orders | 150 orders / second |
+| Standard | 200 orders | 20 / second |
+| Market maker | 2,000 orders | 150 / second |
 
-Market-maker limits are assigned per account. Contact support if you provide liquidity and need them.
+- Each order counts. A batch of 50 uses 50.
+- An idle account can place its burst at once, then its sustained rate. Capacity refills continuously.
+- A batch that doesn't fit is rejected whole and uses nothing.
+- Batches are capped at 1,000 orders.
+- Cancels, edits and replaces never count.
 
-- **A batch is accepted or rejected whole.** If it doesn't fit in what's left of your budget, none of its orders are placed, and nothing is charged against your budget.
-- **Batches are capped at 1,000 orders.** A batch bigger than your burst can never fit, so split it.
+Market-maker limits are set per account. Contact support to request them.
 
-**Cancels never count against the placement budget.** That covers cancel, cancel multiple, cancel all, cancel all for game or league, cancel by reference, and pause orders. Edits and replaces don't count either, since an edit includes a cancel. However fast you're placing, the placement limit never stops you pulling your orders.
+[Cancel by reference](/pages/rest/orders/cancel-by-reference) and `pauseOrders` go through a per-account queue: 15 cancels / second, `429` when 50 are queued, and `423` while a cancel-all runs. Other cancels skip it.
 
-Two legacy REST routes, [cancel by reference](/pages/rest/orders/cancel-by-reference) and `pauseOrders`, still go through a per-account cancel queue. It runs up to 15 cancels per second, rejects with `429` when more than 50 are already queued, and rejects with `423` while a cancel-all for your account is still running. Every other REST cancel (cancel, cancel multiple, cancel all, cancel all for game or league) and every cancel on the [Orders API WebSocket](/pages/websocket/introduction) skips that queue.
+#### Over the limit
 
-#### When you exceed it
-
-- **REST:** `429` with a `Retry-After` header (seconds), and this body:
+- **REST:** `429` with `Retry-After` (seconds):
 
 ```json
 {
@@ -69,28 +71,28 @@ Two legacy REST routes, [cancel by reference](/pages/rest/orders/cancel-by-refer
 }
 ```
 
-- **WebSocket:** the connection stays open. The response holds a single `data[]` entry for the whole request, with `error_type` `rate_limited`. See [Place order error responses](/pages/websocket/place-order#error-responses).
+- **WebSocket:** `error_type` `rate_limited` with `retryAfterMs`. The connection stays open. See [Place order errors](/pages/websocket/place-order#error-responses).
 
-`retryAfterMs` is how long until your batch would fit. A value of `-1` means the batch is larger than your burst or the 1,000-order cap and will never fit, so split it. Rejected requests are not processed, and you can safely resend them.
+`retryAfterMs` is the wait until the batch fits. `-1` means it never will, so split it. Rejected requests are not processed, so resending is safe.
 
-### Global, per IP (REST)
+### Per IP (REST)
 
-Every REST request counts against two per-IP budgets, and that includes cancel requests:
+Every REST request counts, cancels included:
 
-| Window | Limit | Average | Over it |
-|---|---|---|---|
-| Burst | **1,000 requests per 10 seconds** | 100/s | `429` until the 10-second window ends |
-| Sustained | **30,000 requests per 10 minutes** | 50/s | The IP is blocked for 10 minutes. Each repeat within 24 hours doubles the block (20, 40, 80 minutes...), up to 24 hours. |
+| Limit | Over it |
+|---|---|
+| 1,000 requests / 10 seconds | `429` until the window ends |
+| 30,000 requests / 10 minutes | IP blocked 10 minutes, doubling on each repeat within 24 hours, up to 24 hours |
 
-Both return `429` with a `Retry-After` header (seconds) and body `{ "error": "Too many requests. Please try again later." }`. Honor `Retry-After`: retrying through a block does not shorten it.
+Both return `429` with `Retry-After` and `{ "error": "Too many requests. Please try again later." }`. Retrying during a block doesn't shorten it.
 
-High-frequency clients should use the [Orders API WebSocket](/pages/websocket/introduction) for placing and cancelling, because messages on an open connection don't count against this budget.
+WebSocket messages don't count, so high-frequency clients should use the [Orders API WebSocket](/pages/websocket/introduction).
 
 ### Authentication
 
-`/user/login`, password reset and signup have extra per-IP and per-account throttling.
+Login, password reset and signup have extra throttling.
 
-Read endpoints have no per-account limit. Only the global per-IP ceiling applies.
+Read endpoints have only the per-IP limit.
 
 ## Timeouts
 
@@ -112,7 +114,7 @@ The REST API pairs with the [WebSocket Streaming API](/pages/streaming/introduct
 
 ## Legacy Postman collection
 
-The previous documentation lived as a Postman collection. It is preserved for reference, but these Mintlify docs are now the source of truth — the Postman collection may lag behind for new endpoints, parameters, or response shapes.
+The previous documentation lived as a Postman collection. It is preserved for reference. These Mintlify docs are now the source of truth — the Postman collection may lag behind for new endpoints, parameters, or response shapes.
 
 <Card title="4Casters API — Postman collection" icon="link" href="https://documenter.getpostman.com/view/6710109/U16gNmHG">
   View the legacy Postman documentation

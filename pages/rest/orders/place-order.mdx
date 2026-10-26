@@ -369,7 +369,7 @@ Orders placed on a game marked as live follow these rules:
 
 ## Rate limits
 
-New orders draw from your account's placement budget, which is shared with the Orders API WebSocket. Each order in the batch counts. A batch that doesn't fit is rejected whole with `429` and a `Retry-After` header, and none of its orders are placed. Cancels don't count against this budget. See [Rate limiting](/pages/rest/introduction#rate-limiting).
+Each order counts against your account budget, shared with the WebSocket. A batch that doesn\'t fit is rejected whole with `429`. Enforced from 2026-11-02. See [Rate limiting](/pages/rest/introduction#rate-limiting).
 
 ## Per-order errors
 
