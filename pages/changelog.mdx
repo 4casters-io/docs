@@ -17,7 +17,7 @@ Conventions:
 <Update label="2026-10-26" tags={["REST API", "Orders API"]}>
   ### Added
   - **Per-account order limits.** Measured now, enforced from **2026-11-02**. See [Rate limiting](/pages/rest/introduction#rate-limiting).
-    - Standard: 200 burst, 20 / second. Market maker: 2,000 burst, 150 / second.
+    - Standard: 200 burst, 20 / second. Advanced: 2,000 burst, 150 / second.
     - Counted per order. REST and WebSocket share one budget.
     - Over the limit: REST returns `429` with `Retry-After`. WebSocket returns `error_type` `rate_limited` with `retryAfterMs`.
     - Cancels, edits and replaces never count.

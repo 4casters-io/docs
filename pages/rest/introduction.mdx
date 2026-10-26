@@ -45,7 +45,7 @@ Limits are measured since 2026-10-26 and enforced from **Monday, 2026-11-02**.
 | Tier | Burst | Sustained |
 |---|---|---|
 | Standard | 200 orders | 20 / second |
-| Market maker | 2,000 orders | 150 / second |
+| Advanced | 2,000 orders | 150 / second |
 
 - Each order counts. A batch of 50 uses 50.
 - An idle account can place its burst at once, then its sustained rate. Capacity refills continuously.
@@ -53,7 +53,7 @@ Limits are measured since 2026-10-26 and enforced from **Monday, 2026-11-02**.
 - Batches are capped at 1,000 orders.
 - Cancels, edits and replaces never count.
 
-Market-maker limits are set per account. Contact support to request them.
+Advanced limits are set per account. Contact support to request them.
 
 [Cancel by reference](/pages/rest/orders/cancel-by-reference) and `pauseOrders` go through a per-account queue: 15 cancels / second, `429` when 50 are queued, and `423` while a cancel-all runs. Other cancels skip it.
 
