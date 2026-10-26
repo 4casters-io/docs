@@ -466,7 +466,7 @@ title: '下单'
   "data": [
     {
       "error": "<human-readable message>",
-      "error_type": "<one of: validation_error | rejected_liability | rejected_order_type_rules | system_error>"
+      "error_type": "<one of: validation_error | rejected_liability | rejected_order_type_rules | system_error | rate_limited>"
     }
   ],
   "requestID": "YOUR_REQUEST_ID"
@@ -484,6 +484,22 @@ title: '下单'
     - `rejected_liability` — 用户/账户/负债约束阻止了挂单或执行。
     - `rejected_order_type_rules` — 订单类型规则禁止执行（例如 `fillAndKill` 找不到可执行流动性，因此无法成交并被拒绝；`fillOrKill` 无法全部成交；`post` 发现成交但该类型不允许成交；或 `postArb` 因你的美式赔率与将被成交的挂单相差**超过 1%** 而被拒绝）。
     - `system_error` — 瞬时/内部错误；重试可能成功。
+    - `rate_limited` — 账户下单额度已用完。适用于整个请求：`data[]` 只有一项，且没有订单被处理。等待 `retryAfterMs` 后重发。`-1` 表示需拆分批次。见 [速率限制](/zh-Hans/pages/rate-limiting)。
+
+<CodeGroup>
+```json 触发限流
+{
+  "data": [
+    {
+      "error": "rate limited",
+      "error_type": "rate_limited",
+      "retryAfterMs": 350
+    }
+  ],
+  "requestID": "YOUR_REQUEST_ID"
+}
+```
+</CodeGroup>
 
 多笔下单、部分返回错误响应的示例：
 

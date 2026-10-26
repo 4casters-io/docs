@@ -14,6 +14,18 @@ Conventions:
 
 ---
 
+<Update label="2026-10-26" tags={["REST API", "Orders API"]}>
+  ### Added
+  - **Per-account order limits.** Measured now, enforced from **2026-11-02**. See [Rate limiting](/pages/rate-limiting).
+    - Standard: 200 burst, 20 / second. Advanced: 2,000 burst, 150 / second.
+    - Counted per order. REST and WebSocket share one budget.
+    - Over the limit: REST returns `429` with `Retry-After`. WebSocket returns `error_type` `rate_limited` with `retryAfterMs`.
+    - Cancels, edits and replaces never count.
+
+  ### Changed
+  - **Per-IP REST limit.** 3,000 / 60 seconds is now 1,000 / 10 seconds plus 30,000 / 10 minutes. Crossing the 10-minute limit blocks the IP for 10 minutes, doubling on each repeat within 24 hours, up to 24 hours.
+</Update>
+
 <Update label="2026-08-13" tags={["REST API", "Orders API"]}>
   ### Added
   - **`fillOrKill` order type.** All-or-nothing taker order: the entire `bet` must match immediately or the whole order is rejected and any partial fills are rolled back, so you are never left partially filled. Supported on both the REST and WebSocket place endpoints. See [Order types](/pages/rest/orders/place-order#order-types).

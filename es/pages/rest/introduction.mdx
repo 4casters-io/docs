@@ -34,13 +34,7 @@ Los errores a nivel HTTP (`4xx`, `5xx`) se devuelven como `{ "error": "<message>
 
 ## Limitación de tasa {#rate-limiting}
 
-Aplican tres capas de limitación de tasa:
-
-- **Global, por IP** — cada solicitud a la API cuenta contra un presupuesto por IP de **3,000 solicitudes por ventana móvil de 60 segundos** (unas ~50 solicitudes/segundo sostenidas). Superarlo devuelve `429` con un encabezado `Retry-After` (segundos) y el cuerpo `{ "error": "Too many requests. Please try again later." }`.
-- **Rutas de autenticación** (`/user/login`, restablecimiento de contraseña, registro) tienen un throttling adicional por IP y por cuenta.
-- **Rutas de colocar / editar / cancelar** están además limitadas por cuenta.
-
-Los endpoints de lectura no tienen límite por cuenta: solo aplica el techo global por IP.
+Consulta [Límites de tasa](/es/pages/rate-limiting).
 
 ## Tiempos de espera {#timeouts}
 
@@ -62,7 +56,7 @@ La API REST se complementa con la [API de streaming WebSocket](/es/pages/streami
 
 ## Colección heredada de Postman {#legacy-postman-collection}
 
-La documentación previa vivía como una colección de Postman. Se conserva como referencia, pero estas docs de Mintlify son ahora la fuente de verdad: la colección de Postman puede quedar atrás en endpoints, parámetros o formas de respuesta nuevos.
+La documentación previa vivía como una colección de Postman. Se conserva como referencia. Estas docs de Mintlify son ahora la fuente de verdad: la colección de Postman puede quedar atrás en endpoints, parámetros o formas de respuesta nuevos.
 
 <Card title="4Casters API — colección de Postman" icon="link" href="https://documenter.getpostman.com/view/6710109/U16gNmHG">
   Ver la documentación heredada de Postman

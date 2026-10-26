@@ -466,7 +466,7 @@ title: '下單'
   "data": [
     {
       "error": "<human-readable message>",
-      "error_type": "<one of: validation_error | rejected_liability | rejected_order_type_rules | system_error>"
+      "error_type": "<one of: validation_error | rejected_liability | rejected_order_type_rules | system_error | rate_limited>"
     }
   ],
   "requestID": "YOUR_REQUEST_ID"
@@ -484,6 +484,22 @@ title: '下單'
     - `rejected_liability` — 使用者/帳戶/負債約束阻止了掛單或執行。
     - `rejected_order_type_rules` — 訂單型別規則禁止執行（例如 `fillAndKill` 找不到可執行流動性，因此無法成交併被拒絕；`fillOrKill` 無法全部成交；`post` 發現成交但該型別不允許成交；或 `postArb` 因你的美式賠率與將被成交的掛單相差**超過 1%** 而被拒絕）。
     - `system_error` — 瞬時/內部錯誤；重試可能成功。
+    - `rate_limited` — 帳戶下單額度已用完。適用於整個請求：`data[]` 只有一項，且沒有訂單被處理。等待 `retryAfterMs` 後重發。`-1` 表示需拆分批次。見 [速率限制](/zh-Hant/pages/rate-limiting)。
+
+<CodeGroup>
+```json 觸發速率限制
+{
+  "data": [
+    {
+      "error": "rate limited",
+      "error_type": "rate_limited",
+      "retryAfterMs": 350
+    }
+  ],
+  "requestID": "YOUR_REQUEST_ID"
+}
+```
+</CodeGroup>
 
 多筆下單、部分回傳錯誤回應的示例：
 

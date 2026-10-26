@@ -116,7 +116,7 @@ curl "https://api.4casters.io/user/v2/getGradedSince?cursor=CURSOR_FROM_LAST_RES
 
 ## 速率限制 {#rate-limits}
 
-**每使用者每 5 秒 10 次請求**，併疊加 [全域每 IP 限制](/zh-Hant/pages/rest/introduction#rate-limiting)。這在每秒輪詢一次的同時，仍留有餘量來消化積壓。
+**每使用者每 5 秒 10 次請求**，併疊加 [全域每 IP 限制](/zh-Hant/pages/rate-limiting#per-ip-rest)。這在每秒輪詢一次的同時，仍留有餘量來消化積壓。
 
 即時結算永遠不會填滿一頁 — 每秒最多幾行 — 因此 `hasMore` 只有在停機後追趕進度時才會真正觸發。一個繁忙帳戶一整天的結算大約 12 秒即可消化完畢。
 

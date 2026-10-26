@@ -367,6 +367,10 @@ curl -X POST https://api.4casters.io/session/v3/place \
     - 若賠率變得更優，則立即成交。
     - 若賠率變差，則不成交。
 
+## 速率限制 {#rate-limits}
+
+每筆訂單都計入帳戶額度，與 WebSocket 共用。放不下的批次整批拒絕，回傳 `429`。自 2026-11-02 起強制執行。見 [速率限制](/zh-Hant/pages/rate-limiting)。
+
 ## 單筆訂單錯誤 {#per-order-errors}
 
 <Snippet file="zh-Hant/types/order-error.mdx" />

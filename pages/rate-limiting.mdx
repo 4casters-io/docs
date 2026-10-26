@@ -1,0 +1,64 @@
+---
+title: 'Rate limiting'
+description: 'Limits for the REST API and the Orders API'
+---
+
+## Orders, per account
+
+Placing orders is limited per account. REST and the [Orders API](/pages/websocket/introduction) share one budget.
+
+<Note>
+Limits are measured since 2026-10-26 and enforced from **Monday, 2026-11-02**.
+</Note>
+
+| Tier | Burst | Sustained |
+|---|---|---|
+| Standard | 200 orders | 20 / second |
+| Advanced | 2,000 orders | 150 / second |
+
+- Each order counts. A batch of 50 uses 50.
+- An idle account can place its burst at once, then its sustained rate. Capacity refills continuously.
+- A batch that doesn't fit is rejected whole and uses nothing.
+- Batches are capped at 1,000 orders.
+- Cancels, edits and replaces never count.
+
+Advanced limits are set per account. Contact support to request them.
+
+[Cancel by reference](/pages/rest/orders/cancel-by-reference) and `pauseOrders` go through a per-account queue: 15 cancels / second, `429` when 50 are queued, and `423` while a cancel-all runs. Other cancels skip it.
+
+### Over the limit
+
+- **REST:** `429` with `Retry-After` (seconds):
+
+```json
+{
+  "error": {
+    "message": "rate limited",
+    "code": 429,
+    "details": { "code": "rate_limited", "retryAfterMs": 350, "retryAfterSeconds": 1 }
+  }
+}
+```
+
+- **WebSocket:** `error_type` `rate_limited` with `retryAfterMs`. The connection stays open. See [Place order errors](/pages/websocket/place-order#error-responses).
+
+`retryAfterMs` is the wait until the batch fits. `-1` means it never will, so split it. Rejected requests are not processed, so resending is safe.
+
+## Per IP (REST)
+
+Every REST request counts, cancels included:
+
+| Limit | Over it |
+|---|---|
+| 1,000 requests / 10 seconds | `429` until the window ends |
+| 30,000 requests / 10 minutes | IP blocked 10 minutes, doubling on each repeat within 24 hours, up to 24 hours |
+
+Both return `429` with `Retry-After` and `{ "error": "Too many requests. Please try again later." }`. Retrying during a block doesn't shorten it.
+
+WebSocket messages don't count, so high-frequency clients should use the [Orders API WebSocket](/pages/websocket/introduction).
+
+## Authentication
+
+Login, password reset and signup have extra throttling.
+
+Read endpoints have only the per-IP limit.

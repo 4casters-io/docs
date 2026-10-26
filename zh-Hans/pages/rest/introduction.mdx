@@ -34,13 +34,7 @@ HTTP 级别的错误（`4xx`、`5xx`）以 `{ "error": "<message>" }` 返回。
 
 ## 速率限制 {#rate-limiting}
 
-适用三层速率限制：
-
-- **全局，按 IP** — 发往 API 的每个请求都计入每 IP 预算：**滚动 60 秒窗口内 3,000 次请求**（持续约每秒 50 次）。超出时返回 `429`，带 `Retry-After` 响应头（秒）以及响应体 `{ "error": "Too many requests. Please try again later." }`。
-- **认证路由**（`/user/login`、密码重置、注册）还有额外的按 IP 和按账户限流。
-- **下单 / 改单 / 取消路由**还会按账户额外限流。
-
-读取端点没有按账户限制 — 仅适用全局每 IP 上限。
+见 [速率限制](/zh-Hans/pages/rate-limiting)。
 
 ## 超时 {#timeouts}
 
@@ -62,7 +56,7 @@ REST API 可与 [WebSocket 推送 API](/zh-Hans/pages/streaming/introduction) �
 
 ## 旧版 Postman 集合 {#legacy-postman-collection}
 
-先前的文档以 Postman 集合形式存在。它仍保留作参考，但这些 Mintlify 文档现为权威来源 — Postman 集合在新端点、参数或响应形态上可能滞后。
+先前的文档以 Postman 集合形式存在。它仍保留作参考。这些 Mintlify 文档现为权威来源 — Postman 集合在新端点、参数或响应形态上可能滞后。
 
 <Card title="4Casters API — Postman 集合" icon="link" href="https://documenter.getpostman.com/view/6710109/U16gNmHG">
   查看旧版 Postman 文档

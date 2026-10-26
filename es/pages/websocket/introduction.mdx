@@ -67,3 +67,9 @@ Las respuestas del servidor son objetos JSON con `requestID` más `data` (éxito
 }
 ```
 </CodeGroup>
+
+## Límites de tasa {#rate-limits}
+
+Colocar órdenes tiene un límite por cuenta, compartido con REST. Se aplica desde el 2026-11-02. Al superar el límite recibes `error_type` `rate_limited` con `retryAfterMs`, y la conexión sigue abierta. Las cancelaciones y los heartbeats nunca tienen límite.
+
+Consulta [Límites de tasa](/es/pages/rate-limiting).

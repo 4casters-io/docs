@@ -64,7 +64,7 @@ curl "https://api.4casters.io/exchange/getMatchedVolume?startDate=2026-08-10&end
 
 ## 速率限制 {#rate-limits}
 
-沒有端點級限制 — 僅適用 [全域每 IP 限制](/zh-Hant/pages/rest/introduction#rate-limiting)（滾動每分鐘 3,000 次請求）。對於儀表盤，每隔幾秒輪詢一次完全足夠；注意已最終確定的日期不會再變化，因此只有包含今天的範圍才有必要重新輪詢。
+沒有端點級限制 — 僅適用 [全域每 IP 限制](/zh-Hant/pages/rate-limiting#per-ip-rest)（每 10 秒 1,000 次請求，每 10 分鐘 30,000 次請求）。對於儀表盤，每隔幾秒輪詢一次完全足夠；注意已最終確定的日期不會再變化，因此只有包含今天的範圍才有必要重新輪詢。
 
 ## 錯誤 {#errors}
 

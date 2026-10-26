@@ -466,7 +466,7 @@ Cuando el servidor no consigue colocar una orden individual, la entrada **por or
   "data": [
     {
       "error": "<human-readable message>",
-      "error_type": "<one of: validation_error | rejected_liability | rejected_order_type_rules | system_error>"
+      "error_type": "<one of: validation_error | rejected_liability | rejected_order_type_rules | system_error | rate_limited>"
     }
   ],
   "requestID": "YOUR_REQUEST_ID"
@@ -484,6 +484,22 @@ Los errores se devuelven de forma posicional en el array `data`, coincidiendo co
     - `rejected_liability` — restricciones de usuario, cuenta o liability impidieron la colocación o la ejecución.
     - `rejected_order_type_rules` — las reglas del tipo de orden prohíben la ejecución (p. ej. `fillAndKill` no encontró liquidez ejecutable, así que no se pudo cruzar nada y la orden fue rechazada; `fillOrKill` no se pudo cruzar por completo; `post` encontró cruces cuando los cruces no están permitidos; o `postArb` se rechazó porque tus cuotas americanas difieren de la orden en espera con la que te cruzarías en **más del 1%**).
     - `system_error` — error transitorio o interno; reintentar puede funcionar.
+    - `rate_limited` — se agotó el presupuesto de órdenes de tu cuenta. Aplica a toda la solicitud: `data[]` tiene una sola entrada y no se procesó ninguna orden. Espera `retryAfterMs` y reenvía. `-1` significa que debes dividir el lote. Consulta [Límites de tasa](/es/pages/rate-limiting).
+
+<CodeGroup>
+```json Límite de tasa
+{
+  "data": [
+    {
+      "error": "rate limited",
+      "error_type": "rate_limited",
+      "retryAfterMs": 350
+    }
+  ],
+  "requestID": "YOUR_REQUEST_ID"
+}
+```
+</CodeGroup>
 
 Ejemplo con varias colocaciones de órdenes, algunas de las cuales devolvieron un error:
 

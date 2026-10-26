@@ -466,7 +466,7 @@ When the server fails to place an individual order, the **per-order** entry in `
   "data": [
     {
       "error": "<human-readable message>",
-      "error_type": "<one of: validation_error | rejected_liability | rejected_order_type_rules | system_error>"
+      "error_type": "<one of: validation_error | rejected_liability | rejected_order_type_rules | system_error | rate_limited>"
     }
   ],
   "requestID": "YOUR_REQUEST_ID"
@@ -484,6 +484,22 @@ Errors are returned positionally in the `data` array, matching the index of the 
     - `rejected_liability` — user/account/liability constraints prevented posting or execution.
     - `rejected_order_type_rules` — order-type rules forbid execution (e.g., `fillAndKill` found no executable liquidity, so nothing could be filled and the order was rejected; `fillOrKill` could not be filled in full; `post` found matches when matches are not allowed; or `postArb` was rejected because your American odds differ from the resting order you would match by **more than 1%**).
     - `system_error` — transient/internal error; retry may succeed.
+    - `rate_limited` — your account order budget is used up. Applies to the whole request: `data[]` has one entry and no orders were processed. Wait `retryAfterMs` and resend. `-1` means split the batch. See [Rate limiting](/pages/rate-limiting).
+
+<CodeGroup>
+```json Rate limited
+{
+  "data": [
+    {
+      "error": "rate limited",
+      "error_type": "rate_limited",
+      "retryAfterMs": 350
+    }
+  ],
+  "requestID": "YOUR_REQUEST_ID"
+}
+```
+</CodeGroup>
 
 Example with multiple order places, some of which incurred an error response:
 

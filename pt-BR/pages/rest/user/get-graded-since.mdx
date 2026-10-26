@@ -116,7 +116,7 @@ curl "https://api.4casters.io/user/v2/getGradedSince?cursor=CURSOR_FROM_LAST_RES
 
 ## Limites de taxa {#rate-limits}
 
-**10 requisições a cada 5 segundos por usuário**, além do [limite global por IP](/pt-BR/pages/rest/introduction#rate-limiting). Isso deixa margem para esvaziar um atraso enquanto você consulta uma vez por segundo.
+**10 requisições a cada 5 segundos por usuário**, além do [limite global por IP](/pt-BR/pages/rate-limiting#per-ip-rest). Isso deixa margem para esvaziar um atraso enquanto você consulta uma vez por segundo.
 
 A liquidação ao vivo nunca enche uma página (algumas poucas linhas por segundo no máximo), então `hasMore` só é ativado de verdade quando você está se atualizando após uma queda. Um dia inteiro de liquidações de uma conta com muita atividade é esvaziado em cerca de 12 segundos.
 

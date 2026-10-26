@@ -14,6 +14,18 @@ description: '4casters API 中對用戶端可見的重要變更。'
 
 ---
 
+<Update label="2026-10-26" tags={["REST API", "訂單 API"]}>
+  ### 新增
+  - **按帳戶的下單限制。** 現已開始統計，自 **2026-11-02** 起強制執行。見 [速率限制](/zh-Hant/pages/rate-limiting)。
+    - 標準：突發 200，每秒 20。高階：突發 2,000，每秒 150。
+    - 按訂單計數。REST 和 WebSocket 共用一個額度。
+    - 超出限制：REST 回傳 `429`，帶 `Retry-After`。WebSocket 回傳 `error_type` `rate_limited`，帶 `retryAfterMs`。
+    - 取消、改單和替換從不計數。
+
+  ### 變更
+  - **REST 按 IP 限制。** 每 60 秒 3,000 次改為每 10 秒 1,000 次加每 10 分鐘 30,000 次。超過 10 分鐘限制會封禁該 IP 10 分鐘，24 小時內每次重複翻倍，最長 24 小時。
+</Update>
+
 <Update label="2026-08-13" tags={["REST API", "訂單 API"]}>
   ### 新增
   - **`fillOrKill` 訂單型別。** 全成或全撤的吃單：必須立即撮合全部 `bet`，否則整筆訂單被拒絕並復原任何部分成交，因此你不會停留在部分成交狀態。REST 和 WebSocket 下單端點均支援。見 [訂單型別](/zh-Hant/pages/rest/orders/place-order#order-types)。

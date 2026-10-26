@@ -116,7 +116,7 @@ curl "https://api.4casters.io/user/v2/getGradedSince?cursor=CURSOR_FROM_LAST_RES
 
 ## Rate limits
 
-**10 requests per 5 seconds per user**, on top of the [global per-IP limit](/pages/rest/introduction#rate-limiting). That leaves room to drain a backlog while polling once per second.
+**10 requests per 5 seconds per user**, on top of the [global per-IP limit](/pages/rate-limiting#per-ip-rest). That leaves room to drain a backlog while polling once per second.
 
 Live settlement never fills a page — a few rows per second at most — so `hasMore` only really fires when you're catching up after downtime. A busy account's full day of settlements drains in about 12 seconds.
 
