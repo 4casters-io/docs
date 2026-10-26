@@ -118,7 +118,7 @@ From **My Account → Security → API Keys**, each key's menu offers:
 - **Edit Allowed IPs**
 - **Revoke**. Takes effect on the next request, and any open WebSocket on that key is closed within a minute. Anything still using the key gets `401 InvalidCredentials`.
 
-The list shows each key's name, Key ID, allowed IPs, creation date, last use (updated at most once a minute) and expiry.
+The list shows each key's name, Key ID, allowed IPs, creation date, last use and expiry. Last use counts REST requests (updated at most once a minute); a WebSocket handshake does not update it.
 
 ## Responses
 

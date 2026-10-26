@@ -118,7 +118,7 @@ Desde **Mi cuenta → Seguridad → API Keys**, el menú de cada clave ofrece:
 - **Edit Allowed IPs** (editar IPs permitidas)
 - **Revoke** (revocar). Surte efecto en la siguiente solicitud, y cualquier WebSocket abierto con esa clave se cierra en menos de un minuto. Lo que siga usando la clave recibe `401 InvalidCredentials`.
 
-La lista muestra, para cada clave, su nombre, Key ID, IPs permitidas, fecha de creación, último uso (actualizado como mucho una vez por minuto) y caducidad.
+La lista muestra, para cada clave, su nombre, Key ID, IPs permitidas, fecha de creación, último uso y caducidad. El último uso cuenta las solicitudes REST (actualizado como mucho una vez por minuto); un handshake WebSocket no lo actualiza.
 
 ## Respuestas {#responses}
 
