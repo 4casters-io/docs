@@ -99,12 +99,12 @@ def convert_doc(text):
 
             def stash(mm):
                 slots.append(mm.group(0))
-                return '\x00%d\x00' % (len(slots) - 1)
+                return '\ue000%d\ue001' % (len(slots) - 1)
 
             t = INLINE.sub(stash, line)
             t = convert_text(t)
             for i, v in enumerate(slots):
-                t = t.replace('\x00%d\x00' % i, v)
+                t = t.replace('\ue000%d\ue001' % i, v)
             out.append(t)
     return nl.join(out)
 
