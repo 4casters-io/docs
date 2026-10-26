@@ -367,6 +367,10 @@ Las órdenes colocadas en un juego marcado como live siguen estas reglas:
     - Si las cuotas mejoran, cruza al instante.
     - Si las cuotas empeoran, no cruza.
 
+## Límites de tasa {#rate-limits}
+
+Cada orden cuenta contra el presupuesto de tu cuenta, compartido con el WebSocket. Un lote que no cabe se rechaza completo con `429`. Se aplica desde el 2026-11-02. Consulta [Límites de tasa](/es/pages/rate-limiting).
+
 ## Errores por orden {#per-order-errors}
 
 <Snippet file="es/types/order-error.mdx" />

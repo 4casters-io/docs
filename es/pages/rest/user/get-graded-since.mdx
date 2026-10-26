@@ -116,7 +116,7 @@ curl "https://api.4casters.io/user/v2/getGradedSince?cursor=CURSOR_FROM_LAST_RES
 
 ## Límites de tasa {#rate-limits}
 
-**10 solicitudes cada 5 segundos por usuario**, además del [límite global por IP](/es/pages/rest/introduction#rate-limiting). Eso deja margen para vaciar un atraso mientras consultas una vez por segundo.
+**10 solicitudes cada 5 segundos por usuario**, además del [límite global por IP](/es/pages/rate-limiting#per-ip-rest). Eso deja margen para vaciar un atraso mientras consultas una vez por segundo.
 
 La liquidación en vivo nunca llena una página (unas pocas filas por segundo como mucho), así que `hasMore` solo se activa de verdad cuando te estás poniendo al día tras una caída. Un día completo de liquidaciones de una cuenta con mucha actividad se vacía en unos 12 segundos.
 

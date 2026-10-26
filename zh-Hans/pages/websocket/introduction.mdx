@@ -66,3 +66,9 @@ const ws = new WebSocket('wss://orders-api.4casters.io/orders/ws', {
 }
 ```
 </CodeGroup>
+
+## 速率限制 {#rate-limits}
+
+下单按账户限制，与 REST 共用额度。自 2026-11-02 起强制执行。超出限制时，返回 `error_type` `rate_limited`，带 `retryAfterMs`，连接保持打开。取消和心跳从不受限。
+
+见 [速率限制](/zh-Hans/pages/rate-limiting)。

@@ -116,7 +116,7 @@ curl "https://api.4casters.io/user/v2/getGradedSince?cursor=CURSOR_FROM_LAST_RES
 
 ## 速率限制 {#rate-limits}
 
-**每用户每 5 秒 10 次请求**，并叠加 [全局每 IP 限制](/zh-Hans/pages/rest/introduction#rate-limiting)。这在每秒轮询一次的同时，仍留有余量来消化积压。
+**每用户每 5 秒 10 次请求**，并叠加 [全局每 IP 限制](/zh-Hans/pages/rate-limiting#per-ip-rest)。这在每秒轮询一次的同时，仍留有余量来消化积压。
 
 实时结算永远不会填满一页 — 每秒最多几行 — 因此 `hasMore` 只有在停机后追赶进度时才会真正触发。一个繁忙账户一整天的结算大约 12 秒即可消化完毕。
 

@@ -367,6 +367,10 @@ As ordens enviadas em um evento marcado como live seguem estas regras:
     - Se as odds melhoram, casa na hora.
     - Se as odds pioram, não casa.
 
+## Limites de taxa {#rate-limits}
+
+Cada ordem conta contra o orçamento da sua conta, compartilhado com o WebSocket. Um lote que não cabe é rejeitado por inteiro com `429`. Aplicado a partir de 2026-11-02. Consulte [Limitação de taxa](/pt-BR/pages/rate-limiting).
+
 ## Erros por ordem {#per-order-errors}
 
 <Snippet file="pt-BR/types/order-error.mdx" />

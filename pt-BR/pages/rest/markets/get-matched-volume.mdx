@@ -64,7 +64,7 @@ curl "https://api.4casters.io/exchange/getMatchedVolume?startDate=2026-08-10&end
 
 ## Limites de taxa {#rate-limits}
 
-Não há um limite específico do endpoint: aplica-se somente o [limite global por IP](/pt-BR/pages/rest/introduction#rate-limiting) (3,000 requisições por minuto móvel). Para dashboards, consultar uma vez a cada poucos segundos é mais que suficiente; tenha em conta que os dias finalizados nunca mudam, então só os intervalos que incluem hoje se beneficiam de consultar de novo.
+Não há um limite específico do endpoint: aplica-se somente o [limite global por IP](/pt-BR/pages/rate-limiting#per-ip-rest) (1,000 requisições a cada 10 segundos e 30,000 a cada 10 minutos). Para dashboards, consultar uma vez a cada poucos segundos é mais que suficiente; tenha em conta que os dias finalizados nunca mudam, então só os intervalos que incluem hoje se beneficiam de consultar de novo.
 
 ## Erros {#errors}
 

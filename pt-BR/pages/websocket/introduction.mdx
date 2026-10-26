@@ -67,3 +67,9 @@ As respostas do servidor são objetos JSON com `requestID` mais `data` (sucesso)
 }
 ```
 </CodeGroup>
+
+## Limites de taxa {#rate-limits}
+
+O envio de ordens é limitado por conta, com orçamento compartilhado com o REST. Aplicado a partir de 2026-11-02. Acima do limite, você recebe `error_type` `rate_limited` com `retryAfterMs`, e a conexão continua aberta. Cancelamentos e heartbeats nunca são limitados.
+
+Consulte [Limitação de taxa](/pt-BR/pages/rate-limiting).

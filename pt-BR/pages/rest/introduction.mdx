@@ -34,13 +34,7 @@ Os erros no nível HTTP (`4xx`, `5xx`) são retornados como `{ "error": "<messag
 
 ## Limitação de taxa {#rate-limiting}
 
-Aplicam-se três camadas de limitação de taxa:
-
-- **Global, por IP** — cada requisição à API conta contra um orçamento por IP de **3,000 requisições por janela móvel de 60 segundos** (cerca de ~50 requisições/segundo sustentadas). Ultrapassá-lo retorna `429` com um cabeçalho `Retry-After` (segundos) e o corpo `{ "error": "Too many requests. Please try again later." }`.
-- **Rotas de autenticação** (`/user/login`, redefinição de senha, cadastro) têm throttling adicional por IP e por conta.
-- **Rotas de enviar / editar / cancelar** são, além disso, limitadas por conta.
-
-Os endpoints de leitura não têm limite por conta: aplica-se somente o teto global por IP.
+Consulte [Limitação de taxa](/pt-BR/pages/rate-limiting).
 
 ## Tempos limite {#timeouts}
 
@@ -62,7 +56,7 @@ A API REST é complementada pela [API de streaming WebSocket](/pt-BR/pages/strea
 
 ## Coleção legada do Postman {#legacy-postman-collection}
 
-A documentação anterior vivia como uma coleção do Postman. Ela é mantida como referência, mas estas docs do Mintlify são agora a fonte da verdade: a coleção do Postman pode ficar desatualizada em endpoints, parâmetros ou formas de resposta novos.
+A documentação anterior vivia como uma coleção do Postman. Ela é mantida como referência. Estas docs do Mintlify são agora a fonte da verdade: a coleção do Postman pode ficar desatualizada em endpoints, parâmetros ou formas de resposta novos.
 
 <Card title="4Casters API — coleção do Postman" icon="link" href="https://documenter.getpostman.com/view/6710109/U16gNmHG">
   Ver a documentação legada do Postman

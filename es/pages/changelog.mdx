@@ -14,6 +14,18 @@ Convenciones:
 
 ---
 
+<Update label="2026-10-26" tags={["API REST", "API de órdenes"]}>
+  ### Añadido
+  - **Límites de órdenes por cuenta.** Se miden ahora y se aplican desde el **2026-11-02**. Consulta [Límites de tasa](/es/pages/rate-limiting).
+    - Estándar: ráfaga de 200, 20 / segundo. Avanzado: ráfaga de 2,000, 150 / segundo.
+    - Se cuentan por orden. REST y WebSocket comparten un mismo presupuesto.
+    - Al superar el límite: REST devuelve `429` con `Retry-After`. WebSocket devuelve `error_type` `rate_limited` con `retryAfterMs`.
+    - Las cancelaciones, ediciones y reemplazos nunca cuentan.
+
+  ### Cambiado
+  - **Límite por IP en REST.** 3,000 / 60 segundos pasa a ser 1,000 / 10 segundos más 30,000 / 10 minutos. Superar el límite de 10 minutos bloquea la IP durante 10 minutos; el bloqueo se duplica con cada repetición en 24 horas, hasta 24 horas.
+</Update>
+
 <Update label="2026-08-13" tags={["API REST", "API de órdenes"]}>
   ### Añadido
   - **Tipo de orden `fillOrKill`.** Orden taker de todo o nada: todo el `bet` debe cruzarse de inmediato o se rechaza la orden completa y se revierten los cruces parciales, de modo que nunca quedas parcialmente cruzado. Compatible tanto en el endpoint REST como en el WebSocket de colocación. Consulta [Tipos de orden](/es/pages/rest/orders/place-order#order-types).

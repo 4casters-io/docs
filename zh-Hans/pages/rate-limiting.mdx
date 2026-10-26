@@ -1,0 +1,64 @@
+---
+title: '速率限制'
+description: 'REST API 和订单 API 的限制'
+---
+
+## 按账户限制下单 {#orders-per-account}
+
+下单按账户限制。REST 和 [订单 API](/zh-Hans/pages/websocket/introduction) 共用一个额度。
+
+<Note>
+限制自 2026-10-26 起开始统计，自 **2026-11-02（周一）** 起强制执行。
+</Note>
+
+| 等级 | 突发 | 持续 |
+|---|---|---|
+| 标准 | 200 笔订单 | 每秒 20 笔 |
+| 高级 | 2,000 笔订单 | 每秒 150 笔 |
+
+- 每笔订单都计数。一批 50 笔订单占用 50。
+- 空闲账户可一次性下满突发额度，之后按持续速率下单。额度持续恢复。
+- 放不下的批次整批拒绝，不占用额度。
+- 每批最多 1,000 笔订单。
+- 取消、改单和替换从不计数。
+
+高级限制按账户设置。请联系客服申请。
+
+[按引用取消](/zh-Hans/pages/rest/orders/cancel-by-reference) 和 `pauseOrders` 走按账户的队列：每秒 15 笔取消，排队超过 50 笔时返回 `429`，全部取消进行中时返回 `423`。其他取消不走该队列。
+
+### 超出限制 {#over-the-limit}
+
+- **REST：** 返回 `429`，带 `Retry-After`（秒）：
+
+```json
+{
+  "error": {
+    "message": "rate limited",
+    "code": 429,
+    "details": { "code": "rate_limited", "retryAfterMs": 350, "retryAfterSeconds": 1 }
+  }
+}
+```
+
+- **WebSocket：** 返回 `error_type` `rate_limited`，带 `retryAfterMs`。连接保持打开。见 [下单错误](/zh-Hans/pages/websocket/place-order#error-responses)。
+
+`retryAfterMs` 是批次可放下前需等待的时间。`-1` 表示永远放不下，请拆分批次。被拒绝的请求不会被处理，可以安全重发。
+
+## 按 IP 限制（REST） {#per-ip-rest}
+
+每个 REST 请求都计数，包括取消：
+
+| 限制 | 超出后 |
+|---|---|
+| 每 10 秒 1,000 次请求 | 窗口结束前返回 `429` |
+| 每 10 分钟 30,000 次请求 | IP 被封禁 10 分钟，24 小时内每次重复翻倍，最长 24 小时 |
+
+两者都返回 `429`，带 `Retry-After` 和 `{ "error": "Too many requests. Please try again later." }`。封禁期间重试不会缩短封禁。
+
+WebSocket 消息不计数，因此高频客户端应使用 [订单 API WebSocket](/zh-Hans/pages/websocket/introduction)。
+
+## 认证 {#authentication}
+
+登录、密码重置和注册有额外限流。
+
+读取端点仅受按 IP 限制。

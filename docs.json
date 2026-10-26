@@ -210,6 +210,12 @@
             "pages": [
               "es/pages/changelog"
             ]
+          },
+          {
+            "tab": "Límites de tasa",
+            "pages": [
+              "es/pages/rate-limiting"
+            ]
           }
         ]
       },
@@ -307,6 +313,12 @@
             "tab": "Registro de alterações",
             "pages": [
               "pt-BR/pages/changelog"
+            ]
+          },
+          {
+            "tab": "Limitação de taxa",
+            "pages": [
+              "pt-BR/pages/rate-limiting"
             ]
           }
         ],
@@ -411,6 +423,12 @@
             "pages": [
               "zh-Hans/pages/changelog"
             ]
+          },
+          {
+            "tab": "速率限制",
+            "pages": [
+              "zh-Hans/pages/rate-limiting"
+            ]
           }
         ],
         "banner": {
@@ -513,6 +531,12 @@
             "tab": "更新日誌",
             "pages": [
               "zh-Hant/pages/changelog"
+            ]
+          },
+          {
+            "tab": "速率限制",
+            "pages": [
+              "zh-Hant/pages/rate-limiting"
             ]
           }
         ],

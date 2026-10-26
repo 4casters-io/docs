@@ -466,7 +466,7 @@ Quando o servidor não consegue enviar uma ordem individual, a entrada **por ord
   "data": [
     {
       "error": "<human-readable message>",
-      "error_type": "<one of: validation_error | rejected_liability | rejected_order_type_rules | system_error>"
+      "error_type": "<one of: validation_error | rejected_liability | rejected_order_type_rules | system_error | rate_limited>"
     }
   ],
   "requestID": "YOUR_REQUEST_ID"
@@ -484,6 +484,22 @@ Os erros são retornados de forma posicional no array `data`, correspondendo ao 
     - `rejected_liability` — restrições de usuário, conta ou exposição impediram o envio ou a execução.
     - `rejected_order_type_rules` — as regras do tipo de ordem proíbem a execução (p. ex. `fillAndKill` não encontrou liquidez executável, então nada pôde ser casado e a ordem foi rejeitada; `fillOrKill` não pôde ser casada por completo; `post` encontrou casamentos quando casamentos não são permitidos; ou `postArb` foi rejeitada porque suas odds americanas diferem da ordem em aberto com a qual você casaria em **mais de 1%**).
     - `system_error` — erro transitório ou interno; tentar novamente pode funcionar.
+    - `rate_limited` — o orçamento de ordens da sua conta se esgotou. Vale para a requisição inteira: `data[]` tem uma única entrada e nenhuma ordem foi processada. Aguarde `retryAfterMs` e reenvie. `-1` significa dividir o lote. Consulte [Limitação de taxa](/pt-BR/pages/rate-limiting).
+
+<CodeGroup>
+```json Limite de taxa
+{
+  "data": [
+    {
+      "error": "rate limited",
+      "error_type": "rate_limited",
+      "retryAfterMs": 350
+    }
+  ],
+  "requestID": "YOUR_REQUEST_ID"
+}
+```
+</CodeGroup>
 
 Exemplo com vários envios de ordens, alguns dos quais retornaram um erro:
 

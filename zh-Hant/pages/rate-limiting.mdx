@@ -1,0 +1,64 @@
+---
+title: '速率限制'
+description: 'REST API 和訂單 API 的限制'
+---
+
+## 按帳戶限制下單 {#orders-per-account}
+
+下單按帳戶限制。REST 和 [訂單 API](/zh-Hant/pages/websocket/introduction) 共用一個額度。
+
+<Note>
+限制自 2026-10-26 起開始統計，自 **2026-11-02（週一）** 起強制執行。
+</Note>
+
+| 等級 | 突發 | 持續 |
+|---|---|---|
+| 標準 | 200 筆訂單 | 每秒 20 筆 |
+| 高階 | 2,000 筆訂單 | 每秒 150 筆 |
+
+- 每筆訂單都計數。一批 50 筆訂單佔用 50。
+- 空閒帳戶可一次性下滿突發額度，之後按持續速率下單。額度持續恢復。
+- 放不下的批次整批拒絕，不佔用額度。
+- 每批最多 1,000 筆訂單。
+- 取消、改單和替換從不計數。
+
+高階限制按帳戶設定。請聯絡客服申請。
+
+[按引用取消](/zh-Hant/pages/rest/orders/cancel-by-reference) 和 `pauseOrders` 走按帳戶的佇列：每秒 15 筆取消，排隊超過 50 筆時回傳 `429`，全部取消進行中時回傳 `423`。其他取消不走該佇列。
+
+### 超出限制 {#over-the-limit}
+
+- **REST：** 回傳 `429`，帶 `Retry-After`（秒）：
+
+```json
+{
+  "error": {
+    "message": "rate limited",
+    "code": 429,
+    "details": { "code": "rate_limited", "retryAfterMs": 350, "retryAfterSeconds": 1 }
+  }
+}
+```
+
+- **WebSocket：** 回傳 `error_type` `rate_limited`，帶 `retryAfterMs`。連線保持開啟。見 [下單錯誤](/zh-Hant/pages/websocket/place-order#error-responses)。
+
+`retryAfterMs` 是批次可放下前需等待的時間。`-1` 表示永遠放不下，請拆分批次。被拒絕的請求不會被處理，可以安全重發。
+
+## 按 IP 限制（REST） {#per-ip-rest}
+
+每個 REST 請求都計數，包括取消：
+
+| 限制 | 超出後 |
+|---|---|
+| 每 10 秒 1,000 次請求 | 視窗結束前回傳 `429` |
+| 每 10 分鐘 30,000 次請求 | IP 被封禁 10 分鐘，24 小時內每次重複翻倍，最長 24 小時 |
+
+兩者都回傳 `429`，帶 `Retry-After` 和 `{ "error": "Too many requests. Please try again later." }`。封禁期間重試不會縮短封禁。
+
+WebSocket 訊息不計數，因此高頻用戶端應使用 [訂單 API WebSocket](/zh-Hant/pages/websocket/introduction)。
+
+## 認證 {#authentication}
+
+登入、密碼重置和註冊有額外速率限制。
+
+讀取端點僅受按 IP 限制。
