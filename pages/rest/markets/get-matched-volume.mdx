@@ -64,7 +64,7 @@ curl "https://api.4casters.io/exchange/getMatchedVolume?startDate=2026-08-10&end
 
 ## Rate limits
 
-There is no endpoint-specific limit — only the [global per-IP limit](/pages/rest/introduction#rate-limiting) (1,000 requests per 10 seconds and 30,000 per 10 minutes) applies. For dashboards, polling once every few seconds is more than fine; note that finalized days never change, so only ranges that include today benefit from re-polling at all.
+There is no endpoint-specific limit — only the [global per-IP limit](/pages/rate-limiting#per-ip-rest) (1,000 requests per 10 seconds and 30,000 per 10 minutes) applies. For dashboards, polling once every few seconds is more than fine; note that finalized days never change, so only ranges that include today benefit from re-polling at all.
 
 ## Errors
 
