@@ -1152,6 +1152,7 @@
           {
             "type": "object",
             "properties": {
+              "hasMarketMakerAccess": { "type": "boolean" },
               "auth":  { "type": "string", "description": "Auth token. Pass as `Authorization: Bearer <auth>` on subsequent requests." },
               "email": { "type": "string", "format": "email" },
               "passwordSecurityChecks": { "type": "object", "description": "Result of password strength checks." }
@@ -1175,7 +1176,6 @@
           "matchedVolume":        { "type": "object", "description": "Account preferences for displaying matched volume." },
           "openInterest":         { "type": "object", "description": "Account preferences for displaying open interest." },
           "isAdmin":              { "type": "boolean" },
-          "hasMarketMakerAccess": { "type": "boolean" },
           "isPro":                { "type": "boolean" },
           "isDeposit":            { "type": "boolean" },
           "isAlphaUser":          { "type": "boolean" },
