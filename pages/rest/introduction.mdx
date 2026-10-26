@@ -53,7 +53,7 @@ Market-maker limits are assigned per account. Contact support if you provide liq
 
 **Cancels never count against the placement budget.** That covers cancel, cancel multiple, cancel all, cancel all for game or league, cancel by reference, and pause orders. Edits and replaces don't count either, since an edit includes a cancel. However fast you're placing, the placement limit never stops you pulling your orders.
 
-REST cancels do go through a per-account cancel queue, which runs up to 15 cancel requests per second. A cancel is rejected with `429` when more than 50 are already queued, and with `423` while a cancel-all for your account is still running. A single cancel-all or cancel-multiple request is the fastest way to pull many orders. Cancels on the [Orders API WebSocket](/pages/websocket/introduction) don't go through this queue.
+Two legacy REST routes, [cancel by reference](/pages/rest/orders/cancel-by-reference) and `pauseOrders`, still go through a per-account cancel queue. It runs up to 15 cancels per second, rejects with `429` when more than 50 are already queued, and rejects with `423` while a cancel-all for your account is still running. Every other REST cancel (cancel, cancel multiple, cancel all, cancel all for game or league) and every cancel on the [Orders API WebSocket](/pages/websocket/introduction) skips that queue.
 
 #### When you exceed it
 
