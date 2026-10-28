@@ -3,7 +3,7 @@ title: 'API de 4casters'
 description: 'Acceso programático al intercambio de apuestas peer-to-peer de 4casters'
 ---
 
-4casters expone tres APIs que comparten el mismo token de autenticación y el mismo motor subyacente de cuenta / libro de órdenes / liquidación. Elige la que corresponda a lo que estás construyendo, o combínalas: la mayoría de las integraciones usan REST para configuración e historial y un WebSocket para trading en vivo.
+4casters expone tres APIs que comparten las mismas credenciales y el mismo motor subyacente de cuenta / libro de órdenes / liquidación. Elige la que corresponda a lo que estás construyendo, o combínalas: la mayoría de las integraciones usan REST para configuración e historial y un WebSocket para trading en vivo.
 
 ## Elige tu API {#choose-your-api}
 
@@ -29,14 +29,12 @@ description: 'Acceso programático al intercambio de apuestas peer-to-peer de 4c
 
 ## Autenticación {#authentication}
 
-**No hay claves de API.** Te autenticas con el mismo nombre de usuario y contraseña con los que inicias sesión en 4casters.io, y las tres APIs comparten el único token que devuelve el inicio de sesión. Las claves de API están planificadas; consulta [Autenticación](/es/pages/authentication) para conocer el estado actual.
+Las tres APIs aceptan una credencial en el encabezado `Authorization` (tanto en las solicitudes REST como en los handshakes WebSocket). Hay dos tipos:
 
-1. Llama a [`POST /user/login`](/es/pages/rest/authentication) en la API REST con tu nombre de usuario y contraseña.
-2. Envía el token devuelto en cada solicitud posterior:
-   - **REST**: encabezado `Authorization: Bearer <token>`.
-   - **WebSockets**: encabezado `Authorization: <token>` en el handshake.
+- Una **[clave de API](/es/pages/rest/api-keys)**, creada una vez en la página de tu cuenta. Para programas: sin inicio de sesión, sin rotación, con rangos de IP opcionales (IPv4 o IPv6) y caducidad, revocable por separado.
+- Un **token de inicio de sesión**, de [`POST /user/login`](/es/pages/rest/authentication) con tu nombre de usuario y contraseña. Lo que usa el sitio web; válido 30 días y después rotado en el lugar.
 
-Los tokens son válidos durante 30 días y después se rotan automáticamente. Consulta [Autenticación](/es/pages/authentication) para la vida útil del token, el manejo de errores y las recomendaciones sobre credenciales, y la [referencia de inicio de sesión REST](/es/pages/rest/authentication) para la forma completa de la respuesta.
+Si estás leyendo esta documentación para escribir código, usa una clave. [Autenticación](/es/pages/authentication) compara ambas y cubre la vida útil del token, los errores y la higiene de credenciales.
 
 ## Convenciones {#conventions}
 
@@ -51,7 +49,7 @@ Los tokens son válidos durante 30 días y después se rotan automáticamente. C
 
 La mayoría de los clientes no triviales combinan las tres:
 
-1. **REST** — `POST /user/login` una vez, guarda el token en caché y luego llama a `GET /user/getMe` y `GET /games/v2/leagues` para inicializar el estado.
+1. **REST** — con tu clave de API, llama a `GET /user/getMe` y `GET /games/v2/leagues` para inicializar el estado.
 2. **WebSocket de streaming** — abre el feed de precios de los mercados que te importan y el feed de usuario para reaccionar a tus propios cruces / liquidaciones.
 3. **WebSocket de órdenes** — abre una conexión persistente y coloca / cancela órdenes con baja latencia, correlacionando las respuestas por `requestID`.
 4. **REST** — recurre a `POST /myBets/getMatchedBets`, `/myBets/getOrdersForGame`, etc. para historial y conciliación.

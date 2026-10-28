@@ -26,6 +26,11 @@ Conventions:
   - **Per-IP REST limit.** 3,000 / 60 seconds is now 1,000 / 10 seconds plus 30,000 / 10 minutes. Crossing the 10-minute limit blocks the IP for 10 minutes, doubling on each repeat within 24 hours, up to 24 hours.
 </Update>
 
+<Update label="2026-10-25" tags={["REST API", "Orders API", "Streaming API"]}>
+  ### Added
+  - **API keys.** Create long-lived credentials for your programs from **My Account → Security → API Keys**. A key is sent in the `Authorization` header exactly like a login token and is accepted by the REST API and both WebSocket APIs. Keys never rotate, can be restricted to IPv4/IPv6 addresses or CIDR ranges, can carry an expiry, and are revoked one at a time. Account administration (keys, password, 2FA, withdrawals) still requires a website session. See [API keys](/pages/rest/api-keys).
+</Update>
+
 <Update label="2026-08-13" tags={["REST API", "Orders API"]}>
   ### Added
   - **`fillOrKill` order type.** All-or-nothing taker order: the entire `bet` must match immediately or the whole order is rejected and any partial fills are rolled back, so you are never left partially filled. Supported on both the REST and WebSocket place endpoints. See [Order types](/pages/rest/orders/place-order#order-types).

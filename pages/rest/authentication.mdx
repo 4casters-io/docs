@@ -1,14 +1,12 @@
 ---
-title: 'Authentication'
-description: 'Log in and authorize requests'
+title: 'Log in'
+description: 'POST /user/login: exchange a password for a login token'
 openapi: 'POST /user/login'
 ---
 
-<Note>
-**No API keys.** 4casters does not issue API keys yet. Log in with your account's username and password, exactly as you would on the website, and use the returned token. See the [Authentication overview](/pages/authentication) for how the token is used across all three APIs and how to handle its 30-day lifetime.
-</Note>
+Every authenticated route takes one credential in the `Authorization` header: an [API key](/pages/rest/api-keys), which you create once on your account page, or a **login token**, which this endpoint returns in exchange for your password. If you are writing a program, use a key and skip this page; the [Authentication overview](/pages/authentication) compares the two.
 
-To use any authenticated route you need an auth token. Tokens are obtained by logging in and are valid for **30 days**, after which a fresh login is required.
+A login token is valid for **30 days**, after which it is rotated in place (see [Token rotation](#token-rotation)).
 
 ## Log in
 
@@ -67,12 +65,12 @@ See [`User`](/api-reference/openapi.json) in the OpenAPI schema for every field.
 | ------ | ------- |
 | `400`  | `username` and `password` are required. |
 | `401`  | Username or password is incorrect. |
-| `403`  | Account banned, locked, or closed. |
+| `403`  | Account banned, locked, closed, or frozen. |
 | `429`  | Login rate-limit exceeded. |
 
 ## Authorizing requests
 
-Pass the token from `data.user.auth` on every subsequent request. Three header / payload formats are accepted, in this order of preference:
+Pass the token from `data.user.auth` on every subsequent request. An API key goes in exactly the same place. Three header / payload formats are accepted, in this order of preference:
 
 <Tabs>
   <Tab title="Authorization header (recommended)">
@@ -93,7 +91,7 @@ Pass the token from `data.user.auth` on every subsequent request. Three header /
   </Tab>
 </Tabs>
 
-If no token is provided — or the token is unknown / expired — the server responds with `401 InvalidCredentials`.
+If no credential is provided, or it is unknown, revoked or expired, the server responds with `401 InvalidCredentials` (an expired API key says `401 ApiKeyExpired`). A credential refused for where the request came from, or for a frozen account, is a `403`; the [API keys page](/pages/rest/api-keys#responses) lists every message.
 
 ## Token rotation
 
@@ -101,7 +99,7 @@ Authenticated requests with tokens older than 30 days automatically rotate to a 
 
 ## Logging out
 
-`POST /user/logout` invalidates the token used to make the call. Subsequent requests with that token return `401`; other tokens held for the same account are unaffected.
+`POST /user/logout` invalidates the token used to make the call. Subsequent requests with that token return `401`; other tokens held for the same account, and API keys, are unaffected. Logout takes a login token; a key is refused here with `403 LoginSessionRequired`.
 
 ## Two-factor authentication
 

@@ -3,7 +3,7 @@ title: '4casters API'
 description: 'Programmatic access to the 4casters peer-to-peer betting exchange'
 ---
 
-4casters exposes three APIs that share the same auth token and the same underlying account / orderbook / settlement engine. Pick the one that matches what you're building, or mix-and-match — most integrations use REST for setup + history and a WebSocket for live trading.
+4casters exposes three APIs that share the same credentials and the same underlying account / orderbook / settlement engine. Pick the one that matches what you're building, or mix-and-match — most integrations use REST for setup + history and a WebSocket for live trading.
 
 ## Choose your API
 
@@ -29,14 +29,12 @@ description: 'Programmatic access to the 4casters peer-to-peer betting exchange'
 
 ## Authentication
 
-**There are no API keys.** You authenticate with the same username and password you use to log in at 4casters.io, and all three APIs share the one token that login returns. API keys are planned; see [Authentication](/pages/authentication) for the current state.
+All three APIs take one credential in the `Authorization` header (REST requests and WebSocket handshakes alike). There are two kinds:
 
-1. Call [`POST /user/login`](/pages/rest/authentication) on the REST API with your username and password.
-2. Send the returned token on every subsequent request:
-   - **REST**: `Authorization: Bearer <token>` header.
-   - **WebSockets**: `Authorization: <token>` header on the handshake.
+- An **[API key](/pages/rest/api-keys)**, created once on your account page. For programs: no login step, no rotation, optional IP ranges (IPv4 or IPv6) and expiry, revocable on its own.
+- A **login token**, from [`POST /user/login`](/pages/rest/authentication) with your username and password. What the website uses; valid 30 days, then rotated in place.
 
-Tokens are valid for 30 days and are rotated automatically after that. See [Authentication](/pages/authentication) for token lifetime, error handling, and credential guidance, and the [REST login reference](/pages/rest/authentication) for the full response shape.
+If you are reading these docs to write code, use a key. [Authentication](/pages/authentication) compares the two and covers token lifetime, errors and credential hygiene.
 
 ## Conventions
 
@@ -51,7 +49,7 @@ Tokens are valid for 30 days and are rotated automatically after that. See [Auth
 
 Most non-trivial clients combine all three:
 
-1. **REST** — `POST /user/login` once, cache the token, then call `GET /user/getMe` and `GET /games/v2/leagues` to bootstrap state.
+1. **REST** — with your API key, call `GET /user/getMe` and `GET /games/v2/leagues` to bootstrap state.
 2. **Streaming WebSocket** — open the price feed for the markets you care about and the user feed to react to your own fills / settles.
 3. **Orders WebSocket** — open a persistent connection and place / cancel orders with low latency, correlating responses by `requestID`.
 4. **REST** — fall back to `POST /myBets/getMatchedBets`, `/myBets/getOrdersForGame`, etc. for history and reconciliation.
