@@ -137,10 +137,12 @@ Rejections carry `errorType: rejected_order_type_rules` with one of two messages
         <ResponseField name="userReference"  type="string" />
       </Expandable>
     </ResponseField>
+    <ResponseField name="liveDelayMs" type="number">The game's live betting delay in milliseconds (the same value as `liveDelayMs` on the game in [getOrderbook](/pages/rest/markets/get-orderbook#response)); present whether or not this order was delayed. `-1` = not known.</ResponseField>
   </Expandable>
   <Expandable title="Per-order error">
     <ResponseField name="error"     type="string">Human-readable failure description.</ResponseField>
     <ResponseField name="errorType" type="string">`validation_error`, `rejected_liability`, `rejected_order_type_rules`, or `system_error`.</ResponseField>
+    <ResponseField name="liveDelayMs" type="number">The game's live betting delay in milliseconds; `-1` when the order did not validate (no game).</ResponseField>
   </Expandable>
 </ResponseField>
 

@@ -109,7 +109,7 @@ Rejections carry `errorType: rejected_order_type_rules` with one of two messages
 
 ## Response
 
-The server responds with your `requestID` and a list of per-order results.
+The server responds with your `requestID` and a list of per-order results. Every per-order result, success or error, also carries `liveDelayMs`: the game's live betting delay in milliseconds (the same value as `liveDelayMs` on the game in [getOrderbook](/pages/rest/markets/get-orderbook#response)), present whether or not this order was delayed; `-1` = not known (for example an order that did not validate).
 
 <CodeGroup>
 ```json JSON
