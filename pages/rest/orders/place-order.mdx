@@ -359,9 +359,9 @@ Orders placed on a game marked as live follow these rules:
 2. If the order does match existing liquidity, it incurs a delay before execution.
 3. Different leagues have different live delay periods:
     - **NFL, NCAAF, NBA, WNBA, NCAAB, MLB, NHL**: 0.5 seconds.
-    - **Top-tier soccer (Premier League, Champions League, World Cup and the other major competitions), ATP, WTA, CFL**: 2 seconds.
+    - **Major soccer (Premier League, La Liga, Serie A, Bundesliga, Ligue 1 and the other European top divisions, Champions League, Europa League, MLS, Liga MX, Libertadores, World Cup and the other major competitions), ATP, WTA, CFL**: 2 seconds.
     - **UFCMMA**: 3 seconds.
-    - **EURO-CUP**: 5 seconds.
+    - **EURO-CUP and the rest of live soccer (second divisions, Brazil, the rest of South America, Asia)**: 5 seconds.
     - **Default**: 10 seconds.
 
     Live half and period markets use their parent league's delay. These values are operational settings and can change without notice. The delay that applies to a game is on the game itself: `liveDelayMs` in the [getOrderbook](/pages/rest/markets/get-orderbook#response) response (`-1` = not known yet).
