@@ -109,7 +109,7 @@ Rejections carry `errorType: rejected_order_type_rules` with one of two messages
 
 ## Response
 
-The server responds with your `requestID` and a list of per-order results. Every per-order result, success or error, also carries `liveDelayMs`: the game's live betting delay in milliseconds (the same value as `liveDelayMs` on the game in [getOrderbook](/pages/rest/markets/get-orderbook#response)), present whether or not this order was delayed; `-1` = not known (for example an order that did not validate).
+The server responds with your `requestID` and a list of per-order results. Every per-order result, success or error, also carries `liveDelayMs`: the live delay this order was subject to, in milliseconds — a number only when the game was live (the same value as `liveDelayMs` on the game in [getOrderbook](/pages/rest/markets/get-orderbook#response)), `null` when it was not (a game that is not live has no live delay, and an order that did not validate has no game). Always present, never `-1`.
 
 <CodeGroup>
 ```json JSON
@@ -451,7 +451,7 @@ Orders placed on a game marked as live follow these rules:
     - EURO-CUP and the rest of live soccer (second divisions, Brazil, the rest of South America, Asia): 5 seconds.
     - Default: 10 seconds.
 
-    Live half and period markets use their parent league's delay. These values are operational settings and can change without notice. The delay that applies to a game is on the game itself: `liveDelayMs` in the [getOrderbook](/pages/rest/markets/get-orderbook#response) response (`-1` = not known yet).
+    Live half and period markets use their parent league's delay. These values are operational settings and can change without notice. The delay that applies to a game is on the game itself: `liveDelayMs` in the [getOrderbook](/pages/rest/markets/get-orderbook#response) response — a number only while the game is live and the delay is known, `null` otherwise (a game that is not live has no live delay).
 4. After the delay, the order attempts to execute:
     - If the odds improve, it matches instantly.
     - If the odds decrease, it does not match.
