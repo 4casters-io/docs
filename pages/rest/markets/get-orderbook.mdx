@@ -51,7 +51,7 @@ curl "https://api.4casters.io/exchange/v2/getOrderbook?gameID=688c0516fbc14da0c2
     <ResponseField name="draw1x2"           type="array">**Soccer only.** Three-way money line orders on the draw.</ResponseField>
     <ResponseField name="openInterest"      type="number">Sum of `bet` across every resting order on the game.</ResponseField>
     <ResponseField name="matchedVolume"     type="number">Total volume matched on this game.</ResponseField>
-    <ResponseField name="liveDelayMs"       type="number | null">The live betting delay on this game, in milliseconds: how long an order that matches resting liquidity waits before it executes (see [Live delay](/pages/rest/orders/place-order#live-delay)). Always present. A number only while the game is `live` and the delay is known; `null` otherwise — a game that is not live has no live delay, and `null` on a live game means the delay is not known yet. Never `-1`, never `0` for a game that is not live.</ResponseField>
+    <ResponseField name="liveDelayMs"       type="number | null">The live betting delay on this game, in milliseconds: how long an order that matches resting liquidity waits before it executes (see [Live delay](/pages/rest/orders/place-order#live-delay)). A number only while the game is `live` and the delay is known; `null` otherwise (a game that is not live has no live delay; `null` on a live game means the delay is not known yet).</ResponseField>
   </Expandable>
 </ResponseField>
 

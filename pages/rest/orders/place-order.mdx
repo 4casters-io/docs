@@ -137,12 +137,12 @@ Rejections carry `errorType: rejected_order_type_rules` with one of two messages
         <ResponseField name="userReference"  type="string" />
       </Expandable>
     </ResponseField>
-    <ResponseField name="liveDelayMs" type="number | null">The live delay this order was subject to, in milliseconds: a number only when the game was live (the same value as `liveDelayMs` on the game in [getOrderbook](/pages/rest/markets/get-orderbook#response)), `null` when it was not — a game that is not live has no live delay. Always present, never `-1`.</ResponseField>
+    <ResponseField name="liveDelayMs" type="number | null">The live delay this order was subject to, in milliseconds: a number only when the game was live (the same value as `liveDelayMs` on the game in [getOrderbook](/pages/rest/markets/get-orderbook#response)), `null` when it was not (a game that is not live has no live delay).</ResponseField>
   </Expandable>
   <Expandable title="Per-order error">
     <ResponseField name="error"     type="string">Human-readable failure description.</ResponseField>
     <ResponseField name="errorType" type="string">`validation_error`, `rejected_liability`, `rejected_order_type_rules`, or `system_error`.</ResponseField>
-    <ResponseField name="liveDelayMs" type="number | null">The live delay this order was subject to, in milliseconds: a number only when the game was live, `null` when it was not or when the order did not validate (no game). Always present, never `-1`.</ResponseField>
+    <ResponseField name="liveDelayMs" type="number | null">The live delay this order was subject to, in milliseconds: a number only when the game was live, `null` when it was not or when the order did not validate (no game).</ResponseField>
   </Expandable>
 </ResponseField>
 
@@ -178,10 +178,11 @@ Three orders that all match instantly with available liquidity.
             "risk": 50.286, "win": 28.286, "winWithoutCommission": 28.571
           }
         ],
-        "unmatched": {}
+        "unmatched": {},
+        "liveDelayMs": null
       },
-      { "matched": [/* spread fill */], "unmatched": {} },
-      { "matched": [/* total fill  */], "unmatched": {} }
+      { "matched": [/* spread fill */], "unmatched": {}, "liveDelayMs": null },
+      { "matched": [/* total fill  */], "unmatched": {}, "liveDelayMs": null }
     ]
   }
 }
@@ -213,7 +214,8 @@ A limit order for 300 that partially matches and leaves the remainder resting.
           "wagerRequestID": "68d43574cfebf0b249a2c28f",
           "offered": 115, "odds": -185, "type": "moneyline",
           "side": "5d48bd5198366d41ec7238da", "number": null
-        }
+        },
+        "liveDelayMs": null
       }
     ]
   }
@@ -240,7 +242,8 @@ A limit order for 300 that partially matches and leaves the remainder resting.
             "risk": 100.538, "win": 53.226, "winWithoutCommission": 53.763
           }
         ],
-        "unmatched": {}
+        "unmatched": {},
+        "liveDelayMs": null
       }
     ]
   }
@@ -259,7 +262,8 @@ A `fillAndKill` with no match returns a per-order error.
     "createdSessions": [
       {
         "error": "fill and kill has no matches",
-        "errorType": "rejected_order_type_rules"
+        "errorType": "rejected_order_type_rules",
+        "liveDelayMs": null
       }
     ]
   }
@@ -294,7 +298,8 @@ A `fillAndKill` with no match returns a per-order error.
     "createdSessions": [
       {
         "error": "fill or kill matched but not fully",
-        "errorType": "rejected_order_type_rules"
+        "errorType": "rejected_order_type_rules",
+        "liveDelayMs": null
       }
     ]
   }
@@ -377,18 +382,18 @@ Each order counts against your account budget, shared with the WebSocket. A batc
 
 <Snippet file="types/order-error.mdx" />
 
-Example with multiple places, some erroring:
+Example with multiple places on a live NBA game, some erroring (`liveDelayMs` is the game's 500 ms on every order that reached the game; the one that did not validate has no game, so `null`):
 
 <CodeGroup>
 ```json Response
 {
   "data": {
     "createdSessions": [
-      { "matched": [/* successful fill */], "unmatched": {} },
-      { "error": "game not found: invalid gameID", "errorType": "validation_error" },
-      { "error": "Insufficient balance.",          "errorType": "rejected_liability" },
-      { "error": "post order cannot have matches", "errorType": "rejected_order_type_rules" },
-      { "error": "failed to interact with database","errorType": "system_error" }
+      { "matched": [/* successful fill */], "unmatched": {}, "liveDelayMs": 500 },
+      { "error": "game not found: invalid gameID", "errorType": "validation_error",          "liveDelayMs": null },
+      { "error": "Insufficient balance.",          "errorType": "rejected_liability",        "liveDelayMs": 500 },
+      { "error": "post order cannot have matches", "errorType": "rejected_order_type_rules", "liveDelayMs": 500 },
+      { "error": "failed to interact with database","errorType": "system_error",             "liveDelayMs": 500 }
     ]
   }
 }
