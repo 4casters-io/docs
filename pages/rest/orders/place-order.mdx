@@ -362,7 +362,7 @@ Orders placed on a game marked as live follow these rules:
     - **EURO-CUP**: 5 seconds.
     - **Default**: 10 seconds.
 
-    Live half, period and player-prop markets use their parent league's delay. These values are operational settings and can change without notice.
+    Live half and period markets use their parent league's delay. These values are operational settings and can change without notice. The delay that applies to a game is on the game itself: `liveDelayMs` in the [getOrderbook](/pages/rest/markets/get-orderbook#response) response (`-1` = not known yet).
 4. After the delay, the order attempts to execute:
     - If the odds improve, it matches instantly.
     - If the odds decrease, it does not match.
