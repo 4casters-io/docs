@@ -2,13 +2,16 @@
 title: 'API de streaming de 4casters'
 ---
 
-La API de streaming de 4casters entrega actualizaciones de usuario y de mercado en tiempo real por una conexión WebSocket cruda.
+La API de streaming de 4casters entrega actualizaciones de usuario, de mercado y de juego en tiempo real por una conexión WebSocket cruda.
 
 ## Endpoints {#endpoints}
 - **Feed de usuario**: `wss://streaming-api.4casters.io/v2/user`
 - **Feed de precios**: `wss://streaming-api.4casters.io/price-stream`
+- **Feed de puntuaciones**: `wss://streaming-api.4casters.io/v1/score`
 
 El feed de precios difunde todas las actualizaciones de mercado por defecto. Los clientes pueden acotar el stream a juegos, ligas o deportes concretos: consulta [Suscripciones](/es/pages/streaming/price-feed#subscriptions).
+
+El feed de puntuaciones difunde el estado en vivo de los juegos: marcador, periodo, reloj y el detalle que importa en cada deporte. Usa los mismos comandos de suscripción que el feed de precios y, además, envía el estado actual de todos los juegos en vivo suscritos al conectar: consulta [Instantáneas al conectar](/es/pages/streaming/score-feed#snapshot-on-connect).
 
 ## Autenticación {#auth}
 
