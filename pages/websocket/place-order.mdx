@@ -109,7 +109,7 @@ Rejections carry `errorType: rejected_order_type_rules` with one of two messages
 
 ## Response
 
-The server responds with your `requestID` and a list of per-order results. Every per-order result, success or error, also carries `liveDelayMs`: the live delay this order was subject to, in milliseconds — a number only when the game was live (the same value as `liveDelayMs` on the game in [getOrderbook](/pages/rest/markets/get-orderbook#response)), `null` when it was not (a game that is not live has no live delay, and an order that did not validate has no game). Always present, never `-1`.
+The server responds with your `requestID` and a list of per-order results. Every per-order result, success or error, also carries `liveDelayMs`: the live delay this order was subject to, in milliseconds — a number only when the game was live (the same value as `liveDelayMs` on the game in [getOrderbook](/pages/rest/markets/get-orderbook#response)), `null` when it was not (a game that is not live has no live delay, and an order that did not validate has no game).
 
 <CodeGroup>
 ```json JSON
@@ -123,7 +123,8 @@ The server responds with your `requestID` and a list of per-order results. Every
       "side": "6259a766452fb85a6cdd17f6",
       "type": "moneyline",
       "userReference": "YOUR_USER_REFERENCE",
-      "wagerRequestID": "67f45377c18c6697c172af9d"
+      "wagerRequestID": "67f45377c18c6697c172af9d",
+      "liveDelayMs": null
     }
   ],
   "requestID": "YOUR_REQUEST_ID"
@@ -204,7 +205,8 @@ Response:
               "winWithoutCommission": 28.57142857142857
             }
           ],
-          "unmatched": {}
+          "unmatched": {},
+          "liveDelayMs": null
         },
         {
           "matched": [
@@ -223,7 +225,8 @@ Response:
               "winWithoutCommission": 45.45454545454545
             }
           ],
-          "unmatched": {}
+          "unmatched": {},
+          "liveDelayMs": null
         },
         {
           "matched": [
@@ -242,7 +245,8 @@ Response:
               "winWithoutCommission": 48.07692307692308
             }
           ],
-          "unmatched": {}
+          "unmatched": {},
+          "liveDelayMs": null
         }
       ],
       "requestID": "match-triplet-1758736259482"
@@ -285,7 +289,8 @@ Place 1 order for 300 that partially matches instantly and leaves the remaining 
         "type": "moneyline",
         "userReference": "match-ref",
         "wagerRequestID": "68d43574cfebf0b249a2c28f"
-      }
+      },
+      "liveDelayMs": null
     }
   ],
   "requestID": "match-1758737780621"
@@ -317,7 +322,8 @@ A fill-and-kill order with a full match.
           "winWithoutCommission": 53.76344086021505
         }
       ],
-      "unmatched": {}
+      "unmatched": {},
+      "liveDelayMs": null
     }
   ],
   "requestID": "fillandkill-match-1758738106842"
@@ -327,7 +333,7 @@ A fill-and-kill order with a full match.
 
 ### Scenario 4: Fill and Kill order with no match
 
-A fill-and-kill order with no match. The server responds with an `error` and `error_type`.
+A fill-and-kill order with no match. The server responds with an `error` and `error_type` (and `liveDelayMs`, `null` here because the game was not live).
 
 <CodeGroup>
 ```json JSON
@@ -335,7 +341,8 @@ A fill-and-kill order with no match. The server responds with an `error` and `er
   "data": [
     {
       "error": "fill and kill has no matches",
-      "error_type": "rejected_order_type_rules"
+      "error_type": "rejected_order_type_rules",
+      "liveDelayMs": null
     }
   ],
   "requestID": "fillandkill-1758737972423"
@@ -466,7 +473,8 @@ When the server fails to place an individual order, the **per-order** entry in `
   "data": [
     {
       "error": "<human-readable message>",
-      "error_type": "<one of: validation_error | rejected_liability | rejected_order_type_rules | system_error | rate_limited>"
+      "error_type": "<one of: validation_error | rejected_liability | rejected_order_type_rules | system_error | rate_limited>",
+      "liveDelayMs": null
     }
   ],
   "requestID": "YOUR_REQUEST_ID"
