@@ -1,0 +1,122 @@
+---
+title: 'Get rebates'
+description: 'List the maker rebates credited to your account, each tied to the fill it was paid on'
+openapi: 'sources/core-api.openapi.json GET /user/getRebates'
+---
+
+Returns the **maker rebates** credited to your account, newest first, with your rebate rate and running totals.
+
+Rebates are paid to enrolled market-maker accounts on the liquidity they provide. You earn one on every fill of an order you posted (where you are the maker), whether that bet wins or loses. An account that is not enrolled gets `rebateRate: null` and no credits.
+
+## How a rebate is paid
+
+- **When:** at grading. A fill earns its rebate when its game is graded, not when it matches. Each credit's `createdAt` is the grading time.
+- **How much:** `min(risk, win) × rebateRate` on the fill, from your side of the bet. At a 0.1% rate, a $1,100 risk at -110 to win $1,000 earns $1.00.
+- **Half results** (a half win or a half loss) earn half.
+- **Pushes earn nothing,** and a fill refunded before grading earns nothing.
+- **Later refunds and regrades.** If a graded bet is refunded or regraded afterwards, the rebate is reversed in your balance, but the original credit still appears in this list.
+- **One credit per fill.** Several takers hitting one order produce one credit each.
+
+## Request
+
+`GET /user/getRebates`
+
+<ParamField query="sinceDays" type="integer">
+  Only return credits from the last `sinceDays` days. Values above 365 are treated as 365. Omit it for every credit. Does not affect `summary`.
+</ParamField>
+
+<CodeGroup>
+```bash curl
+curl "https://api.4casters.io/user/getRebates?sinceDays=30" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+</CodeGroup>
+
+## Response
+
+<ResponseField name="data.rebateRate" type="number | null">
+  Your rebate rate as a fraction (`0.001` = 0.1%). `null` when the account is not enrolled.
+</ResponseField>
+
+<ResponseField name="data.rebates" type="array">
+  One entry per rebate credit, newest first.
+  <Expandable title="Rebate">
+    <ResponseField name="id" type="string">Id of the credit itself.</ResponseField>
+    <ResponseField name="txID" type="string | null">
+      The fill the rebate was paid on. This is the same `txID` returned by [Get graded bets](/pages/rest/user/get-graded), [Get matched bets](/pages/rest/user/get-matched-bets) and the [user feed](/pages/streaming/user-feed), so join on it to attach a rebate to its bet. `null` on credits paid before October 2026, when the grader started stamping it.
+    </ResponseField>
+    <ResponseField name="orderID" type="string | null">
+      The order you posted that was filled. Same as the bet's `id` on [Get graded bets](/pages/rest/user/get-graded) and `orderID` on the user feed.
+    </ResponseField>
+    <ResponseField name="gameID" type="string | null">The game the fill was on.</ResponseField>
+    <ResponseField name="amount" type="number">Rebate credited, in dollars.</ResponseField>
+    <ResponseField name="createdAt" type="string">ISO 8601 time the rebate was credited (when the game was graded).</ResponseField>
+    <ResponseField name="game" type="object | null">
+      `eventName`, `league` and `start` of the game. `null` when the game can no longer be loaded.
+    </ResponseField>
+    <ResponseField name="type" type="string | null">`moneyline`, `spread`, `total`, `moneyline1x2` or `outright`. `null` when the order can no longer be loaded.</ResponseField>
+    <ResponseField name="odds" type="number | null">American odds of **your** side of the fill. `null` when the order can no longer be loaded.</ResponseField>
+    <ResponseField name="side" type="string | null">
+      Readable label for your side, e.g. `Liberty -3.5` or `Over 210.5`. `null` when it cannot be derived (`moneyline1x2`, outrights, or an order that can no longer be loaded).
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="data.summary" type="object">
+  All-time and rolling totals, independent of `sinceDays`.
+  <Expandable title="summary">
+    <ResponseField name="totalEarned" type="number">Every rebate ever credited.</ResponseField>
+    <ResponseField name="last7Days" type="number">Credited in the last 7 days.</ResponseField>
+    <ResponseField name="last30Days" type="number">Credited in the last 30 days.</ResponseField>
+  </Expandable>
+</ResponseField>
+
+<Note>
+A credit whose order or game can no longer be loaded is still listed — a ledger never hides money — with `game`, `type`, `odds` and `side` set to `null`. Such rows are rare.
+</Note>
+
+### Example
+
+<CodeGroup>
+```json JSON
+{
+  "data": {
+    "rebateRate": 0.001,
+    "rebates": [
+      {
+        "id": "6ae4b2c91f0d3a7e5c8b4d21",
+        "txID": "6ae4a7f05b3c2e1d9a7f6c10",
+        "orderID": "6ae4a6d84c2b1f0e8d6e5b0f",
+        "gameID": "6ae1c0a93b2a0e9d7c5d4a0e",
+        "amount": 1,
+        "createdAt": "2026-10-07T20:14:03.512Z",
+        "game": {
+          "eventName": "Indiana Fever vs New York Liberty",
+          "league": "WNBA",
+          "start": "2026-10-07T17:00:00.000Z"
+        },
+        "type": "spread",
+        "odds": 110,
+        "side": "Liberty -3.5"
+      }
+    ],
+    "summary": {
+      "totalEarned": 412.37,
+      "last7Days": 38.5,
+      "last30Days": 151.02
+    }
+  }
+}
+```
+</CodeGroup>
+
+## Rebates that are not paid yet
+
+This endpoint lists credited rebates only. A fill on a game that has not been graded has not earned its rebate yet. To estimate what is pending, take your fills from [Get matched bets](/pages/rest/user/get-matched-bets) with `origin: "offer"` (orders you posted) and apply `min(risk, win) × rebateRate` to each. The estimate is approximate: those `risk` and `win` figures are commission-adjusted, and the rebate is computed on the fill's own stake and odds.
+
+## Errors
+
+| Status | Meaning |
+|---|---|
+| `401` | Missing or invalid auth token. |
+| `429` | Rate limited by the [global per-IP limit](/pages/rest/introduction#rate-limiting). Wait `Retry-After` seconds. |

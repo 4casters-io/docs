@@ -1,0 +1,122 @@
+---
+title: '獲取返傭'
+description: '列出記入你帳戶的 maker 返傭，每筆都對應其所支付的那筆成交'
+openapi: 'sources/core-api.openapi.json GET /user/getRebates'
+---
+
+回傳記入你帳戶的 **maker 返傭**（最新的在前），以及你的返傭費率和累計總額。
+
+返傭支付給已登記的做市帳戶，以回報其提供的流動性。你掛出的訂單（你是 maker，即掛單方）每成交一筆，無論該投注贏或輸，你都會獲得一筆返傭。未登記的帳戶得到 `rebateRate: null`，且沒有任何返傭記錄。
+
+## 返傭如何支付 {#how-a-rebate-is-paid}
+
+- **何時：** 結算時。一筆成交在其賽事結算時才獲得返傭，而不是在成交時。每筆返傭的 `createdAt` 即結算時間。
+- **多少：** 按該筆成交、從你這一側計算的 `min(risk, win) × rebateRate`。費率為 0.1% 時，以 -110 賠率承擔 $1,100 風險、可贏 $1,000 的投注獲得 $1.00。
+- **半贏或半輸**獲得一半。
+- **平局不獲得返傭，**結算前被退款的成交也不獲得。
+- **事後退款與重新結算。** 若已結算的投注之後被退款或重新結算，返傭會從你的餘額中衝回，但原始返傭記錄仍會出現在此列表中。
+- **每筆成交一條記錄。** 多個 taker 吃掉同一訂單時，每筆成交各產生一條記錄。
+
+## 請求 {#request}
+
+`GET /user/getRebates`
+
+<ParamField query="sinceDays" type="integer">
+  只回傳最近 `sinceDays` 天內的返傭記錄。大於 365 的值按 365 處理。省略則回傳全部記錄。不影響 `summary`。
+</ParamField>
+
+<CodeGroup>
+```bash curl
+curl "https://api.4casters.io/user/getRebates?sinceDays=30" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+</CodeGroup>
+
+## 回應 {#response}
+
+<ResponseField name="data.rebateRate" type="number | null">
+  你的返傭費率，以小數表示（`0.001` = 0.1%）。帳戶未登記時為 `null`。
+</ResponseField>
+
+<ResponseField name="data.rebates" type="array">
+  每筆返傭一條記錄，最新的在前。
+  <Expandable title="Rebate">
+    <ResponseField name="id" type="string">該返傭記錄本身的 id。</ResponseField>
+    <ResponseField name="txID" type="string | null">
+      支付該返傭所對應的那筆成交。與[獲取已結算投注](/zh-Hant/pages/rest/user/get-graded)、[獲取已成交投注](/zh-Hant/pages/rest/user/get-matched-bets)和[使用者 feed](/zh-Hant/pages/streaming/user-feed)回傳的 `txID` 相同，可據此將返傭關聯到對應的投注。2026 年 10 月之前支付的記錄為 `null`，此後結算程式才開始寫入該欄位。
+    </ResponseField>
+    <ResponseField name="orderID" type="string | null">
+      你掛出並被成交的訂單。與[獲取已結算投注](/zh-Hant/pages/rest/user/get-graded)中該投注的 `id` 以及使用者 feed 中的 `orderID` 相同。
+    </ResponseField>
+    <ResponseField name="gameID" type="string | null">該筆成交所屬的賽事。</ResponseField>
+    <ResponseField name="amount" type="number">記入的返佣金額，單位為美元。</ResponseField>
+    <ResponseField name="createdAt" type="string">返傭記入的 ISO 8601 時間（即賽事結算時間）。</ResponseField>
+    <ResponseField name="game" type="object | null">
+      賽事的 `eventName`、`league` 和 `start`。賽事已無法載入時為 `null`。
+    </ResponseField>
+    <ResponseField name="type" type="string | null">`moneyline`、`spread`、`total`、`moneyline1x2` 或 `outright`。訂單已無法載入時為 `null`。</ResponseField>
+    <ResponseField name="odds" type="number | null">該筆成交中**你這一側**的美式賠率。訂單已無法載入時為 `null`。</ResponseField>
+    <ResponseField name="side" type="string | null">
+      你這一側的可讀標籤，例如 `Liberty -3.5` 或 `Over 210.5`。無法推導時為 `null`（`moneyline1x2`、outright，或訂單已無法載入）。
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="data.summary" type="object">
+  歷史總額與滾動視窗總額，與 `sinceDays` 無關。
+  <Expandable title="summary">
+    <ResponseField name="totalEarned" type="number">迄今記入的全部返傭。</ResponseField>
+    <ResponseField name="last7Days" type="number">最近 7 天記入的返傭。</ResponseField>
+    <ResponseField name="last30Days" type="number">最近 30 天記入的返傭。</ResponseField>
+  </Expandable>
+</ResponseField>
+
+<Note>
+訂單或賽事已無法載入的返傭記錄仍會列出（賬本從不隱藏資金），其 `game`、`type`、`odds` 和 `side` 為 `null`。此類記錄很少見。
+</Note>
+
+### 示例 {#example}
+
+<CodeGroup>
+```json JSON
+{
+  "data": {
+    "rebateRate": 0.001,
+    "rebates": [
+      {
+        "id": "6ae4b2c91f0d3a7e5c8b4d21",
+        "txID": "6ae4a7f05b3c2e1d9a7f6c10",
+        "orderID": "6ae4a6d84c2b1f0e8d6e5b0f",
+        "gameID": "6ae1c0a93b2a0e9d7c5d4a0e",
+        "amount": 1,
+        "createdAt": "2026-10-07T20:14:03.512Z",
+        "game": {
+          "eventName": "Indiana Fever vs New York Liberty",
+          "league": "WNBA",
+          "start": "2026-10-07T17:00:00.000Z"
+        },
+        "type": "spread",
+        "odds": 110,
+        "side": "Liberty -3.5"
+      }
+    ],
+    "summary": {
+      "totalEarned": 412.37,
+      "last7Days": 38.5,
+      "last30Days": 151.02
+    }
+  }
+}
+```
+</CodeGroup>
+
+## 尚未支付的返傭 {#rebates-that-are-not-paid-yet}
+
+此端點只列出已記入的返傭。賽事尚未結算的成交還沒有獲得返傭。若要估算待支付金額，可從[獲取已成交投注](/zh-Hant/pages/rest/user/get-matched-bets)中取出 `origin: "offer"`（你掛出的訂單）的成交，並對每筆應用 `min(risk, win) × rebateRate`。該估算只是近似值：那裡的 `risk` 和 `win` 已扣除手續費，而返傭是按該筆成交本身的本金和賠率計算的。
+
+## 錯誤 {#errors}
+
+| 狀態碼 | 含義 |
+|---|---|
+| `401` | 缺少或無效的身份驗證令牌。 |
+| `429` | 觸發了[全域按 IP 的速率限制](/zh-Hant/pages/rest/introduction#rate-limiting)。請等待 `Retry-After` 秒。 |

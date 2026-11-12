@@ -1,0 +1,122 @@
+---
+title: '获取返佣'
+description: '列出记入你账户的 maker 返佣，每笔都对应其所支付的那笔成交'
+openapi: 'sources/core-api.openapi.json GET /user/getRebates'
+---
+
+返回记入你账户的 **maker 返佣**（最新的在前），以及你的返佣费率和累计总额。
+
+返佣支付给已登记的做市账户，以回报其提供的流动性。你挂出的订单（你是 maker，即挂单方）每成交一笔，无论该投注赢或输，你都会获得一笔返佣。未登记的账户得到 `rebateRate: null`，且没有任何返佣记录。
+
+## 返佣如何支付 {#how-a-rebate-is-paid}
+
+- **何时：** 结算时。一笔成交在其赛事结算时才获得返佣，而不是在成交时。每笔返佣的 `createdAt` 即结算时间。
+- **多少：** 按该笔成交、从你这一侧计算的 `min(risk, win) × rebateRate`。费率为 0.1% 时，以 -110 赔率承担 $1,100 风险、可赢 $1,000 的投注获得 $1.00。
+- **半赢或半输**获得一半。
+- **平局不获得返佣，**结算前被退款的成交也不获得。
+- **事后退款与重新结算。** 若已结算的投注之后被退款或重新结算，返佣会从你的余额中冲回，但原始返佣记录仍会出现在此列表中。
+- **每笔成交一条记录。** 多个 taker 吃掉同一订单时，每笔成交各产生一条记录。
+
+## 请求 {#request}
+
+`GET /user/getRebates`
+
+<ParamField query="sinceDays" type="integer">
+  只返回最近 `sinceDays` 天内的返佣记录。大于 365 的值按 365 处理。省略则返回全部记录。不影响 `summary`。
+</ParamField>
+
+<CodeGroup>
+```bash curl
+curl "https://api.4casters.io/user/getRebates?sinceDays=30" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+</CodeGroup>
+
+## 响应 {#response}
+
+<ResponseField name="data.rebateRate" type="number | null">
+  你的返佣费率，以小数表示（`0.001` = 0.1%）。账户未登记时为 `null`。
+</ResponseField>
+
+<ResponseField name="data.rebates" type="array">
+  每笔返佣一条记录，最新的在前。
+  <Expandable title="Rebate">
+    <ResponseField name="id" type="string">该返佣记录本身的 id。</ResponseField>
+    <ResponseField name="txID" type="string | null">
+      支付该返佣所对应的那笔成交。与[获取已结算投注](/zh-Hans/pages/rest/user/get-graded)、[获取已成交投注](/zh-Hans/pages/rest/user/get-matched-bets)和[用户 feed](/zh-Hans/pages/streaming/user-feed)返回的 `txID` 相同，可据此将返佣关联到对应的投注。2026 年 10 月之前支付的记录为 `null`，此后结算程序才开始写入该字段。
+    </ResponseField>
+    <ResponseField name="orderID" type="string | null">
+      你挂出并被成交的订单。与[获取已结算投注](/zh-Hans/pages/rest/user/get-graded)中该投注的 `id` 以及用户 feed 中的 `orderID` 相同。
+    </ResponseField>
+    <ResponseField name="gameID" type="string | null">该笔成交所属的赛事。</ResponseField>
+    <ResponseField name="amount" type="number">记入的返佣金额，单位为美元。</ResponseField>
+    <ResponseField name="createdAt" type="string">返佣记入的 ISO 8601 时间（即赛事结算时间）。</ResponseField>
+    <ResponseField name="game" type="object | null">
+      赛事的 `eventName`、`league` 和 `start`。赛事已无法加载时为 `null`。
+    </ResponseField>
+    <ResponseField name="type" type="string | null">`moneyline`、`spread`、`total`、`moneyline1x2` 或 `outright`。订单已无法加载时为 `null`。</ResponseField>
+    <ResponseField name="odds" type="number | null">该笔成交中**你这一侧**的美式赔率。订单已无法加载时为 `null`。</ResponseField>
+    <ResponseField name="side" type="string | null">
+      你这一侧的可读标签，例如 `Liberty -3.5` 或 `Over 210.5`。无法推导时为 `null`（`moneyline1x2`、outright，或订单已无法加载）。
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="data.summary" type="object">
+  历史总额与滚动窗口总额，与 `sinceDays` 无关。
+  <Expandable title="summary">
+    <ResponseField name="totalEarned" type="number">迄今记入的全部返佣。</ResponseField>
+    <ResponseField name="last7Days" type="number">最近 7 天记入的返佣。</ResponseField>
+    <ResponseField name="last30Days" type="number">最近 30 天记入的返佣。</ResponseField>
+  </Expandable>
+</ResponseField>
+
+<Note>
+订单或赛事已无法加载的返佣记录仍会列出（账本从不隐藏资金），其 `game`、`type`、`odds` 和 `side` 为 `null`。此类记录很少见。
+</Note>
+
+### 示例 {#example}
+
+<CodeGroup>
+```json JSON
+{
+  "data": {
+    "rebateRate": 0.001,
+    "rebates": [
+      {
+        "id": "6ae4b2c91f0d3a7e5c8b4d21",
+        "txID": "6ae4a7f05b3c2e1d9a7f6c10",
+        "orderID": "6ae4a6d84c2b1f0e8d6e5b0f",
+        "gameID": "6ae1c0a93b2a0e9d7c5d4a0e",
+        "amount": 1,
+        "createdAt": "2026-10-07T20:14:03.512Z",
+        "game": {
+          "eventName": "Indiana Fever vs New York Liberty",
+          "league": "WNBA",
+          "start": "2026-10-07T17:00:00.000Z"
+        },
+        "type": "spread",
+        "odds": 110,
+        "side": "Liberty -3.5"
+      }
+    ],
+    "summary": {
+      "totalEarned": 412.37,
+      "last7Days": 38.5,
+      "last30Days": 151.02
+    }
+  }
+}
+```
+</CodeGroup>
+
+## 尚未支付的返佣 {#rebates-that-are-not-paid-yet}
+
+此端点只列出已记入的返佣。赛事尚未结算的成交还没有获得返佣。若要估算待支付金额，可从[获取已成交投注](/zh-Hans/pages/rest/user/get-matched-bets)中取出 `origin: "offer"`（你挂出的订单）的成交，并对每笔应用 `min(risk, win) × rebateRate`。该估算只是近似值：那里的 `risk` 和 `win` 已扣除手续费，而返佣是按该笔成交本身的本金和赔率计算的。
+
+## 错误 {#errors}
+
+| 状态码 | 含义 |
+|---|---|
+| `401` | 缺少或无效的身份验证令牌。 |
+| `429` | 触发了[全局按 IP 的速率限制](/zh-Hans/pages/rest/introduction#rate-limiting)。请等待 `Retry-After` 秒。 |

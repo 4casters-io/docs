@@ -1,0 +1,122 @@
+---
+title: 'Obtener rebates'
+description: 'Lista los rebates de maker abonados en tu cuenta, cada uno ligado al cruce por el que se pagó'
+openapi: 'sources/core-api.openapi.json GET /user/getRebates'
+---
+
+Devuelve los **rebates de maker** abonados en tu cuenta, del más reciente al más antiguo, junto con tu tasa de rebate y los totales acumulados.
+
+Los rebates se pagan a las cuentas de market maker inscritas por la liquidez que aportan. Ganas uno por cada cruce de una orden que colocaste (donde tú eres el maker), gane o pierda esa apuesta. Una cuenta que no está inscrita recibe `rebateRate: null` y ningún abono.
+
+## Cómo se paga un rebate {#how-a-rebate-is-paid}
+
+- **Cuándo:** al liquidar. Un cruce gana su rebate cuando se liquida su evento, no cuando se cruza. El `createdAt` de cada abono es la hora de liquidación.
+- **Cuánto:** `min(risk, win) × rebateRate` sobre el cruce, desde tu lado de la apuesta. Con una tasa del 0.1%, un riesgo de $1,100 a -110 para ganar $1,000 gana $1.00.
+- **Resultados a medias** (media victoria o media derrota) ganan la mitad.
+- **Los empates no ganan nada,** y un cruce reembolsado antes de la liquidación tampoco.
+- **Reembolsos y reliquidaciones posteriores.** Si una apuesta ya liquidada se reembolsa o se reliquida después, el rebate se revierte en tu saldo, pero el abono original sigue apareciendo en esta lista.
+- **Un abono por cruce.** Varios takers que toman una misma orden producen un abono cada uno.
+
+## Solicitud {#request}
+
+`GET /user/getRebates`
+
+<ParamField query="sinceDays" type="integer">
+  Devuelve solo los abonos de los últimos `sinceDays` días. Los valores mayores que 365 se tratan como 365. Omítelo para obtener todos los abonos. No afecta a `summary`.
+</ParamField>
+
+<CodeGroup>
+```bash curl
+curl "https://api.4casters.io/user/getRebates?sinceDays=30" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+</CodeGroup>
+
+## Respuesta {#response}
+
+<ResponseField name="data.rebateRate" type="number | null">
+  Tu tasa de rebate como fracción (`0.001` = 0.1%). `null` cuando la cuenta no está inscrita.
+</ResponseField>
+
+<ResponseField name="data.rebates" type="array">
+  Una entrada por abono de rebate, del más reciente al más antiguo.
+  <Expandable title="Rebate">
+    <ResponseField name="id" type="string">Id del abono en sí.</ResponseField>
+    <ResponseField name="txID" type="string | null">
+      El cruce por el que se pagó el rebate. Es el mismo `txID` que devuelven [Obtener apuestas liquidadas por fechas](/es/pages/rest/user/get-graded), [Obtener apuestas cruzadas](/es/pages/rest/user/get-matched-bets) y el [feed de usuario](/es/pages/streaming/user-feed), así que únelos por él para asociar un rebate a su apuesta. `null` en los abonos pagados antes de octubre de 2026, cuando el liquidador empezó a registrarlo.
+    </ResponseField>
+    <ResponseField name="orderID" type="string | null">
+      La orden que colocaste y que se cruzó. Igual que el `id` de la apuesta en [Obtener apuestas liquidadas por fechas](/es/pages/rest/user/get-graded) y que `orderID` en el feed de usuario.
+    </ResponseField>
+    <ResponseField name="gameID" type="string | null">El evento en el que se produjo el cruce.</ResponseField>
+    <ResponseField name="amount" type="number">Rebate abonado, en dólares.</ResponseField>
+    <ResponseField name="createdAt" type="string">Marca de tiempo ISO 8601 en que se abonó el rebate (cuando se liquidó el evento).</ResponseField>
+    <ResponseField name="game" type="object | null">
+      `eventName`, `league` y `start` del evento. `null` cuando el evento ya no se puede cargar.
+    </ResponseField>
+    <ResponseField name="type" type="string | null">`moneyline`, `spread`, `total`, `moneyline1x2` u `outright`. `null` cuando la orden ya no se puede cargar.</ResponseField>
+    <ResponseField name="odds" type="number | null">Cuotas americanas de **tu** lado del cruce. `null` cuando la orden ya no se puede cargar.</ResponseField>
+    <ResponseField name="side" type="string | null">
+      Etiqueta legible de tu lado, p. ej. `Liberty -3.5` u `Over 210.5`. `null` cuando no se puede derivar (`moneyline1x2`, outrights, o una orden que ya no se puede cargar).
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="data.summary" type="object">
+  Totales históricos y de ventana móvil, independientes de `sinceDays`.
+  <Expandable title="summary">
+    <ResponseField name="totalEarned" type="number">Todos los rebates abonados hasta la fecha.</ResponseField>
+    <ResponseField name="last7Days" type="number">Abonado en los últimos 7 días.</ResponseField>
+    <ResponseField name="last30Days" type="number">Abonado en los últimos 30 días.</ResponseField>
+  </Expandable>
+</ResponseField>
+
+<Note>
+Un abono cuya orden o evento ya no se puede cargar sigue apareciendo en la lista (un libro mayor nunca oculta dinero), con `game`, `type`, `odds` y `side` en `null`. Estas filas son raras.
+</Note>
+
+### Ejemplo {#example}
+
+<CodeGroup>
+```json JSON
+{
+  "data": {
+    "rebateRate": 0.001,
+    "rebates": [
+      {
+        "id": "6ae4b2c91f0d3a7e5c8b4d21",
+        "txID": "6ae4a7f05b3c2e1d9a7f6c10",
+        "orderID": "6ae4a6d84c2b1f0e8d6e5b0f",
+        "gameID": "6ae1c0a93b2a0e9d7c5d4a0e",
+        "amount": 1,
+        "createdAt": "2026-10-07T20:14:03.512Z",
+        "game": {
+          "eventName": "Indiana Fever vs New York Liberty",
+          "league": "WNBA",
+          "start": "2026-10-07T17:00:00.000Z"
+        },
+        "type": "spread",
+        "odds": 110,
+        "side": "Liberty -3.5"
+      }
+    ],
+    "summary": {
+      "totalEarned": 412.37,
+      "last7Days": 38.5,
+      "last30Days": 151.02
+    }
+  }
+}
+```
+</CodeGroup>
+
+## Rebates aún no pagados {#rebates-that-are-not-paid-yet}
+
+Este endpoint solo lista los rebates ya abonados. Un cruce en un evento que todavía no se ha liquidado aún no ha ganado su rebate. Para estimar lo pendiente, toma tus cruces de [Obtener apuestas cruzadas](/es/pages/rest/user/get-matched-bets) con `origin: "offer"` (órdenes que colocaste) y aplica `min(risk, win) × rebateRate` a cada uno. La estimación es aproximada: esos `risk` y `win` ya incluyen la comisión, y el rebate se calcula sobre el importe y las cuotas propias del cruce.
+
+## Errores {#errors}
+
+| Estado | Significado |
+|---|---|
+| `401` | Token de autenticación ausente o no válido. |
+| `429` | Límite de tasa superado por el [límite global por IP](/es/pages/rest/introduction#rate-limiting). Espera `Retry-After` segundos. |
