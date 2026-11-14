@@ -1,0 +1,49 @@
+---
+title: 'Récupérer un pari par référence utilisateur'
+description: 'Consulter tous les paris liés à un identifiant défini par le client'
+openapi: 'GET /user/getBetByUserReference'
+---
+
+Consultez tous les paris liés à un `userReference`. `userReference` est une chaîne optionnelle définie par le client que vous pouvez attacher à un ordre au placement pour le suivre de votre côté — cet endpoint en est le pendant en lecture.
+
+La réponse sépare les résultats en trois ensembles :
+
+- `unmatched` — offres ouvertes issues de cette référence encore en attente au carnet.
+- `matched`   — paris matchés (non réglés) issus de cette référence.
+- `graded`    — paris réglés issus de cette référence, incluant `risk`, `win`, `fee` et `result`.
+
+## Requête {#request}
+
+`GET /user/getBetByUserReference`
+
+<ParamField query="userReference" type="string" required>
+  Référence définie par le client, passée au placement.
+</ParamField>
+<ParamField query="gameID" type="string" required>
+  Restreint la consultation à un seul match.
+</ParamField>
+
+<CodeGroup>
+```bash curl
+curl "https://api.4casters.io/user/getBetByUserReference?userReference=my-order-1&gameID=67d1c942215edc7ee0c806ef" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+</CodeGroup>
+
+## Réponse {#response}
+
+<ResponseField name="data.unmatched" type="array">
+  Ordres ouverts — même format que [Récupérer les ordres non matchés](/fr/pages/rest/user/get-unmatched-orders#response).
+</ResponseField>
+<ResponseField name="data.matched" type="array">
+  Paris matchés (non réglés) — même format que [Récupérer les paris matchés](/fr/pages/rest/user/get-matched-bets#response).
+</ResponseField>
+<ResponseField name="data.graded" type="array">
+  Paris réglés — même format que [Récupérer les wagers réglés](/fr/pages/rest/user/get-graded-wagers#response).
+</ResponseField>
+
+## Erreurs {#errors}
+
+| Statut | Signification |
+| ------ | ------- |
+| `408`  | `userReference` ou `gameID` manquant. |

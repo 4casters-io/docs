@@ -1,0 +1,69 @@
+---
+title: 'API d''ordres 4casters'
+---
+
+L'API d'ordres 4casters prend en charge le placement d'ordres en temps réel, l'annulation et la gestion de session via une connexion WebSocket brute.
+
+## Endpoints {#endpoints}
+- **API d'ordres** : `wss://orders-api.4casters.io/orders/ws`
+
+## Authentification {#auth}
+
+La connexion s'authentifie avec un identifiant 4casters dans l'en-tête
+`Authorization` lors du handshake WebSocket : une [clé API](/fr/pages/rest/api-keys)
+(créez-en une sur la page de votre compte ; le bon choix pour un programme) ou un
+token de connexion obtenu via [`POST /user/login`](/fr/pages/rest/authentication).
+Le serveur déduit l'utilisateur de l'identifiant : **pas de nom d'utilisateur dans
+l'URL**. Un identifiant refusé fait échouer le handshake avec un `401` ou un `403` ;
+voir [Authentification](/fr/pages/authentication).
+
+### Se connecter {#connect}
+
+<CodeGroup>
+```javascript JavaScript
+const WebSocket = require('ws');
+const ws = new WebSocket('wss://orders-api.4casters.io/orders/ws', {
+  headers: { Authorization: process.env.FOURCASTERS_API_KEY },
+});
+```
+</CodeGroup>
+
+## Format des messages {#message-format}
+
+Chaque requête client est un 2-uplet `[messageType, payload]`. Chaque payload doit inclure un `requestID` que vous générez ; le serveur le renvoie en écho pour que vous puissiez corréler les réponses.
+
+<CodeGroup>
+```json Requête
+[
+  "messageType",
+  {
+    "requestID": "YOUR_REQUEST_ID",
+    "...": "..."
+  }
+]
+```
+</CodeGroup>
+
+Les réponses du serveur sont des objets JSON avec `requestID` plus soit `data` (succès), soit `error` (échec) :
+
+<CodeGroup>
+```json Succès
+{
+  "requestID": "YOUR_REQUEST_ID",
+  "data": { "...": "..." }
+}
+```
+
+```json Erreur
+{
+  "requestID": "YOUR_REQUEST_ID",
+  "error": "human-readable error"
+}
+```
+</CodeGroup>
+
+## Limites de débit {#rate-limits}
+
+Le placement d'ordres est limité par compte, avec un budget partagé avec REST. Appliqué à partir du 2026-11-02. Au-delà de la limite, vous recevez l'`error_type` `rate_limited` avec `retryAfterMs`, et la connexion reste ouverte. Les annulations et les heartbeats ne sont jamais limités.
+
+Voir [Limites de débit](/fr/pages/rate-limiting).

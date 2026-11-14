@@ -1,0 +1,15 @@
+<ResponseField name="game" type="object">
+  Instantané dénormalisé du match auquel ce pari appartient.
+  <Expandable title="game">
+    <ResponseField name="id" type="string">Id du match.</ResponseField>
+    <ResponseField name="league" type="string">Code de la ligue (par ex. `NBA`, `PREMIER-LEAGUE`).</ResponseField>
+    <ResponseField name="sport" type="string">Sport (par ex. `basketball`, `soccer`).</ResponseField>
+    <ResponseField name="start" type="string">Heure de début du match au format ISO 8601.</ResponseField>
+    <ResponseField name="ended" type="boolean">Indique si le match est terminé.</ResponseField>
+    <ResponseField name="eventName" type="string">Nom lisible de l'affiche (peut être `null` pour certaines ligues).</ResponseField>
+    <ResponseField name="isFutures" type="boolean">`true` pour les marchés futures et les marchés spéciaux similaires.</ResponseField>
+    <ResponseField name="participants" type="array">
+      Tableau à deux éléments : `[away, home]`. Chaque participant porte `id`, `longName`, `shortName`, `homeAway`, `mainPitcher`, `rotationNumber`, `futuresSide` et (pour les matchs terminés) `score`.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
