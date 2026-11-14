@@ -1,0 +1,42 @@
+---
+title: 'Annuler par référence utilisateur'
+description: 'Annuler des ordres par leur référence définie par le client'
+openapi: 'POST /session/cancelByReference'
+---
+
+Annulez tous les ordres ouverts du match donné dont le `userReference` correspond à l'une des références fournies. Utile quand vous avez étiqueté vos ordres avec vos propres ids et voulez annuler par ceux-ci plutôt que de suivre les ids d'ordre 4casters.
+
+## Requête {#request}
+
+`POST /session/cancelByReference`
+
+<ParamField body="gameID" type="string" required>
+  Restreint la recherche à un seul match.
+</ParamField>
+<ParamField body="userReferences" type="array" required>
+  Tableau de chaînes `userReference`. Tout ordre ouvert dans `gameID` dont le `userReference` figure dans ce tableau est annulé.
+</ParamField>
+
+<CodeGroup>
+```bash curl
+curl -X POST https://api.4casters.io/session/cancelByReference \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "gameID": "6924f82640a7e89c3d3acc41",
+    "userReferences": ["my-order-1", "my-order-2"]
+  }'
+```
+</CodeGroup>
+
+## Réponse {#response}
+
+<ResponseField name="data" type="array">
+  Résultats d'annulation par ordre. Même format que [Annuler un ordre](/fr/pages/rest/orders/cancel-order#response).
+</ResponseField>
+
+## Erreurs {#errors}
+
+| Statut | Signification |
+| ------ | ------- |
+| `400`  | `userReferences` manquant ou pas un tableau. |

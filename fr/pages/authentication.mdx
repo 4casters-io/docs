@@ -1,0 +1,190 @@
+---
+title: 'Authentification'
+description: 'Deux identifiants : une clé API pour les programmes, un token de connexion pour tout le reste'
+---
+
+Toutes les API 4casters, REST comme WebSocket, s'authentifient de la même façon : une chaîne d'identifiant dans l'en-tête `Authorization`. Il existe deux types d'identifiants, et la seule décision à prendre est lequel utiliser.
+
+| | Clé API | Token de connexion |
+| --- | --- | --- |
+| **Conçu pour** | Les programmes : bots, scripts, tâches backend. | Le site web et tout ce qui est de courte durée. |
+| **Comment l'obtenir** | Une seule fois, depuis la page de votre compte. | `POST /user/login` avec votre nom d'utilisateur et votre mot de passe. |
+| **Durée de vie** | Jusqu'à ce que vous la révoquiez, ou jusqu'à une date d'expiration choisie à sa création. | 30 jours, puis renouvelé sur place à la requête suivante. |
+| **Restriction réseau** | Par clé : adresses IPv4 et IPv6 ou plages CIDR. | Aucune (une liste blanche à l'échelle du compte peut être mise en place via le support). |
+| **Révocation** | Par clé, immédiate, depuis la page du compte. | Une déconnexion, ou un changement de mot de passe, révoque tous les tokens de connexion. |
+| **Peut gérer le compte** | Non. L'administration du compte (clés, mot de passe, 2FA, retraits) nécessite une session sur le site web. | Oui. |
+
+**Si vous écrivez du code qui tourne sans surveillance, utilisez une clé API.** Les tokens de connexion existent pour que le site web puisse vous connecter : ils sont renouvelés, ils meurent avec un changement de mot de passe, et un token divulgué vaut votre mot de passe jusqu'à ce que vous vous en rendiez compte.
+
+## Clés API {#api-keys}
+
+Créez-en une dans **Mon compte → Sécurité → Clés API** (ou allez directement sur [4casters.io/account/api-keys](https://4casters.io/account/api-keys)) : donnez-lui un nom, restreignez-la éventuellement aux plages IP de vos serveurs et donnez-lui une date d'expiration, puis copiez la clé depuis la confirmation. Elle n'est affichée qu'une seule fois.
+
+Une clé ressemble à `4ck_Wk15VXFX_T4MPcp8Ij2IODI7OFFIlQsHmvvzJ3Nj8C-StfVe3h0k1kH2SF`. La première partie, `4ck_Wk15VXFX`, est son **Key ID** : elle n'est pas secrète, et c'est ainsi que la page du compte désigne la clé. Le reste est le secret.
+
+Envoyez-la exactement là où va un token de connexion :
+
+<Tabs>
+  <Tab title="API REST">
+    ```bash
+    curl https://api.4casters.io/user/getMe \
+      -H "Authorization: 4ck_Wk15VXFX_T4MPcp8Ij2IODI7OFFIlQsHmvvzJ3Nj8C-StfVe3h0k1kH2SF"
+    ```
+  </Tab>
+  <Tab title="WebSocket d'ordres">
+    ```javascript
+    const ws = new WebSocket('wss://orders-api.4casters.io/orders/ws', {
+      headers: { Authorization: process.env.FOURCASTERS_API_KEY },
+    });
+    ```
+  </Tab>
+  <Tab title="WebSocket de streaming">
+    ```javascript
+    const ws = new WebSocket('wss://streaming-api.4casters.io/v2/user', {
+      headers: { Authorization: process.env.FOURCASTERS_API_KEY },
+    });
+    ```
+  </Tab>
+</Tabs>
+
+Il n'y a pas d'étape de connexion et rien à renouveler. La référence complète, y compris les IP autorisées, l'expiration, ce qu'une clé ne peut pas faire et chaque erreur qu'elle peut produire, se trouve sur la [page des clés API](/fr/pages/rest/api-keys).
+
+## Tokens de connexion {#login-tokens}
+
+Un token de connexion est ce que le site web conserve après que vous vous êtes connecté. Il fonctionne sur toutes les API, il convient donc pour une expérience rapide ou un script ponctuel ; pour tout ce qui tourne en continu, préférez une clé.
+
+### 1. Se connecter {#1-log-in}
+
+`POST https://api.4casters.io/user/login`
+
+<CodeGroup>
+```bash curl
+curl -X POST https://api.4casters.io/user/login \
+  -H "Content-Type: application/json" \
+  -d '{"username": "your_username", "password": "your_password"}'
+```
+
+```javascript JavaScript
+const res = await fetch('https://api.4casters.io/user/login', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    username: process.env.FOURCASTERS_USERNAME,
+    password: process.env.FOURCASTERS_PASSWORD,
+  }),
+});
+const { data } = await res.json();
+const token = data.user.auth;
+```
+
+```python Python
+import os, requests
+
+res = requests.post(
+    "https://api.4casters.io/user/login",
+    json={
+        "username": os.environ["FOURCASTERS_USERNAME"],
+        "password": os.environ["FOURCASTERS_PASSWORD"],
+    },
+    headers={"User-Agent": "my-bot/1.0"},
+)
+token = res.json()["data"]["user"]["auth"]
+```
+</CodeGroup>
+
+Le champ `username` accepte soit votre nom d'utilisateur, soit l'email du compte.
+
+Le token se trouve dans `data.user.auth` dans le corps de la réponse : une chaîne hexadécimale de 256 caractères. La même valeur est aussi définie dans un cookie signé `auth` ; les intégrations côté serveur doivent capturer `data.user.auth` et ignorer le cookie.
+
+```json
+{
+  "data": {
+    "user": {
+      "id": "5fe37acbb5a23600123662c1",
+      "username": "your_username",
+      "auth": "5cd551d6...",
+      "...": "..."
+    }
+  }
+}
+```
+
+La forme complète de la réponse est documentée sur la [page de connexion REST](/fr/pages/rest/authentication).
+
+<Tip>
+Connectez-vous **une seule fois** et réutilisez le token. La connexion est soumise à une limite de débit par IP et par compte, et chaque connexion réussie émet un nouveau token. Se reconnecter n'invalide pas les tokens que vous détenez déjà.
+</Tip>
+
+### 2. Envoyer le token {#2-send-the-token}
+
+<Tabs>
+  <Tab title="API REST">
+    Passez le token dans l'en-tête `Authorization`. Le préfixe `Bearer ` est optionnel.
+
+    ```bash
+    curl https://api.4casters.io/user/getMe \
+      -H "Authorization: Bearer 5cd551d6..."
+    ```
+
+    Un token manquant, inconnu ou expiré renvoie `401` avec le corps `{ "error": { "message": "InvalidCredentials", "code": 401 } }`.
+  </Tab>
+  <Tab title="WebSocket d'ordres">
+    Passez le token dans l'en-tête `Authorization` lors du handshake. Le serveur déduit votre compte du token.
+
+    ```javascript
+    const ws = new WebSocket('wss://orders-api.4casters.io/orders/ws', {
+      headers: { Authorization: token },
+    });
+    ```
+
+    Voir [API d'ordres](/fr/pages/websocket/introduction).
+  </Tab>
+  <Tab title="WebSocket de streaming">
+    Même en-tête, même token, pour le flux utilisateur comme pour le flux des prix.
+
+    ```javascript
+    const ws = new WebSocket('wss://streaming-api.4casters.io/v2/user', {
+      headers: { Authorization: token },
+    });
+    ```
+
+    Voir [API de streaming](/fr/pages/streaming/introduction).
+  </Tab>
+</Tabs>
+
+### Durée de vie du token {#token-lifetime}
+
+| | |
+| --- | --- |
+| **Valide pendant** | 30 jours à compter de la connexion. |
+| **Après 30 jours** | La requête REST authentifiée suivante renouvelle le token sur place : l'ancienne valeur cesse immédiatement de fonctionner et la nouvelle est renvoyée dans l'en-tête de réponse `X-Auth-Token`. |
+| **Déconnexion** | `POST /user/logout` invalide le token utilisé pour cet appel. Les autres tokens du compte ne sont pas affectés. |
+| **Changement de mot de passe** | Invalide tous les tokens de connexion du compte. Les clés API ne sont pas affectées. |
+
+Si vous devez fonctionner avec un token de connexion pendant plus d'un mois, faites l'une des choses suivantes :
+
+- **Reconnectez-vous à chaque `401`.** Le plus simple et le plus robuste. Traitez un `401` comme "obtenir un nouveau token", et non comme une erreur fatale.
+- **Surveillez `X-Auth-Token`.** Chaque fois que cet en-tête est présent dans une réponse, persistez sa valeur et utilisez-la à partir de ce moment.
+
+Un script qui se connecte une fois, stocke le token et ne regarde jamais les en-têtes de réponse fonctionnera exactement 30 jours, puis échouera avec `401` sur chaque requête. Une clé API n'a aucun de ces problèmes.
+
+### Erreurs de connexion {#login-errors}
+
+| Statut | Signification | Que faire |
+| --- | --- | --- |
+| `400` | `username` ou `password` absent du corps. | Envoyez les deux en JSON. |
+| `401` | Nom d'utilisateur ou mot de passe incorrect. | Vérifiez les identifiants. Le message est le même que le compte existe ou non. |
+| `403` | Compte banni, fermé ou gelé. | Contactez le support. |
+| `428` | `CHALLENGE_REQUIRED`. Renvoyé uniquement pendant que la plateforme contre activement une attaque par credential stuffing ; un challenge de vérification humaine est exigé. | Continuez à utiliser un identifiant que vous détenez déjà, ou attendez et réessayez. Les clients scriptés ne peuvent pas résoudre le challenge. Une clé API n'est jamais soumise au challenge. |
+| `429` | Limite de débit de connexion dépassée. | Patientez le nombre de secondes indiqué par `Retry-After` et réutilisez les tokens existants au lieu de vous reconnecter. |
+
+## Authentification à deux facteurs {#two-factor-authentication}
+
+L'authentification à deux facteurs sur 4casters protège les **retraits**, pas la connexion. L'activer sur votre compte ne change pas la façon dont vous vous authentifiez auprès de l'API : `POST /user/login` ne demande jamais de code, et les clés API ne sont pas affectées.
+
+## Protéger vos identifiants {#keeping-credentials-safe}
+
+- Stockez les clés, noms d'utilisateur et mots de passe dans des variables d'environnement ou un gestionnaire de secrets, jamais dans le contrôle de version.
+- Traitez une clé ou un token comme un mot de passe. Quiconque le détient peut placer des ordres et lire votre compte.
+- Donnez à chaque programme sa propre clé API, nommée d'après le programme, et restreignez-la aux adresses depuis lesquelles il tourne. Si l'une fuite, révoquez celle-là.
+- Envisagez un compte dédié au trading automatisé, afin qu'un identifiant divulgué n'expose pas votre solde principal. Les comptes s'ouvrent de la même façon que n'importe quel compte utilisateur.

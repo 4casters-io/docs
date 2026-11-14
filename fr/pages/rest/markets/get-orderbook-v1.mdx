@@ -1,0 +1,41 @@
+---
+title: 'Récupérer le carnet d''ordres (v1, déprécié)'
+description: 'Endpoint hérité de carnet d''ordres imbriqué, conservé pour rétrocompatibilité'
+openapi: 'POST /exchange/getOrderbook'
+---
+
+<Warning>
+**Déprécié.** Utilisez [`GET /exchange/v2/getOrderbook`](/fr/pages/rest/markets/get-orderbook) pour le format plat, plus simple et recommandé.
+
+Cet endpoint est conservé pour la rétrocompatibilité avec les clients plus anciens.
+</Warning>
+
+Renvoie le carnet d'ordres d'une ligue entière sous forme **imbriquée**, indexée par nombre de spread / total. Même format par match que [Récupérer le carnet d'ordres d'un match](/fr/pages/rest/markets/get-single-orderbook), mais pour chaque match de la ligue.
+
+## Requête {#request}
+
+`POST /exchange/getOrderbook`
+
+<ParamField body="leagueRequested" type="string" required>
+  Code de ligue (insensible à la casse).
+</ParamField>
+
+<CodeGroup>
+```bash curl
+curl -X POST https://api.4casters.io/exchange/getOrderbook \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"leagueRequested": "NBA"}'
+```
+</CodeGroup>
+
+## Réponse {#response}
+
+<ResponseField name="data.market" type="string">Toujours `null` dans cet endpoint.</ResponseField>
+<ResponseField name="data.games"  type="array">
+  Tableau de matchs avec les champs de carnet d'ordres imbriqué. Voir [Récupérer le carnet d'ordres d'un match](/fr/pages/rest/markets/get-single-orderbook#response) pour le format par match — tableaux `awayMoneylines` / `homeMoneylines` plus objets `awaySpreads` / `homeSpreads` / `over` / `under` indexés par nombre de spread ou de total.
+</ResponseField>
+
+Chaque ordre individuel de ces ensembles a le format d'ordre standard :
+
+<Snippet file="fr/types/orderbook-order.mdx" />

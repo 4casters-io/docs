@@ -1,0 +1,44 @@
+---
+title: 'Récupérer un pari par ID de requête de wager'
+description: 'Consulter tous les paris issus d''une seule requête de placement'
+openapi: 'GET /user/getBetByWagerRequestID'
+---
+
+Consultez tous les paris liés à un seul `wagerRequestID`. Un `wagerRequestID` est généré par le serveur pour **chaque** ordre d'une requête de placement — utilisez-le pour relier entre eux chaque exécution et chaque offre en attente issues d'un seul ordre soumis.
+
+La réponse sépare les résultats en trois ensembles :
+
+- `unmatched` — offres ouvertes issues de la requête encore en attente au carnet. **Toujours vide pour cet endpoint** — utilisez plutôt [Récupérer un pari par référence utilisateur](/fr/pages/rest/user/get-bet-by-user-reference) si vous avez besoin des offres ouvertes dans la réponse.
+- `matched`   — paris matchés (non réglés) issus de la requête.
+- `graded`    — paris réglés issus de la requête, incluant `risk`, `win`, `fee` et `result`.
+
+## Requête {#request}
+
+`GET /user/getBetByWagerRequestID`
+
+<ParamField query="wagerRequestID" type="string" required>
+  Le `wagerRequestID` renvoyé par `/session/v3/place` (dans le champ `matched[].wagerRequestID` ou `unmatched.wagerRequestID`).
+</ParamField>
+
+<CodeGroup>
+```bash curl
+curl "https://api.4casters.io/user/getBetByWagerRequestID?wagerRequestID=65f69afec4c141f5ecc5dc0b" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+</CodeGroup>
+
+## Réponse {#response}
+
+<ResponseField name="data.unmatched" type="array">Tableau vide.</ResponseField>
+<ResponseField name="data.matched" type="array">
+  Paris matchés (non réglés) — même format que [Récupérer les paris matchés](/fr/pages/rest/user/get-matched-bets#response).
+</ResponseField>
+<ResponseField name="data.graded" type="array">
+  Paris réglés — même format que [Récupérer les wagers réglés](/fr/pages/rest/user/get-graded-wagers#response).
+</ResponseField>
+
+## Erreurs {#errors}
+
+| Statut | Signification |
+| ------ | ------- |
+| `400`  | `wagerRequestID` manquant ou inconnu. |

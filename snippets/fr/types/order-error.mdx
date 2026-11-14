@@ -1,0 +1,17 @@
+Quand le serveur rejette un ordre individuel dans un lot de placement, de modification ou d'annulation par ordre, l'entrée **par ordre** est renvoyée sous la forme :
+
+```json
+{
+  "error": "<human-readable message>",
+  "errorType": "validation_error | rejected_liability | rejected_order_type_rules | system_error"
+}
+```
+
+Les erreurs sont renvoyées **par position** dans le tableau de résultats, à l'index de l'ordre correspondant en entrée. Si vous recevez une erreur pour un ordre, cet ordre n'a pas été traité et peut être resoumis sans risque.
+
+- `error` n'est pas standardisé — c'est une chaîne descriptive qui peut changer.
+- `errorType` est un enum stable sur lequel vous pouvez vous appuyer pour un traitement programmatique :
+  - `validation_error` — le payload ou l'état a échoué à la validation (champs manquants, odds/number invalides, side invalide, match inactif).
+  - `rejected_liability` — des contraintes d'utilisateur / de compte / de responsabilité (liability) ont empêché le placement ou l'exécution.
+  - `rejected_order_type_rules` — les règles du type d'ordre ont interdit l'exécution. Exemples : `fillAndKill` n'avait aucune liquidité exécutable, `fillOrKill` n'a pas pu être exécuté en totalité, `post` aurait matché des ordres en attente, ou `postArb` est à plus de 1% du prix matchable.
+  - `system_error` — erreur interne transitoire ; une nouvelle tentative peut réussir.

@@ -1,0 +1,38 @@
+---
+title: 'Récupérer la responsabilité sur un match'
+description: 'Perte pire-cas sur un seul match'
+openapi: 'GET /user/getGameLiability'
+---
+
+Calcule la **responsabilité (liability) financière pire-cas** de l'appelant pour un seul match, en tenant compte de chaque pari sur chaque marché du match.
+
+La valeur est toujours `<= 0` — même un carnet entièrement couvert peut subir une perte à cause d'annulations pour pluie, de suspensions ou de disqualifications.
+
+## Requête {#request}
+
+`GET /user/getGameLiability`
+
+<ParamField query="gameID" type="string" required>L'id du match pour lequel calculer la responsabilité.</ParamField>
+
+<CodeGroup>
+```bash curl
+curl "https://api.4casters.io/user/getGameLiability?gameID=657f8ea1ea0ce6f62c1fe37d" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+</CodeGroup>
+
+## Réponse {#response}
+
+<ResponseField name="data.liability" type="number">
+  La perte pire-cas dans la devise du compte. Toujours `<= 0`. Renvoie `0` quand l'appelant n'a aucun pari sur le match.
+</ResponseField>
+
+### Exemple {#example}
+
+<CodeGroup>
+```json JSON
+{
+  "data": { "liability": -125.50 }
+}
+```
+</CodeGroup>

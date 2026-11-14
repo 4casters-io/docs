@@ -1,0 +1,49 @@
+---
+title: 'Annuler tous les ordres d''un match'
+description: 'Annuler tous les ordres ouverts sur un seul match'
+openapi: 'POST /session/cancelAllOrdersForGame'
+---
+
+Annulez tous les ordres ouverts sur un seul match. Vous pouvez optionnellement restreindre à un seul `type` de marché pour laisser les autres marchés en place.
+
+## Requête {#request}
+
+`POST /session/cancelAllOrdersForGame`
+
+<ParamField body="gameID" type="string" required>
+  Le match dont les ordres doivent être annulés.
+</ParamField>
+<ParamField body="type" type="string">
+  Optionnel. N'annule que les ordres de ce type de marché — l'un de `moneyline`, `spread`, `total`. Quand il est omis, tous les types de marché sont annulés.
+</ParamField>
+
+<CodeGroup>
+```bash curl (un marché)
+curl -X POST https://api.4casters.io/session/cancelAllOrdersForGame \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "gameID": "688c0516fbc14da0c202d426",
+    "type": "spread"
+  }'
+```
+
+```bash curl (tous les marchés)
+curl -X POST https://api.4casters.io/session/cancelAllOrdersForGame \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{ "gameID": "688c0516fbc14da0c202d426" }'
+```
+</CodeGroup>
+
+## Réponse {#response}
+
+<ResponseField name="data" type="array">
+  Résultats d'annulation par ordre. Même format que [Annuler un ordre](/fr/pages/rest/orders/cancel-order#response).
+</ResponseField>
+
+## Erreurs {#errors}
+
+| Statut | Signification |
+| ------ | ------- |
+| `400`  | `gameID` manquant / invalide, ou `type` n'est pas l'une des valeurs autorisées. |

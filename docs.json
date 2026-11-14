@@ -222,6 +222,116 @@
         ]
       },
       {
+        "language": "fr",
+        "tabs": [
+          {
+            "tab": "Introduction",
+            "pages": [
+              "fr/pages/introduction",
+              "fr/pages/authentication"
+            ]
+          },
+          {
+            "tab": "Streaming WebSocket",
+            "pages": [
+              "fr/pages/streaming/introduction",
+              "fr/pages/streaming/user-feed",
+              "fr/pages/streaming/price-feed"
+            ]
+          },
+          {
+            "tab": "API des ordres",
+            "pages": [
+              "fr/pages/websocket/introduction",
+              "fr/pages/websocket/heartbeat",
+              "fr/pages/websocket/place-order",
+              "fr/pages/websocket/cancel-orders"
+            ]
+          },
+          {
+            "tab": "API REST",
+            "groups": [
+              {
+                "group": "Premiers pas",
+                "pages": [
+                  "fr/pages/rest/introduction",
+                  "fr/pages/rest/authentication",
+                  "fr/pages/rest/api-keys"
+                ]
+              },
+              {
+                "group": "Utilisateur",
+                "pages": [
+                  "fr/pages/rest/user/get-me",
+                  "fr/pages/rest/user/get-matched-bets",
+                  "fr/pages/rest/user/get-unmatched-orders",
+                  "fr/pages/rest/user/get-orders-for-game",
+                  "fr/pages/rest/user/get-graded",
+                  "fr/pages/rest/user/get-graded-since",
+                  "fr/pages/rest/user/get-graded-wagers",
+                  "fr/pages/rest/user/get-bet-by-id",
+                  "fr/pages/rest/user/get-bet-by-wager-request-id",
+                  "fr/pages/rest/user/get-bet-by-user-reference",
+                  "fr/pages/rest/user/orders-heartbeat",
+                  "fr/pages/rest/user/get-game-liability"
+                ]
+              },
+              {
+                "group": "Ordres",
+                "pages": [
+                  "fr/pages/rest/orders/place-order",
+                  "fr/pages/rest/orders/edit-order",
+                  "fr/pages/rest/orders/lookup-order",
+                  "fr/pages/rest/orders/cancel-order",
+                  "fr/pages/rest/orders/cancel-multiple",
+                  "fr/pages/rest/orders/cancel-by-reference",
+                  "fr/pages/rest/orders/cancel-all-for-game",
+                  "fr/pages/rest/orders/cancel-all-for-league",
+                  "fr/pages/rest/orders/cancel-all-orders"
+                ]
+              },
+              {
+                "group": "Marchés",
+                "pages": [
+                  "fr/pages/rest/markets/get-leagues",
+                  "fr/pages/rest/markets/get-participants",
+                  "fr/pages/rest/markets/get-games",
+                  "fr/pages/rest/markets/get-orderbook",
+                  "fr/pages/rest/markets/get-single-orderbook",
+                  "fr/pages/rest/markets/get-average-price",
+                  "fr/pages/rest/markets/get-matched-volume",
+                  "fr/pages/rest/markets/get-orderbook-v1"
+                ]
+              },
+              {
+                "group": "Affiliation",
+                "pages": [
+                  "fr/pages/rest/affiliate/get-affiliate-commission",
+                  "fr/pages/rest/affiliate/deep-links"
+                ]
+              }
+            ]
+          },
+          {
+            "tab": "Journal des modifications",
+            "pages": [
+              "fr/pages/changelog"
+            ]
+          },
+          {
+            "tab": "Limites de débit",
+            "pages": [
+              "fr/pages/rate-limiting"
+            ]
+          }
+        ],
+        "banner": {
+          "content": "Cette documentation est traduite par IA à titre de commodité et peut contenir des erreurs. **La version anglaise fait foi** — vérifiez-la avant de vous fier à cette page. [Signaler une erreur de traduction](https://github.com/4casters-io/docs/issues/new?labels=translation&title=%5Bfr%5D+Translation+issue&body=%2A%2APage%3A%2A%2A+%3C%21--+paste+the+URL+of+the+page+--%3E%0A%0A%2A%2AWhat+reads+wrong%3A%2A%2A+%3C%21--+quote+the+text+--%3E%0A%0A%2A%2ASuggested+wording%3A%2A%2A%0A%0A---%0A_Language%3A+fr.+The+English+page+is+authoritative._%0A)",
+          "type": "warning",
+          "dismissible": false
+        }
+      },
+      {
         "language": "pt-BR",
         "tabs": [
           {

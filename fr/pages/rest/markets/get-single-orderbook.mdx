@@ -1,0 +1,66 @@
+---
+title: 'Récupérer le carnet d''ordres d''un match'
+description: 'Lire le carnet d''ordres imbriqué d''un match, plus les marchés enfants'
+openapi: 'GET /exchange/getSingleOrderbook'
+---
+
+Renvoie le carnet d'ordres **imbriqué** d'un seul match — les spreads et les totals sont des objets indexés par nombre de spread / total plutôt que des tableaux aplatis. Renvoie aussi les éventuels matchs enfants (props, périodes alternatives) et un `orderSummary` des propres ordres en attente de l'appelant pour la ligue.
+
+Pour le format plat, plus simple, préférez [Récupérer le carnet d'ordres](/fr/pages/rest/markets/get-orderbook).
+
+## Requête {#request}
+
+`GET /exchange/getSingleOrderbook`
+
+<ParamField query="gameID" type="string" required>
+  Id du match.
+</ParamField>
+
+<CodeGroup>
+```bash curl
+curl "https://api.4casters.io/exchange/getSingleOrderbook?gameID=65b67450503180295ade9216" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+</CodeGroup>
+
+## Réponse {#response}
+
+<ResponseField name="data.game" type="object">
+  Objet match avec les champs de carnet d'ordres imbriqué. Les champs `Game` standard s'appliquent (voir [Récupérer les matchs](/fr/pages/rest/markets/get-games#response)), plus :
+
+  <Expandable title="Champs de carnet d'ordres par match">
+    <ResponseField name="awayMoneylines" type="array">Ordres moneyline en attente côté extérieur. Triés meilleur prix d'abord.</ResponseField>
+    <ResponseField name="homeMoneylines" type="array">Ordres moneyline en attente côté domicile.</ResponseField>
+    <ResponseField name="awaySpreads"    type="object">Objet indexé par nombre de spread (par ex. `"-3.5"`). Chaque valeur est un tableau d'ordres.</ResponseField>
+    <ResponseField name="homeSpreads"    type="object">Objet indexé par nombre de spread.</ResponseField>
+    <ResponseField name="over"           type="object">Objet indexé par nombre de total (par ex. `"220.5"`). Chaque valeur est un tableau d'ordres.</ResponseField>
+    <ResponseField name="under"          type="object" />
+    <ResponseField name="homeMoneylines1x2" type="object">**Football (soccer) uniquement.** Objet avec des tableaux `homeYes` / `homeNo`.</ResponseField>
+    <ResponseField name="awayMoneylines1x2" type="object">**Football (soccer) uniquement.** Objet avec des tableaux `awayYes` / `awayNo`.</ResponseField>
+    <ResponseField name="draw1x2"           type="object">**Football (soccer) uniquement.** Objet avec des tableaux `drawYes` / `drawNo`.</ResponseField>
+    <ResponseField name="mainHomeSpread"  type="string">Le spread principal domicile actuellement affiché (la ligne de consensus).</ResponseField>
+    <ResponseField name="mainAwaySpread"  type="number" />
+    <ResponseField name="mainTotal"       type="string" />
+    <ResponseField name="openInterest"    type="number" />
+    <ResponseField name="matchedVolume"   type="number" />
+  </Expandable>
+</ResponseField>
+<ResponseField name="data.orderSummary" type="array">
+  Les propres ordres en attente de l'appelant sur toute la ligue (pas seulement ce match). Utile pour afficher des badges « vos offres » dans une UI.
+</ResponseField>
+<ResponseField name="data.childGames" type="array">
+  Matchs enfants (périodes alternatives, etc.) du match demandé. Même format que `data.game`.
+</ResponseField>
+<ResponseField name="data.propGames" type="array">
+  Matchs de props liés au match demandé.
+</ResponseField>
+
+Chaque ordre individuel a le format d'ordre standard :
+
+<Snippet file="fr/types/orderbook-order.mdx" />
+
+## Erreurs {#errors}
+
+| Statut | Signification |
+| ------ | ------- |
+| `400`  | `gameID` manquant. |
