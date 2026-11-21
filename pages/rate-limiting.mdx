@@ -50,8 +50,8 @@ Every REST request counts, cancels included:
 
 | Limit | Over it |
 |---|---|
-| 1,000 requests / 10 seconds | `429` until the window ends |
-| 30,000 requests / 10 minutes | IP blocked 10 minutes, doubling on each repeat within 24 hours, up to 24 hours |
+| 1,500 requests / 10 seconds | `429` until the window ends |
+| 100,000 requests / 10 minutes | IP blocked 10 minutes, doubling on each repeat within 24 hours, up to 24 hours |
 
 Both return `429` with `Retry-After` and `{ "error": "Too many requests. Please try again later." }`. Retrying during a block doesn't shorten it.
 

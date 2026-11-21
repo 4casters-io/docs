@@ -50,8 +50,8 @@ Cada solicitud REST cuenta, incluidas las cancelaciones:
 
 | Límite | Al superarlo |
 |---|---|
-| 1,000 solicitudes / 10 segundos | `429` hasta que termine la ventana |
-| 30,000 solicitudes / 10 minutos | IP bloqueada 10 minutos; se duplica con cada repetición en 24 horas, hasta 24 horas |
+| 1,500 solicitudes / 10 segundos | `429` hasta que termine la ventana |
+| 100,000 solicitudes / 10 minutos | IP bloqueada 10 minutos; se duplica con cada repetición en 24 horas, hasta 24 horas |
 
 Ambos devuelven `429` con `Retry-After` y `{ "error": "Too many requests. Please try again later." }`. Reintentar durante un bloqueo no lo acorta.
 
