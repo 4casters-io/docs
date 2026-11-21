@@ -14,6 +14,11 @@ description: '4casters API 中对客户端可见的重要变更。'
 
 ---
 
+<Update label="2026-11-21" tags={["REST API"]}>
+  ### 变更
+  - **REST 按 IP 限制上调。** 每 10 秒 1,000 次改为每 10 秒 1,500 次，每 10 分钟 30,000 次改为每 10 分钟 100,000 次。封禁时长不变。见 [速率限制](/zh-Hans/pages/rate-limiting#per-ip-rest)。
+</Update>
+
 <Update label="2026-10-26" tags={["REST API", "订单 API"]}>
   ### 新增
   - **按账户的下单限制。** 现已开始统计，自 **2026-11-02** 起强制执行。见 [速率限制](/zh-Hans/pages/rate-limiting)。
