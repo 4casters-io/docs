@@ -1,0 +1,48 @@
+---
+title: 'Taxas'
+description: 'A comissão sobre apostas casadas e como ela é calculada'
+---
+
+## Quem paga {#who-pays}
+
+A comissão é cobrada do **taker** em cada aposta casada. Os makers não pagam comissão.
+
+Não há taxa para enviar, editar ou cancelar uma ordem, para usar a API, nem em uma aposta que dá push ou é reembolsada.
+
+## Sua taxa {#your-rate}
+
+Sua taxa é definida por conta. Ela é `commissionCharged` em [Obter usuário atual](/pt-BR/pages/rest/user/get-me) e na [resposta de login](/pt-BR/pages/rest/authentication), como fração: `0.01` é 1%. A taxa padrão é 1%.
+
+Contas com mais de $2M em volume como taker em um mês podem passar para uma comissão de taker de 0.75% no mês seguinte.
+
+## Cálculo {#calculation}
+
+`toWin` é o seu valor apostado × (odds decimais − 1).
+
+| Resultado | Comissão |
+|---|---|
+| Ganha | taxa × `toWin` |
+| Perde | taxa × o menor entre o valor apostado e `toWin` |
+| Meio ganho ou meia perda (linhas de quarto) | metade do valor acima |
+| Push ou reembolso | nenhuma |
+
+Em um favorito você paga taxa × `toWin` nos dois casos. Em um azarão você paga taxa × `toWin` se ganhar e taxa × valor apostado se perder.
+
+Exemplos a 1%:
+
+| Aposta | Se ganhar | Se perder |
+|---|---|---|
+| $100 a -200 (para ganhar $50) | $0.50 de comissão, você ganha $49.50 | $0.50 de comissão, você perde $100.50 |
+| $100 a +150 (para ganhar $150) | $1.50 de comissão, você ganha $148.50 | $1.00 de comissão, você perde $101.00 |
+
+## Quando é cobrada {#when-it-is-charged}
+
+A comissão é cobrada quando a aposta é liquidada. Uma reliquidação a estorna e a cobra de novo sobre o novo resultado.
+
+Antes da liquidação ela já está incluída em `risk` e `win`: `risk` é o seu valor apostado mais a comissão em caso de perda, e `win` é o seu ganho menos a comissão em caso de vitória. Veja [Obter apostas casadas](/pt-BR/pages/rest/user/get-matched-bets) e o [feed de usuário](/pt-BR/pages/streaming/user-feed).
+
+Depois da liquidação, `fee` é o valor cobrado. Veja [Obter apostas liquidadas](/pt-BR/pages/rest/user/get-graded).
+
+## Alterações {#changes}
+
+As alterações nas taxas e nos [limites de taxa](/pt-BR/pages/rate-limiting) são publicadas no [Registro de alterações](/pt-BR/pages/changelog). Para ser avisado, assine o feed RSS dele: `https://docs.4casters.io/pages/changelog/rss.xml`.

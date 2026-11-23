@@ -113,6 +113,12 @@
             "pages": [
               "pages/rate-limiting"
             ]
+          },
+          {
+            "tab": "Fees",
+            "pages": [
+              "pages/fees"
+            ]
           }
         ]
       },
@@ -218,6 +224,12 @@
             "pages": [
               "es/pages/rate-limiting"
             ]
+          },
+          {
+            "tab": "Comisiones",
+            "pages": [
+              "es/pages/fees"
+            ]
           }
         ]
       },
@@ -321,6 +333,12 @@
             "tab": "Limitação de taxa",
             "pages": [
               "pt-BR/pages/rate-limiting"
+            ]
+          },
+          {
+            "tab": "Taxas",
+            "pages": [
+              "pt-BR/pages/fees"
             ]
           }
         ],
@@ -431,6 +449,12 @@
             "pages": [
               "zh-Hans/pages/rate-limiting"
             ]
+          },
+          {
+            "tab": "费用",
+            "pages": [
+              "zh-Hans/pages/fees"
+            ]
           }
         ],
         "banner": {
@@ -539,6 +563,12 @@
             "tab": "速率限制",
             "pages": [
               "zh-Hant/pages/rate-limiting"
+            ]
+          },
+          {
+            "tab": "費用",
+            "pages": [
+              "zh-Hant/pages/fees"
             ]
           }
         ],
