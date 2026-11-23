@@ -1,0 +1,86 @@
+---
+title: 'Récupérer le prix moyen'
+description: 'Meilleurs prix et prix moyens par match dans une ligue'
+openapi: 'GET /exchange/getOddsForAveragePrice'
+---
+
+Renvoie une liste tronquée des meilleurs prix et prix moyens pour chaque match d'une ligue. Pour chaque match et chaque marché (moneyline / spread / total), la réponse inclut :
+
+- le **meilleur prix** (le prix de la meilleure offre en attente) ;
+- le **prix moyen** que vous paieriez en balayant au moins **$500** de liquidité ;
+- le **pari maximum** qui pourrait être exécuté au meilleur prix et au prix moyen.
+
+Les tableaux par marché (`awayMoneylines`, `homeMoneylines`, etc.) sont retirés de chaque match ; seul le bloc récapitulatif `odds` demeure.
+
+<Note>
+Contrairement à la plupart des endpoints, celui-ci renvoie les matchs au **niveau supérieur** (pas sous `data`).
+</Note>
+
+## Requête {#request}
+
+`GET /exchange/getOddsForAveragePrice`
+
+<ParamField query="leagueRequested" type="string" required>
+  Code de ligue (insensible à la casse).
+</ParamField>
+
+<CodeGroup>
+```bash curl
+curl "https://api.4casters.io/exchange/getOddsForAveragePrice?leagueRequested=NBA" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+</CodeGroup>
+
+## Réponse {#response}
+
+<ResponseField name="games" type="array">
+  Chaque `game` est le format [Game](/fr/pages/rest/markets/get-games#response) standard avec les champs supplémentaires suivants :
+
+  <Expandable title="Champs supplémentaires par match">
+    <ResponseField name="matchedVolume"   type="number" />
+    <ResponseField name="mainHomeSpread"  type="string" />
+    <ResponseField name="mainAwaySpread"  type="number" />
+    <ResponseField name="mainTotal"       type="string" />
+    <ResponseField name="odds" type="object">
+      Meilleurs prix / prix moyens et tailles maximales de pari pour les marchés moneyline, spread et total.
+      <Expandable title="odds">
+        <ResponseField name="averageHomeMoneyline"            type="integer" />
+        <ResponseField name="bestHomeMoneyline"               type="integer" />
+        <ResponseField name="bestHomeMoneylineWithCommission" type="integer" />
+        <ResponseField name="bestHomeMoneylinePriceLimit"     type="integer">Pari maximum au meilleur prix moneyline domicile.</ResponseField>
+        <ResponseField name="averageAwayMoneyline"            type="integer" />
+        <ResponseField name="bestAwayMoneyline"               type="integer" />
+        <ResponseField name="bestAwayMoneylineWithCommission" type="integer" />
+        <ResponseField name="bestAwayMoneylinePriceLimit"     type="integer" />
+        <ResponseField name="averageHomeSpread"               type="integer" />
+        <ResponseField name="bestHomeSpread"                  type="integer" />
+        <ResponseField name="bestHomeSpreadWithCommission"    type="integer" />
+        <ResponseField name="bestHomeSpreadPriceLimit"        type="integer" />
+        <ResponseField name="mainHomeSpread"                  type="string" />
+        <ResponseField name="averageAwaySpread"               type="integer" />
+        <ResponseField name="bestAwaySpread"                  type="integer" />
+        <ResponseField name="bestAwaySpreadWithCommission"    type="integer" />
+        <ResponseField name="bestAwaySpreadPriceLimit"        type="integer" />
+        <ResponseField name="mainAwaySpread"                  type="number" />
+        <ResponseField name="averageOver"                     type="integer" />
+        <ResponseField name="bestOver"                        type="integer" />
+        <ResponseField name="bestOverWithCommission"          type="integer" />
+        <ResponseField name="bestOverPriceLimit"              type="integer" />
+        <ResponseField name="averageUnder"                    type="integer" />
+        <ResponseField name="bestUnder"                       type="integer" />
+        <ResponseField name="bestUnderWithCommission"         type="integer" />
+        <ResponseField name="bestUnderPriceLimit"             type="integer" />
+        <ResponseField name="mainTotal"                       type="string" />
+        <ResponseField name="maxMoneyLineBet"                 type="integer">Maximum de `homeMoneylineMaxBet` et `awayMoneylineMaxBet`.</ResponseField>
+        <ResponseField name="homeMoneylineMaxBet"             type="integer" />
+        <ResponseField name="awayMoneylineMaxBet"             type="integer" />
+        <ResponseField name="maxTotalBet"                     type="integer" />
+        <ResponseField name="maxOverBet"                      type="integer" />
+        <ResponseField name="maxUnderBet"                     type="integer" />
+        <ResponseField name="maxSpreadBet"                    type="integer" />
+        <ResponseField name="maxHomeSpreadBet"                type="integer" />
+        <ResponseField name="maxAwaySpreadBet"                type="integer" />
+      </Expandable>
+    </ResponseField>
+  </Expandable>
+</ResponseField>

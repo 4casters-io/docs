@@ -1,0 +1,57 @@
+---
+title: 'Annuler tous les ordres'
+description: 'Annuler tous les ordres ouverts appartenant à votre compte'
+openapi: 'POST /session/cancelAllOrders'
+---
+
+Annulez **tous** les ordres ouverts appartenant à l'appelant, tous matchs et toutes ligues confondus. Utilisez ceci pour les arrêts d'urgence — un coupe-circuit déclenché par un système de supervision, par exemple.
+
+Pour une alternative moins destructrice qui vous permet de reprendre les ordres plus tard, voir `POST /session/pauseOrders` (endpoint jumeau qui annule et mémorise ; à associer à `resumeOrders`).
+
+## Requête {#request}
+
+`POST /session/cancelAllOrders`
+
+Ne prend aucun paramètre.
+
+<CodeGroup>
+```bash curl
+curl -X POST https://api.4casters.io/session/cancelAllOrders \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+</CodeGroup>
+
+## Réponse {#response}
+
+<ResponseField name="data" type="array">
+  Résultats d'annulation par ordre. Même format que [Annuler un ordre](/fr/pages/rest/orders/cancel-order#response).
+</ResponseField>
+
+### Exemple {#example}
+
+<CodeGroup>
+```json JSON
+{
+  "data": [
+    {
+      "success": true,
+      "sessionID": "65b036dfb31407c2b6bc1cfe",
+      "odds": -110,
+      "filled": 0,
+      "offered": 0,
+      "remaining": 100,
+      "gameID": "65f0c3c24ef07d0008abc123"
+    },
+    {
+      "success": true,
+      "sessionID": "65b036e0b31407c2b6bc1d08",
+      "odds": 125,
+      "filled": 25,
+      "offered": 0,
+      "remaining": 75,
+      "gameID": "65f0c4ae4ef07d0008abc456"
+    }
+  ]
+}
+```
+</CodeGroup>

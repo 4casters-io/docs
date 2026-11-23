@@ -1,0 +1,64 @@
+---
+title: 'Limites de débit'
+description: "Limites de l'API REST et de l'API d'ordres"
+---
+
+## Ordres, par compte {#orders-per-account}
+
+Le placement d'ordres est limité par compte. REST et l'[API d'ordres](/fr/pages/websocket/introduction) partagent un même budget.
+
+<Note>
+Les limites sont mesurées depuis le 2026-10-26 et appliquées à partir du **lundi 2026-11-02**.
+</Note>
+
+| Niveau | Rafale | Soutenu |
+|---|---|---|
+| Standard | 200 ordres | 20 / seconde |
+| Avancé | 2,000 ordres | 150 / seconde |
+
+- Chaque ordre compte. Un lot de 50 en consomme 50.
+- Un compte inactif peut placer sa rafale d'un coup, puis à son débit soutenu. La capacité se recharge en continu.
+- Un lot qui ne rentre pas est rejeté en entier et ne consomme rien.
+- Les lots sont plafonnés à 1,000 ordres.
+- Les annulations, modifications et remplacements ne comptent jamais.
+
+Les limites avancées sont définies par compte. Contactez le support pour en faire la demande.
+
+L'[annulation par référence](/fr/pages/rest/orders/cancel-by-reference) et `pauseOrders` passent par une file d'attente par compte : 15 annulations / seconde, `429` quand 50 sont en file, et `423` pendant qu'une annulation totale est en cours. Les autres annulations ne passent pas par cette file.
+
+### Au-delà de la limite {#over-the-limit}
+
+- **REST :** `429` avec `Retry-After` (en secondes) :
+
+```json
+{
+  "error": {
+    "message": "rate limited",
+    "code": 429,
+    "details": { "code": "rate_limited", "retryAfterMs": 350, "retryAfterSeconds": 1 }
+  }
+}
+```
+
+- **WebSocket :** `error_type` `rate_limited` avec `retryAfterMs`. La connexion reste ouverte. Voir [Erreurs de placement d'ordre](/fr/pages/websocket/place-order#error-responses).
+
+`retryAfterMs` est l'attente jusqu'à ce que le lot rentre. `-1` signifie qu'il ne rentrera jamais : découpez-le. Les requêtes rejetées ne sont pas traitées, les renvoyer est donc sans risque.
+
+## Par IP (REST) {#per-ip-rest}
+
+Chaque requête REST compte, annulations comprises :
+
+| Limite | Au-delà |
+|---|---|
+| 1,000 requêtes / 10 secondes | `429` jusqu'à la fin de la fenêtre |
+| 30,000 requêtes / 10 minutes | IP bloquée 10 minutes, durée doublée à chaque récidive dans les 24 heures, jusqu'à 24 heures |
+
+Les deux renvoient `429` avec `Retry-After` et `{ "error": "Too many requests. Please try again later." }`. Réessayer pendant un blocage ne le raccourcit pas.
+
+Les messages WebSocket ne comptent pas : les clients à haute fréquence doivent donc utiliser le [WebSocket de l'API d'ordres](/fr/pages/websocket/introduction).
+
+## Authentification {#authentication}
+
+La connexion, la réinitialisation du mot de passe et l'inscription font l'objet d'un throttling supplémentaire.
+
+Les lectures authentifiées ne sont soumises qu'à la limite par IP.

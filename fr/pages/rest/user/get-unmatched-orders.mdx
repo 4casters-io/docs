@@ -1,0 +1,94 @@
+---
+title: 'Récupérer les ordres non matchés'
+description: 'Lister vos ordres ouverts en attente sur l''exchange'
+openapi: 'GET /user/getUnmatched'
+---
+
+Renvoie tous les **ordres ouverts** de l'appelant qui sont actuellement en attente sur l'exchange et disponibles pour être matchés.
+
+## Requête {#request}
+
+`GET /user/getUnmatched`
+
+Ne prend aucun paramètre.
+
+<CodeGroup>
+```bash curl
+curl https://api.4casters.io/user/getUnmatched \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+</CodeGroup>
+
+## Réponse {#response}
+
+<ResponseField name="data.unmatched" type="array">
+  Tableau des ordres ouverts, trié par heure de début de match croissante.
+  <Expandable title="UnmatchedOrder">
+    <ResponseField name="id" type="string">Id de l'ordre.</ResponseField>
+    <ResponseField name="txID" type="string">Id de transaction de la création de l'ordre.</ResponseField>
+    <ResponseField name="type" type="string">`moneyline`, `spread`, `total` ou `moneyline1x2`.</ResponseField>
+    <ResponseField name="bet" type="number">Le `bet` (risque) d'origine.</ResponseField>
+    <ResponseField name="odds" type="integer">Cotes américaines.</ResponseField>
+    <ResponseField name="spread" type="number">Présent pour `spread`.</ResponseField>
+    <ResponseField name="total" type="number">Présent pour `total`.</ResponseField>
+    <ResponseField name="participantID" type="string">Présent pour `moneyline` et `spread` — le participant sur lequel porte le pari.</ResponseField>
+    <ResponseField name="otherParticipantID" type="string">L'id du participant opposé (dont le côté est offert).</ResponseField>
+    <ResponseField name="filled" type="number">Risque déjà matché.</ResponseField>
+    <ResponseField name="offered" type="number">Montant d'offre d'origine (matché + restant).</ResponseField>
+    <ResponseField name="remaining" type="number">Montant de gain encore disponible sur cet ordre (le taker paie le risque pour le prendre).</ResponseField>
+    <ResponseField name="takenRatio" type="number">Fraction de l'ordre déjà matchée, entre `0` et `1`.</ResponseField>
+    <ResponseField name="expiry" type="string">Horodatage d'annulation programmée (ISO 8601). `null` si aucune expiration n'a été définie.</ResponseField>
+    <ResponseField name="createdAt" type="string">Horodatage ISO 8601.</ResponseField>
+    <ResponseField name="origin" type="string">`offer` ou `wager`.</ResponseField>
+    <ResponseField name="userReference" type="string">Identifiant défini par le client, conservé depuis le placement.</ResponseField>
+    <ResponseField name="wagerRequestID" type="string">Id généré par le serveur regroupant chaque exécution / offre issues de la requête de placement d'origine.</ResponseField>
+    <ResponseField name="graded" type="boolean">Toujours `false`.</ResponseField>
+    <ResponseField name="closed" type="boolean" />
+    <ResponseField name="adminRefund" type="boolean" />
+    <Snippet file="fr/types/game-summary.mdx" />
+  </Expandable>
+</ResponseField>
+
+### Exemple {#example}
+
+<CodeGroup>
+```json JSON
+{
+  "data": {
+    "unmatched": [
+      {
+        "id": "62851e3bd54b74e52c39953c",
+        "txID": "62851e3bd54b74e52c39953b",
+        "type": "moneyline",
+        "bet": 100,
+        "odds": 165,
+        "spread": null,
+        "total": null,
+        "participantID": "6165e6e23c65e61a09bf1f73",
+        "otherParticipantID": "626dca8a83899580a06ba87e",
+        "filled": 0,
+        "offered": 100,
+        "remaining": 100,
+        "takenRatio": 0,
+        "expiry": "2022-05-18T23:08:00.000Z",
+        "createdAt": "2022-05-18T16:26:35.601Z",
+        "origin": "offer",
+        "graded": false,
+        "closed": false,
+        "adminRefund": false,
+        "game": {
+          "id": "62823d9d75d894042dfee218",
+          "league": "NHL",
+          "sport": "hockey",
+          "start": "2022-05-18T23:08:00.000Z",
+          "ended": false,
+          "eventName": "NEW YORK RANGERS VS CAROLINA HURRICANES",
+          "isFutures": false,
+          "participants": [/* ... */]
+        }
+      }
+    ]
+  }
+}
+```
+</CodeGroup>

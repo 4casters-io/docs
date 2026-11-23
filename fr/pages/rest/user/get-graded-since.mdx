@@ -1,0 +1,132 @@
+---
+title: 'Récupérer les paris réglés depuis un curseur'
+description: 'Interroger vos paris réglés dans l''ordre de règlement avec un curseur, pour garder une copie locale synchronisée'
+openapi: 'sources/core-api.openapi.json GET /user/v2/getGradedSince'
+---
+
+Renvoie vos **paris réglés (graded) dans l'ordre de leur règlement**, une page à la fois. Chaque réponse vous donne un `cursor` ; renvoyez-le pour obtenir la page suivante. C'est ainsi que vous gardez une copie locale de votre historique de paris synchronisée sans deviner de plages de dates.
+
+Les lignes sont exactement celles de [Récupérer les paris réglés](/fr/pages/rest/user/get-graded) : une par exécution, de votre côté, avec le match intégré.
+
+## Comment interroger {#how-to-poll}
+
+1. **Premier appel :** envoyez `since`, un horodatage ISO 8601. Vous recevez les paris réglés strictement après cet instant, du plus ancien au plus récent, plus un `cursor`.
+2. **Chaque appel suivant :** envoyez le dernier `cursor`, **une fois par seconde**.
+3. Si une réponse contient `hasMore: true`, rappelez **immédiatement** avec le nouveau curseur jusqu'à ce que `hasMore` vaille `false`. Revenez ensuite à une fois par seconde.
+
+Une page vide renvoie votre curseur inchangé, ainsi un processus d'interrogation ne perd jamais sa position. Traitez le curseur comme opaque : n'en construisez ni n'en modifiez jamais un. Un curseur que cet endpoint ne vous a pas donné est rejeté avec `400`.
+
+```js
+let cursor = firstResponse.data.cursor; // from your one-time ?since=<ISO> call
+while (true) {
+  let hasMore = true;
+  while (hasMore) {
+    const res = await get('/user/v2/getGradedSince', { cursor });
+    if (res.status === 429) { await sleep(res.headers['retry-after'] * 1000); continue; } // same cursor
+    for (const row of res.data.graded) upsert(row.txID, row);
+    cursor = res.data.cursor;
+    hasMore = res.data.hasMore;
+  }
+  await sleep(1000);
+}
+```
+
+<Note>
+**Faites un upsert par `txID`, n'ajoutez pas à la suite.** Un pari peut revenir plus tard si son règlement change : un remboursement, ou un nouveau règlement après une correction de score. Il réapparaît plus loin dans le parcours ; la version la plus récente l'emporte.
+</Note>
+
+## Reprendre avec `settledThrough` {#resuming-with-settledthrough}
+
+Chaque réponse contient aussi `settledThrough`, un horodatage ISO 8601 : vous détenez désormais **tous** les paris réglés à cet instant ou avant.
+
+Si vous préférez ne pas stocker le curseur opaque, reprenez avec `since=settledThrough`. Vous ne pouvez pas manquer de pari de cette façon. Vous pouvez revoir quelques lignes, car plusieurs paris peuvent être réglés dans la même milliseconde et une page peut s'arrêter au milieu d'eux ; dédoublonnez par `txID`. Le `cursor` reste la position exacte.
+
+## Requête {#request}
+
+`GET /user/v2/getGradedSince`
+
+Les mêmes paramètres peuvent aussi être envoyés dans un corps JSON avec `POST /user/v2/getGradedSince`. Envoyez exactement l'un de `since` et `cursor`.
+
+<ParamField query="since" type="string">
+  Premier appel uniquement. Renvoie les paris réglés strictement après cet instant ISO 8601.
+</ParamField>
+<ParamField query="cursor" type="string">
+  Chaque appel suivant. Le `cursor` de la réponse précédente, tel quel.
+</ParamField>
+
+<CodeGroup>
+```bash Premier appel
+curl "https://api.4casters.io/user/v2/getGradedSince?since=2026-08-01T00:00:00.000Z" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+
+```bash Appel suivant
+curl "https://api.4casters.io/user/v2/getGradedSince?cursor=CURSOR_FROM_LAST_RESPONSE" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+</CodeGroup>
+
+## Réponse {#response}
+
+<ResponseField name="data.graded" type="array">
+  Jusqu'à **100** exécutions réglées, le règlement le plus ancien en premier. Mêmes champs que [Récupérer les paris réglés](/fr/pages/rest/user/get-graded#response).
+</ResponseField>
+<ResponseField name="data.cursor" type="string">
+  Votre nouvelle position. Envoyez-la comme `cursor` à l'appel suivant. Sur une page vide, c'est le curseur que vous avez envoyé.
+</ResponseField>
+<ResponseField name="data.hasMore" type="boolean">
+  `true` si une autre page est déjà prête : rappelez immédiatement.
+</ResponseField>
+<ResponseField name="data.settledThrough" type="string">
+  ISO 8601. Vous détenez tous les paris réglés à cet instant ou avant. Vous pouvez reprendre à partir de là sans risque avec `since`.
+</ResponseField>
+
+### Exemple {#example}
+
+<CodeGroup>
+```json JSON
+{
+  "data": {
+    "graded": [
+      {
+        "txID": "66b2a1f0c3e4d5a6b7c8d9e0",
+        "id": "66b2a1e9c3e4d5a6b7c8d9d1",
+        "origin": "wager",
+        "type": "total",
+        "outcome": "loser",
+        "bet": 100,
+        "odds": -110,
+        "total": 8.5,
+        "OU": "over",
+        "fee": "1.00",
+        "risk": "101.00",
+        "win": "89.91",
+        "result": "-101.00",
+        "settledAt": "2026-08-02T02:41:57.003Z",
+        "game": { "id": "66b0f4e2a9b8c7d6e5f4a3b2", "league": "MLB" /* ... */ }
+      }
+    ],
+    "cursor": "gc_9QmT4xR2vK7pL1sN8wZ3",
+    "hasMore": false,
+    "settledThrough": "2026-08-02T02:41:57.003Z"
+  }
+}
+```
+</CodeGroup>
+
+## Limites de débit {#rate-limits}
+
+**10 requêtes par tranche de 5 secondes par utilisateur**, en plus de la [limite globale par IP](/fr/pages/rate-limiting#per-ip-rest). Cela laisse de la marge pour rattraper un retard tout en interrogeant une fois par seconde.
+
+Le règlement en direct ne remplit jamais une page (quelques lignes par seconde au plus), donc `hasMore` ne se déclenche vraiment que lorsque vous rattrapez votre retard après une interruption. Une journée complète de règlements d'un compte très actif se rattrape en environ 12 secondes.
+
+Si vous recevez un `429`, attendez `Retry-After` secondes et renvoyez le **même** curseur.
+
+## Erreurs {#errors}
+
+| Statut | Signification |
+|---|---|
+| `400` | `since` et `cursor` envoyés tous les deux, un `since` malformé, ou un curseur que cet endpoint n'a pas émis. |
+| `401` | Token d'authentification manquant ou invalide. |
+| `403` | Votre compte ne peut pas utiliser cet endpoint. |
+| `429` | Limite de débit dépassée. Attendez `Retry-After` secondes et renvoyez le même curseur. |

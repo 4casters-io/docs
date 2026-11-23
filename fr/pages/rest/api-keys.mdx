@@ -1,0 +1,133 @@
+---
+title: 'Clés d''API'
+description: 'Identifiants de longue durée pour vos programmes, gérés depuis la page de votre compte'
+---
+
+Une clé d'API est un identifiant que vous créez pour un programme. Elle s'authentifie en tant que votre compte sur toutes les API 4casters, n'expire jamais sauf si vous lui donnez une date d'expiration, n'est jamais renouvelée à votre insu et peut être restreinte aux adresses réseau de votre choix. Vous pouvez détenir autant de clés que vous le souhaitez et révoquer chacune séparément : une clé divulguée vous coûte une clé, pas votre mot de passe.
+
+Si vous hésitez entre une clé et un token de connexion, commencez par [Authentification](/fr/pages/authentication).
+
+## Créer une clé {#create-a-key}
+
+1. Connectez-vous sur [4casters.io](https://4casters.io) et ouvrez **Mon compte → Sécurité → Clés API**, ou allez directement sur [4casters.io/account/api-keys](https://4casters.io/account/api-keys).
+2. Cliquez sur **Créer une clé**. Donnez-lui un nom, restreignez-la éventuellement à des plages d'IP et donnez-lui éventuellement une date d'expiration.
+3. Copiez la clé depuis la confirmation. **Elle n'est affichée qu'une seule fois.** 4casters n'en conserve qu'un hash ; si vous la perdez, révoquez-la et créez-en une autre.
+
+Créer, modifier et révoquer des clés nécessite une session connectée sur le site web. Une clé ne peut ni créer ni révoquer de clés.
+
+## Anatomie d'une clé {#anatomy-of-a-key}
+
+```
+4ck_Wk15VXFX_T4MPcp8Ij2IODI7OFFIlQsHmvvzJ3Nj8C-StfVe3h0k1kH2SF
+└──────┬───┘ └──────────────────────┬──────────────────────┘└─┬──┘
+    Key ID                        secret                    check
+```
+
+| Partie | Exemple | Ce que c'est |
+| --- | --- | --- |
+| **Key ID** | `4ck_Wk15VXFX` | Identifie la clé : le marqueur `4ck_` (une clé 4casters) suivi de huit caractères. Pas secret. C'est ce que liste la page du compte et ce qu'il faut citer dans une demande au support. |
+| **secret** | `T4MPcp8Ij2IODI7OFFIlQsHmvvzJ3Nj8C-StfVe3h0k` | 32 octets aléatoires, en base64url, 43 caractères. Seul le hash de la clé complète est conservé. |
+| **check** (contrôle) | `1kH2SF` | Le CRC32 de tout ce qui précède, sous forme de six caractères base62. Une clé mal saisie ou tronquée est refusée avant toute recherche, et un scanner de secrets peut reconnaître une vraie clé sans faux positif. Ce n'est pas une mesure de sécurité. |
+
+Traitez la chaîne entière comme l'identifiant. Gardez-la hors du contrôle de version, du code côté client et des logs.
+
+## Utiliser une clé {#use-a-key}
+
+Envoyez la clé dans l'en-tête `Authorization`, exactement là où va un token de connexion. Le préfixe `Bearer ` est optionnel. Rien d'autre ne change : les mêmes endpoints, les mêmes messages, les mêmes réponses.
+
+<Tabs>
+  <Tab title="API REST">
+    <CodeGroup>
+    ```bash curl
+    curl https://api.4casters.io/user/getMe \
+      -H "Authorization: 4ck_Wk15VXFX_T4MPcp8Ij2IODI7OFFIlQsHmvvzJ3Nj8C-StfVe3h0k1kH2SF"
+    ```
+
+    ```javascript JavaScript
+    const res = await fetch('https://api.4casters.io/user/getMe', {
+      headers: { Authorization: process.env.FOURCASTERS_API_KEY },
+    });
+    const { data } = await res.json();
+    ```
+
+    ```python Python
+    import os, requests
+
+    res = requests.get(
+        "https://api.4casters.io/user/getMe",
+        headers={"Authorization": os.environ["FOURCASTERS_API_KEY"]},
+    )
+    data = res.json()["data"]
+    ```
+    </CodeGroup>
+  </Tab>
+  <Tab title="WebSocket d'ordres">
+    ```javascript
+    const WebSocket = require('ws');
+    const ws = new WebSocket('wss://orders-api.4casters.io/orders/ws', {
+      headers: { Authorization: process.env.FOURCASTERS_API_KEY },
+    });
+    ```
+    Une clé refusée fait échouer le handshake avec le statut HTTP du [tableau ci-dessous](#responses). Voir [API d'ordres](/fr/pages/websocket/introduction).
+  </Tab>
+  <Tab title="WebSocket de streaming">
+    ```javascript
+    const WebSocket = require('ws');
+    const ws = new WebSocket('wss://streaming-api.4casters.io/v2/user', {
+      headers: { Authorization: process.env.FOURCASTERS_API_KEY },
+    });
+    ```
+    Idem pour `/price-stream`. Voir [API de streaming](/fr/pages/streaming/introduction).
+  </Tab>
+</Tabs>
+
+Il n'y a pas d'étape de connexion ni rien à renouveler. Une clé continue de fonctionner jusqu'à ce que vous la révoquiez ou qu'elle atteigne sa date d'expiration ; un WebSocket ouvert avec une clé est fermé dans la minute qui suit l'un ou l'autre.
+
+## IP autorisées {#allowed-ips}
+
+Une clé peut être restreinte à une liste d'adresses client : IPv4 ou IPv6, adresses uniques ou plages CIDR, mélangées librement. Une requête depuis toute autre adresse est refusée avec `403 ApiKeyIpNotAllowed`, à chaque requête, de sorte qu'une clé qui quitte son réseau cesse aussitôt de fonctionner. Une liste vide signifie que la clé fonctionne depuis n'importe où.
+
+| Entrée | Correspond à |
+| --- | --- |
+| `203.0.113.9` | Cette seule adresse IPv4. |
+| `10.0.0.0/8` | Toutes les adresses IPv4 de `10.0.0.0` à `10.255.255.255`. |
+| `2001:db8:1234::/64` | Toutes les adresses IPv6 de ce /64. La plupart des fournisseurs attribuent un /64 entier à un hôte, et l'hôte peut changer d'adresse à l'intérieur : listez donc le /64 plutôt qu'une seule adresse IPv6. |
+
+L'adresse vérifiée est celle depuis laquelle votre requête atteint 4casters. Si votre programme se trouve derrière un NAT ou un proxy, c'est l'adresse publique du proxy. Vous pouvez modifier les IP autorisées d'une clé à tout moment depuis la page du compte ; la clé elle-même ne change pas.
+
+## Expiration {#expiry}
+
+Optionnelle, choisie à la création de la clé : jamais, 30, 90 ou 365 jours. Une clé expirée est refusée avec `401 ApiKeyExpired` et reste listée sur la page du compte avec la mention **Expirée** jusqu'à ce que vous la révoquiez.
+
+## Ce qu'une clé peut et ne peut pas faire {#what-a-key-can-and-cannot-do}
+
+Une clé agit en tant que votre compte sur l'exchange : lire vos paris et positions, lire les marchés, placer, modifier et annuler des ordres via REST ou le WebSocket d'ordres, s'abonner aux flux de streaming, et tout ce qu'un token de connexion peut faire, **sauf** l'administration du compte. Ces opérations nécessitent une session connectée sur le site web et répondent `403 LoginSessionRequired` à une clé :
+
+- Créer, renommer, modifier ou révoquer des clés d'API
+- Changer votre mot de passe, votre nom ou votre numéro de téléphone
+- Configurer l'authentification à deux facteurs
+- Retraits et adresses de retrait
+
+Les autres protections de votre compte s'appliquent aussi aux clés : un compte gelé refuse ses clés, et une liste blanche d'IP au niveau du compte, lorsqu'elle est configurée, s'applique en plus des IP autorisées propres à chaque clé.
+
+## Gérer les clés {#manage-keys}
+
+Depuis **Mon compte → Sécurité → Clés API**, le menu de chaque clé propose :
+
+- **Renommer**
+- **Modifier l'accès IP**
+- **Révoquer**. Prend effet à la requête suivante, et tout WebSocket ouvert avec cette clé est fermé dans la minute. Tout ce qui utilise encore la clé reçoit `401 InvalidCredentials`.
+
+La liste affiche pour chaque clé son nom, son Key ID, ses IP autorisées, sa date de création, sa dernière utilisation et son expiration. La dernière utilisation compte les requêtes REST (mise à jour au plus une fois par minute) ; un handshake WebSocket ne la met pas à jour.
+
+## Réponses {#responses}
+
+Les mêmes statuts sur REST (en tant que réponse HTTP) et sur les WebSockets (en tant que réponse au handshake).
+
+| Statut | `error.message` | Signification |
+| --- | --- | --- |
+| `401` | `InvalidCredentials` | Clé inconnue, mal formée ou révoquée. |
+| `401` | `ApiKeyExpired` | La clé a dépassé sa date d'expiration. |
+| `403` | `ApiKeyIpNotAllowed` | La requête provient d'une adresse hors des IP autorisées de la clé. |
+| `403` | `LoginSessionRequired` | La route nécessite une session sur le site web, pas une clé. |
+| `403` | `AccountFrozen` | Le compte est gelé. |

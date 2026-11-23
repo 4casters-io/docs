@@ -1,0 +1,69 @@
+---
+title: 'Liens profonds'
+description: 'Envoyez un joueur directement sur un pari précis, avec votre parrainage attaché'
+---
+
+Un lien profond ouvre la page d'accueil de 4casters avec la fenêtre de prise de pari déjà ouverte sur le match, le marché et le côté que vous avez choisis. Ajoutez votre code de parrainage et tout joueur qui s'inscrit après être arrivé par le lien vous est attribué.
+
+```
+https://4casters.io/?game={gameID}&market=spread&side=away&line=3.5&ref=YOUR_CODE
+```
+
+Le lien fonctionne que le visiteur soit connecté ou non. Un visiteur non connecté voit le pari et une invite de connexion / inscription ; le code de parrainage est mémorisé dans son navigateur et prérempli dans le formulaire d'inscription.
+
+## Construire un lien {#building-a-link}
+
+Partez de l'id du match, que vous pouvez obtenir via [`/exchange/getGames`](/fr/pages/rest/markets/get-games) ou dans la barre d'adresse de n'importe quelle page de match (`/exchange-single/{gameID}`). Ajoutez ensuite le marché que vous voulez ouvrir.
+
+<ParamField query="game" type="string" required>
+  L'id du match (24 caractères hexadécimaux).
+</ParamField>
+<ParamField query="market" type="string" required>
+  `moneyline`, `spread`, `total` ou `1x2` (marchés de football à trois issues).
+</ParamField>
+<ParamField query="side" type="string" required>
+  `home` ou `away` pour moneyline (face à face), spread (handicap de points) et 1x2. `over` ou `under` pour total (plus/moins de points). `draw` est aussi accepté pour 1x2.
+</ParamField>
+<ParamField query="line" type="number">
+  Le chiffre du spread ou du total, exprimé du point de vue du côté choisi. Extérieur +3.5 s'écrit `side=away&line=3.5` ; domicile -3.5 s'écrit `side=home&line=-3.5`. Omettez-le pour ouvrir la ligne principale.
+</ParamField>
+<ParamField query="pick" type="string">
+  1x2 uniquement : `yes` (par défaut) ou `no`.
+</ParamField>
+<ParamField query="ref" type="string">
+  Votre code de parrainage, le même que celui utilisé dans les liens `/sign-up/{code}`.
+</ParamField>
+
+## Exemples {#examples}
+
+<CodeGroup>
+```text Moneyline extérieur
+https://4casters.io/?game=6a84db9c5ddbd1134524a222&market=moneyline&side=away&ref=YOUR_CODE
+```
+
+```text Domicile -3.5
+https://4casters.io/?game=6a84db9c5ddbd1134524a222&market=spread&side=home&line=-3.5&ref=YOUR_CODE
+```
+
+```text Total de la ligne principale, under
+https://4casters.io/?game=6a84db9c5ddbd1134524a222&market=total&side=under&ref=YOUR_CODE
+```
+
+```text Match nul, trois issues
+https://4casters.io/?game=6a84db9c5ddbd1134524a222&market=1x2&side=draw&ref=YOUR_CODE
+```
+</CodeGroup>
+
+## Ce que voit le joueur {#what-the-player-sees}
+
+Le lien pointe vers un marché, pas vers un ordre précis. À l'ouverture de la page, la fenêtre affiche la meilleure cote actuellement en attente de ce côté, ainsi que le reste de l'échelle des cotes. Les cotes bougent : le chiffre que voit un joueur peut donc différer de celui que vous avez vu en construisant le lien ; la fenêtre affiche toujours le carnet d'ordres en direct et le joueur confirme la cote avant que le pari soit placé.
+
+Si personne ne propose actuellement ce côté, la fenêtre passe à la création d'une offre sur cette ligne au lieu d'en prendre une, comme lorsqu'on clique sur une cellule vide de l'exchange.
+
+## Remarques {#notes}
+
+- **Les matchs passent en direct.** Au coup d'envoi d'un match, son marché avant match ferme et un marché en direct distinct ouvre. Un lien avant match suivi après le coup d'envoi ouvre à la place le carnet d'ordres du marché en direct.
+- **Lignes inconnues.** Si la ligne du lien n'existe pas pour ce match (ou si `line` est omis et que le match n'a pas encore de ligne principale publiée), la page d'accueil s'ouvre sans fenêtre. Le joueur n'est jamais déplacé en silence vers une autre ligne.
+- **Attribution du parrainage.** Le premier code de parrainage avec lequel un navigateur arrive est celui conservé jusqu'à l'inscription du visiteur. Un visiteur qui a déjà un compte n'est pas réattribué.
+- **Pages de match aussi.** Les mêmes paramètres `market` / `side` / `line` / `ref` fonctionnent aussi sur une page de match (`/exchange-single/{gameID}?market=...`) et ouvrent la fenêtre par-dessus le tableau de ce match au lieu de la page d'accueil.
+- **Les props et les marchés joueur** ne sont pas encore adressables avec ces paramètres.

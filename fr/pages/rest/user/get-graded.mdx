@@ -1,0 +1,156 @@
+---
+title: 'Récupérer les paris réglés'
+description: 'Paris réglés sur une plage de dates de début de match, une ligne par exécution, avec un résumé de P&L'
+openapi: 'sources/core-api.openapi.json GET /user/v2/getGraded'
+---
+
+Renvoie vos **paris réglés (graded)** sur les matchs qui ont commencé dans une plage de dates, plus un résumé du P&L et du volume.
+
+Utilisez cet endpoint pour des rapports sur une période connue ("tout sur les matchs de la semaine dernière"). Pour garder une copie locale de votre historique synchronisée à mesure que les paris sont réglés, utilisez plutôt [Récupérer les paris réglés depuis un curseur](/fr/pages/rest/user/get-graded-since) : il parcourt les règlements dans l'ordre, vous n'avez donc jamais à deviner une plage de dates.
+
+## Fonctionnement des lignes {#how-rows-work}
+
+- **Une ligne par exécution.** Un ordre matché trois fois revient sous forme de trois lignes, chacune avec son propre `txID`. Utilisez `txID` comme identité de la ligne.
+- **Les deux côtés du carnet.** Les ordres que vous avez pris apparaissent avec `origin: "wager"` ; les ordres que vous avez postés et que quelqu'un a pris apparaissent avec `origin: "offer"`. Dans les deux cas, `bet` et `odds` sont de **votre** côté.
+- **Les dates sont comparées à l'heure de début du match,** pas à l'heure du règlement. Un pari réglé tardivement reste dans la plage de son match.
+- **Le match est intégré** à chaque ligne.
+
+## Requête {#request}
+
+`GET /user/v2/getGraded`
+
+Les mêmes paramètres peuvent aussi être envoyés dans un corps JSON avec `POST /user/v2/getGraded`.
+
+<ParamField query="startDate" type="string">
+  Début de la plage, inclus, sous forme de n'importe quel horodatage ISO 8601, comparé à l'heure de début du match. Omettez-le pour obtenir votre **historique complet** : la limite de 35 jours ci-dessous ne s'applique alors pas.
+</ParamField>
+<ParamField query="endDate" type="string">
+  Fin de la plage, exclue, sous forme de n'importe quel horodatage ISO 8601. Par défaut maintenant.
+</ParamField>
+
+<Warning>
+Quand vous envoyez `startDate`, la plage de `startDate` à `endDate` ne peut dépasser **35 jours**. Une plage plus large est rejetée avec `400` ; elle n'est jamais tronquée en silence. Parcourez les périodes plus longues par tranches de 35 jours.
+</Warning>
+
+<CodeGroup>
+```bash curl
+curl "https://api.4casters.io/user/v2/getGraded?startDate=2026-08-01T00:00:00.000Z&endDate=2026-08-08T00:00:00.000Z" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+</CodeGroup>
+
+## Réponse {#response}
+
+<ResponseField name="data.graded" type="array">
+  Vos exécutions réglées dans la plage.
+  <Expandable title="GradedBet">
+    <ResponseField name="txID" type="string">Id de l'exécution. Unique par ligne.</ResponseField>
+    <ResponseField name="id" type="string">Id de l'ordre. Partagé par toutes les exécutions d'un même ordre.</ResponseField>
+    <ResponseField name="ticketNumber" type="string">Numéro de ticket d'affichage.</ResponseField>
+    <ResponseField name="origin" type="string">`wager` : vous avez pris cet ordre. `offer` : vous avez posté l'ordre et il a été pris.</ResponseField>
+    <ResponseField name="type" type="string">`moneyline`, `spread`, `total` ou `moneyline1x2`.</ResponseField>
+    <ResponseField name="outcome" type="string">`winner`, `loser`, `half-win`, `half-loss` ou `refunded`.</ResponseField>
+    <ResponseField name="bet" type="number">Votre mise sur cette exécution.</ResponseField>
+    <ResponseField name="odds" type="number">Cotes américaines de votre côté.</ResponseField>
+    <ResponseField name="participantID" type="string">Le participant sur lequel vous avez parié. Présent pour `moneyline` et `spread`.</ResponseField>
+    <ResponseField name="spread" type="number">La ligne. Présent pour `spread`.</ResponseField>
+    <ResponseField name="total" type="number">La ligne. Présent pour `total`.</ResponseField>
+    <ResponseField name="OU" type="string">`over` ou `under`. Présent pour `total`.</ResponseField>
+    <ResponseField name="market" type="string">L'issue sur laquelle vous avez parié. Présent pour `moneyline1x2`.</ResponseField>
+    <ResponseField name="side" type="string">`yes` ou `no`. Présent pour `moneyline1x2`.</ResponseField>
+    <ResponseField name="fee" type="string">Commission facturée sur cette exécution. `"0.00"` quand vous étiez le maker : les makers ne paient pas de commission.</ResponseField>
+    <ResponseField name="risk" type="string">Ce que vous avez risqué : la mise plus `fee`.</ResponseField>
+    <ResponseField name="win" type="string">Ce que vous pouviez gagner : le gain brut moins `fee`.</ResponseField>
+    <ResponseField name="result" type="string">Votre P&L réglé sur cette exécution : `win` quand vous avez gagné, moins `risk` quand vous avez perdu. Absent quand l'issue est inconnue.</ResponseField>
+    <ResponseField name="createdAt" type="string">Horodatage ISO 8601 du placement de l'ordre.</ResponseField>
+    <ResponseField name="matchedTime" type="string">Horodatage ISO 8601 de l'exécution.</ResponseField>
+    <ResponseField name="settledAt" type="string">Horodatage ISO 8601 du règlement de l'exécution.</ResponseField>
+    <ResponseField name="graded" type="boolean">Toujours `true` ici.</ResponseField>
+    <ResponseField name="adminRefund" type="boolean">`true` si le pari a été remboursé par un admin plutôt que réglé sur le résultat.</ResponseField>
+    <ResponseField name="cancelled" type="boolean">Pour les lignes `offer`, indique si le reste de votre ordre a été annulé par la suite. Toujours `false` pour les lignes `wager`.</ResponseField>
+    <ResponseField name="takenRatio" type="number">Lignes `offer` uniquement. Part de la taille totale de votre ordre qui a été exécutée, de `0` à `1`.</ResponseField>
+    <ResponseField name="expiry" type="string">Lignes `offer` uniquement. Expiration ISO 8601 de votre ordre, ou `null`.</ResponseField>
+    <ResponseField name="wagerRequestID" type="string">Le `wagerRequestID` que vous avez envoyé au placement de l'ordre, ou `null`.</ResponseField>
+    <ResponseField name="userReference" type="string">Le `userReference` que vous avez envoyé au placement de l'ordre, ou `null`.</ResponseField>
+    <ResponseField name="platform" type="string">D'où provient l'ordre, par ex. `api`, `web`, `mobile`.</ResponseField>
+    <Snippet file="fr/types/game-summary.mdx" />
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="data.summary" type="object">
+  Totaux sur les lignes renvoyées.
+  <Expandable title="summary">
+    <ResponseField name="pnl" type="number">Somme de `result`, en dollars entiers.</ResponseField>
+    <ResponseField name="volume" type="number">Somme du plus petit de `risk` et `win` pour chaque ligne, en dollars entiers.</ResponseField>
+  </Expandable>
+</ResponseField>
+
+<Note>
+Les champs monétaires des lignes (`fee`, `risk`, `win`, `result`) sont des **chaînes** à deux décimales, pour que leurs sommes soient exactes. Les totaux de `summary` sont des nombres arrondis.
+</Note>
+
+Dans de rares cas, l'ordre d'une ligne ne peut pas être chargé. Cette ligne ne contient alors que `txID`, `ticketNumber`, `settledAt`, `matchedTime` et `game`, et son `id` est un objet `{ "_id": "…", "error": "…" }` au lieu d'une chaîne. Ignorez-la ou journalisez-la.
+
+### Exemple {#example}
+
+Une prise de $100 sur l'over à -110, perdue, avec 1% de commission :
+
+<CodeGroup>
+```json JSON
+{
+  "data": {
+    "graded": [
+      {
+        "txID": "66b2a1f0c3e4d5a6b7c8d9e0",
+        "id": "66b2a1e9c3e4d5a6b7c8d9d1",
+        "ticketNumber": "8f3c2a1b9d4e5f60718293a4b5c6d7e8",
+        "origin": "wager",
+        "type": "total",
+        "outcome": "loser",
+        "bet": 100,
+        "odds": -110,
+        "total": 8.5,
+        "OU": "over",
+        "fee": "1.00",
+        "risk": "101.00",
+        "win": "89.91",
+        "result": "-101.00",
+        "createdAt": "2026-08-01T23:10:04.112Z",
+        "matchedTime": "2026-08-01T23:10:04.380Z",
+        "settledAt": "2026-08-02T02:41:57.003Z",
+        "graded": true,
+        "adminRefund": false,
+        "cancelled": false,
+        "wagerRequestID": null,
+        "userReference": "my-ref-1042",
+        "platform": "api",
+        "game": {
+          "id": "66b0f4e2a9b8c7d6e5f4a3b2",
+          "league": "MLB",
+          "sport": "baseball",
+          "start": "2026-08-01T23:05:00.000Z",
+          "ended": true,
+          "live": false,
+          "isSpecials": false,
+          "participants": [/* away, home */]
+        }
+      }
+    ],
+    "summary": { "pnl": -101, "volume": 90 }
+  }
+}
+```
+</CodeGroup>
+
+## Limites de débit {#rate-limits}
+
+**60 requêtes par minute par utilisateur**, en plus de la [limite globale par IP](/fr/pages/rate-limiting#per-ip-rest). Un `429` porte un en-tête `Retry-After` en secondes.
+
+## Erreurs {#errors}
+
+| Statut | Signification |
+|---|---|
+| `400` | Date malformée, ou plage de plus de 35 jours. |
+| `401` | Token d'authentification manquant ou invalide. |
+| `403` | Votre compte ne peut pas utiliser cet endpoint. |
+| `429` | Limite de débit dépassée. Attendez `Retry-After` secondes. |

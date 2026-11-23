@@ -261,6 +261,43 @@ Address the user as `você`. Numbers stay `en-US` format (`3,000`, `1%`), same P
 
 `matched` / `unmatched` as **API field names** stay in English (rule 2); the Portuguese words are for the concept in prose. `WebSocket`, `REST`, `maker`, `taker`, `heartbeat`, `token`, `moneyline`, `spread`, `total` stay in English, as in every locale.
 
+### French (`fr`)
+
+Drafted before the pages were translated and applied across `fr/pages/` and `snippets/fr/types/`. **No fluent human has read these pages yet**, so the `fr` banner stays until Gate 2. The 4casters app's French (`fr.json` in the frontend) uses the same terms; change both together.
+
+Address the user as `vous`. Numbers stay `en-US` format (`3,000`, `1%`, `1.5`), same PM decision as every other locale. `WebSocket`, `REST`, `maker`, `taker` (as party and as fee), `heartbeat`, `token`, `moneyline`, `spread`, `total`, `exchange`, `endpoint`, `payload`, `tick`, `push` stay in English. `moneyline`, `spread` and `total` get a short gloss on first use per page: moneyline = face à face (the app's word), spread = handicap de points, total = plus/moins de points.
+
+| English | French |
+|---|---|
+| matched / unmatched | matché(e) / non matché(e) |
+| matched bets | paris matchés |
+| a match, a fill (the event) | un matching / une exécution |
+| orderbook | carnet d'ordres |
+| order | ordre (never commande) |
+| resting order | ordre en attente |
+| place / cancel / edit an order | placer / annuler / modifier un ordre |
+| stake | mise |
+| risk (the stake side of a bet) | risque |
+| liability | responsabilité |
+| settle / settlement / settled, grade | régler / règlement / réglé(e) |
+| graded wager | wager réglé (`wager` kept to preserve the API's wager/bet split) |
+| bet | pari |
+| odds / american odds | cotes / cotes américaines |
+| favorite / underdog | favori / outsider |
+| game | match (plural matchs) |
+| league | ligue |
+| market | marché |
+| user feed / price feed | flux utilisateur / flux des prix |
+| in-play / pre-game | en direct / avant match |
+| fee | frais |
+| payout | gain |
+| balance / account | solde / compte |
+| request / response, header / body | requête / réponse, en-tête / corps |
+
+`responsabilité` and `risque` are **not interchangeable**, as with the Spanish pair: `responsabilité` renders *liability* (worst-case loss across a game, the Betfair France term), `risque` renders *risk* (the stake side of a bet).
+
+**For the French reviewer, one decision each, applied tree-wide in one commit:** `matché` (Betfair France) or `apparié`; `responsabilité` (Betfair France) or `exposition` (the Spanish choice); `wager réglé` for *graded wager*; `flux des prix` or `flux de prix`.
+
 ### New languages
 
 Write the table before drafting. Copy the English column from the Spanish table above — those are the terms that matter for this API — and fill in the target language with a native speaker, not after the fact.
