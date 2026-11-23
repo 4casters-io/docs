@@ -1,0 +1,54 @@
+---
+title: 'Comisiones'
+description: 'La comisión sobre las apuestas cruzadas y cómo se calcula'
+---
+
+## Quién paga {#who-pays}
+
+La comisión se cobra al **taker** en cada apuesta cruzada. Los makers no pagan comisión.
+
+No hay ningún cargo por colocar, editar o cancelar una orden, por usar la API, ni en una apuesta que resulta push o se reembolsa.
+
+## Tu tarifa {#your-rate}
+
+Tu tarifa se asigna por cuenta. Es `commissionCharged` en [Obtener usuario actual](/es/pages/rest/user/get-me) y en la [respuesta de inicio de sesión](/es/pages/rest/authentication), como fracción: `0.01` es 1%. La tarifa estándar es 1%.
+
+Algunos mercados tienen una tarifa menor. Una apuesta en ellos paga la menor de las dos:
+
+| Liga | Mercado | Tarifa |
+|---|---|---|
+| `MLB` | `moneyline` | 0.75% |
+
+Los eventos en vivo son ligas propias (`MLB-LIVE`) y pagan tu tarifa.
+
+## Cálculo {#calculation}
+
+`toWin` es tu importe × (cuota decimal − 1).
+
+| Resultado | Comisión |
+|---|---|
+| Gana | tarifa × `toWin` |
+| Pierde | tarifa × el menor entre el importe y `toWin` |
+| Media ganada o media perdida (líneas de cuarto) | la mitad de lo anterior |
+| Push o reembolso | ninguna |
+
+En un favorito pagas tarifa × `toWin` en ambos casos. En un underdog pagas tarifa × `toWin` si ganas y tarifa × importe si pierdes.
+
+Ejemplos al 1%:
+
+| Apuesta | Si gana | Si pierde |
+|---|---|---|
+| $100 a -200 (para ganar $50) | $0.50 de comisión, ganas $49.50 | $0.50 de comisión, pierdes $100.50 |
+| $100 a +150 (para ganar $150) | $1.50 de comisión, ganas $148.50 | $1.00 de comisión, pierdes $101.00 |
+
+## Cuándo se cobra {#when-it-is-charged}
+
+La comisión se cobra cuando la apuesta se liquida. Una reliquidación la revierte y la vuelve a cobrar sobre el nuevo resultado.
+
+Antes de liquidarse ya está incluida en `risk` y `win`: `risk` es tu importe más la comisión si pierdes, y `win` es tu ganancia menos la comisión si ganas. Consulta [Obtener apuestas cruzadas](/es/pages/rest/user/get-matched-bets) y el [feed de usuario](/es/pages/streaming/user-feed).
+
+Después de liquidarse, `fee` es el importe cobrado. Consulta [Obtener apuestas liquidadas](/es/pages/rest/user/get-graded).
+
+## Cambios {#changes}
+
+Los cambios en las comisiones y en los [límites de tasa](/es/pages/rate-limiting) se publican en el [Registro de cambios](/es/pages/changelog). Para recibir avisos, suscríbete a su feed RSS: `https://docs.4casters.io/pages/changelog/rss.xml`.

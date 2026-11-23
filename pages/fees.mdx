@@ -1,0 +1,54 @@
+---
+title: 'Fees'
+description: 'Commission on matched bets and how it is calculated'
+---
+
+## Who pays
+
+Commission is charged to the **taker** on each matched bet. Makers pay no commission.
+
+There is no fee to place, edit or cancel an order, to use the API, or on a bet that pushes or is refunded.
+
+## Your rate
+
+Your rate is set per account. It is `commissionCharged` on [Get current user](/pages/rest/user/get-me) and in the [login response](/pages/rest/authentication), as a fraction: `0.01` is 1%. The standard rate is 1%.
+
+Some markets have a lower rate. A bet there pays the lower of the two:
+
+| League | Market | Rate |
+|---|---|---|
+| `MLB` | `moneyline` | 0.75% |
+
+In-play games are their own leagues (`MLB-LIVE`) and pay your rate.
+
+## Calculation
+
+`toWin` is your stake × (decimal odds − 1).
+
+| Result | Commission |
+|---|---|
+| Win | rate × `toWin` |
+| Loss | rate × the smaller of stake and `toWin` |
+| Half win or half loss (quarter lines) | half of the above |
+| Push or refund | none |
+
+On a favorite you pay rate × `toWin` either way. On an underdog you pay rate × `toWin` if you win and rate × stake if you lose.
+
+Examples at 1%:
+
+| Bet | If it wins | If it loses |
+|---|---|---|
+| $100 at -200 (to win $50) | $0.50 fee, you win $49.50 | $0.50 fee, you lose $100.50 |
+| $100 at +150 (to win $150) | $1.50 fee, you win $148.50 | $1.00 fee, you lose $101.00 |
+
+## When it is charged
+
+Commission is charged when the bet is graded. A regrade reverses it and charges it again on the new result.
+
+Before grading it is already inside `risk` and `win`: `risk` is your stake plus the commission on a loss, and `win` is your winnings minus the commission on a win. See [Get matched bets](/pages/rest/user/get-matched-bets) and the [user feed](/pages/streaming/user-feed).
+
+After grading, `fee` is the amount charged. See [Get graded bets](/pages/rest/user/get-graded).
+
+## Changes
+
+Changes to fees and [rate limits](/pages/rate-limiting) are posted in the [Changelog](/pages/changelog). To be notified, subscribe to its RSS feed: `https://docs.4casters.io/pages/changelog/rss.xml`.

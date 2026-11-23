@@ -1,0 +1,54 @@
+---
+title: '费用'
+description: '已成交投注的佣金及其计算方式'
+---
+
+## 谁支付 {#who-pays}
+
+每笔已成交投注的佣金向 **taker** 收取。maker 不支付佣金。
+
+下单、修改或取消订单、使用 API，以及走盘（push）或退款的投注，均不收取任何费用。
+
+## 你的费率 {#your-rate}
+
+费率按账户设置。它是 [获取当前用户](/zh-Hans/pages/rest/user/get-me) 和 [登录响应](/zh-Hans/pages/rest/authentication) 中的 `commissionCharged`，以小数表示：`0.01` 即 1%。标准费率为 1%。
+
+部分市场的费率更低。在这些市场下注时，按两者中较低的费率收取：
+
+| 联赛 | 市场 | 费率 |
+|---|---|---|
+| `MLB` | `moneyline` | 0.75% |
+
+滚球赛事属于单独的联赛（`MLB-LIVE`），按你的费率收取。
+
+## 计算方式 {#calculation}
+
+`toWin` 为你的本金 × (小数赔率 − 1)。
+
+| 结果 | 佣金 |
+|---|---|
+| 赢 | 费率 × `toWin` |
+| 输 | 费率 × 本金与 `toWin` 中的较小值 |
+| 赢一半或输一半（四分之一盘） | 上述金额的一半 |
+| 走盘或退款 | 无 |
+
+投注热门时，无论输赢你都支付 费率 × `toWin`。投注冷门时，赢则支付 费率 × `toWin`，输则支付 费率 × 本金。
+
+以 1% 为例：
+
+| 投注 | 若赢 | 若输 |
+|---|---|---|
+| $100，赔率 -200（可赢 $50） | 佣金 $0.50，你赢 $49.50 | 佣金 $0.50，你输 $100.50 |
+| $100，赔率 +150（可赢 $150） | 佣金 $1.50，你赢 $148.50 | 佣金 $1.00，你输 $101.00 |
+
+## 何时收取 {#when-it-is-charged}
+
+佣金在投注结算时收取。重新结算会先冲回佣金，再按新结果重新收取。
+
+结算前，佣金已计入 `risk` 和 `win`：`risk` 是你的本金加上输时的佣金，`win` 是你的赢利减去赢时的佣金。参见 [获取已撮合投注](/zh-Hans/pages/rest/user/get-matched-bets) 和 [用户推送](/zh-Hans/pages/streaming/user-feed)。
+
+结算后，`fee` 即实际收取的金额。参见 [获取已结算投注](/zh-Hans/pages/rest/user/get-graded)。
+
+## 变更 {#changes}
+
+费用和 [速率限制](/zh-Hans/pages/rate-limiting) 的变更会发布在 [更新日志](/zh-Hans/pages/changelog) 中。如需接收通知，请订阅其 RSS：`https://docs.4casters.io/pages/changelog/rss.xml`。
