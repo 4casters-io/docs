@@ -13,13 +13,7 @@ description: '已成交投注的佣金及其计算方式'
 
 费率按账户设置。它是 [获取当前用户](/zh-Hans/pages/rest/user/get-me) 和 [登录响应](/zh-Hans/pages/rest/authentication) 中的 `commissionCharged`，以小数表示：`0.01` 即 1%。标准费率为 1%。
 
-部分市场的费率更低。在这些市场下注时，按两者中较低的费率收取：
-
-| 联赛 | 市场 | 费率 |
-|---|---|---|
-| `MLB` | `moneyline` | 0.75% |
-
-滚球赛事属于单独的联赛（`MLB-LIVE`），按你的费率收取。
+单月 taker 成交量超过 $2M 的账户，可在下个月调整为 0.75% 的 taker 佣金。
 
 ## 计算方式 {#calculation}
 

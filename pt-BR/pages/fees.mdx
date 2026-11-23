@@ -13,13 +13,7 @@ Não há taxa para enviar, editar ou cancelar uma ordem, para usar a API, nem em
 
 Sua taxa é definida por conta. Ela é `commissionCharged` em [Obter usuário atual](/pt-BR/pages/rest/user/get-me) e na [resposta de login](/pt-BR/pages/rest/authentication), como fração: `0.01` é 1%. A taxa padrão é 1%.
 
-Alguns mercados têm uma taxa menor. Uma aposta neles paga a menor das duas:
-
-| Liga | Mercado | Taxa |
-|---|---|---|
-| `MLB` | `moneyline` | 0.75% |
-
-Os eventos ao vivo são ligas próprias (`MLB-LIVE`) e pagam a sua taxa.
+Contas com mais de $2M em volume como taker em um mês podem passar para uma comissão de taker de 0.75% no mês seguinte.
 
 ## Cálculo {#calculation}
 

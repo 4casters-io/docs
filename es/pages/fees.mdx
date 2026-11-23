@@ -13,13 +13,7 @@ No hay ningún cargo por colocar, editar o cancelar una orden, por usar la API, 
 
 Tu tarifa se asigna por cuenta. Es `commissionCharged` en [Obtener usuario actual](/es/pages/rest/user/get-me) y en la [respuesta de inicio de sesión](/es/pages/rest/authentication), como fracción: `0.01` es 1%. La tarifa estándar es 1%.
 
-Algunos mercados tienen una tarifa menor. Una apuesta en ellos paga la menor de las dos:
-
-| Liga | Mercado | Tarifa |
-|---|---|---|
-| `MLB` | `moneyline` | 0.75% |
-
-Los eventos en vivo son ligas propias (`MLB-LIVE`) y pagan tu tarifa.
+Las cuentas con más de $2M de volumen como taker en un mes pueden pasar a una comisión de taker de 0.75% durante el mes siguiente.
 
 ## Cálculo {#calculation}
 

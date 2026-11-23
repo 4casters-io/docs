@@ -13,13 +13,7 @@ description: '已成交投注的佣金及其計算方式'
 
 費率按帳戶設定。它是 [獲取當前使用者](/zh-Hant/pages/rest/user/get-me) 和 [登入回應](/zh-Hant/pages/rest/authentication) 中的 `commissionCharged`，以小數表示：`0.01` 即 1%。標準費率為 1%。
 
-部分市場的費率更低。在這些市場下注時，按兩者中較低的費率收取：
-
-| 聯賽 | 市場 | 費率 |
-|---|---|---|
-| `MLB` | `moneyline` | 0.75% |
-
-滾球賽事屬於單獨的聯賽（`MLB-LIVE`），按你的費率收取。
+單月 taker 成交量超過 $2M 的帳戶，可在下個月調整為 0.75% 的 taker 佣金。
 
 ## 計算方式 {#calculation}
 

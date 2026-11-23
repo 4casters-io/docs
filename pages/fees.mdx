@@ -13,13 +13,7 @@ There is no fee to place, edit or cancel an order, to use the API, or on a bet t
 
 Your rate is set per account. It is `commissionCharged` on [Get current user](/pages/rest/user/get-me) and in the [login response](/pages/rest/authentication), as a fraction: `0.01` is 1%. The standard rate is 1%.
 
-Some markets have a lower rate. A bet there pays the lower of the two:
-
-| League | Market | Rate |
-|---|---|---|
-| `MLB` | `moneyline` | 0.75% |
-
-In-play games are their own leagues (`MLB-LIVE`) and pay your rate.
+Accounts with over $2M in taker volume in a month can be moved to 0.75% taker commission for the following month.
 
 ## Calculation
 
