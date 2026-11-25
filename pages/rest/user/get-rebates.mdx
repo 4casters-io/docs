@@ -1,9 +1,9 @@
 ---
 title: 'Get rebates'
-description: 'Your maker rebate rate, totals, and one row per rebate credit'
+description: 'Your maker rebate totals and one row per rebate credit'
 ---
 
-Returns your **maker rebate rate**, your rebate totals, and the rebates credited to your account, one row per fill.
+Returns your **maker rebate** totals and the rebates credited to your account, one row per fill.
 
 A rebate is paid to the **maker** of a matched offer when the game is graded. See [Fees](/pages/fees#maker-rebate) for the rate and how the amount is calculated.
 
@@ -27,11 +27,11 @@ curl "https://api.4casters.io/user/getRebates?sinceDays=30" \
 ## Response
 
 <ResponseField name="data.rebateRate" type="number">
-  Your rebate rate as a fraction: `0.001` is 0.1%. `null` when your account earns no rebate. This is your prematch rate, or your live rate if you only have a live one.
+  The rebate rate as a fraction: `0.001` is 0.1%.
 </ResponseField>
 
 <ResponseField name="data.rebateRates" type="object">
-  Your rate per mode. Each is a fraction, or `null` when you earn no rebate in that mode.
+  The same rate, for prematch and live games.
   <Expandable title="rebateRates">
     <ResponseField name="prematch" type="number">Rate on prematch games.</ResponseField>
     <ResponseField name="live" type="number">Rate on live games.</ResponseField>
