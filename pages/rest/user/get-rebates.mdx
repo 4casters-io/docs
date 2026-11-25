@@ -1,0 +1,107 @@
+---
+title: 'Get rebates'
+description: 'Your maker rebate totals and one row per rebate credit'
+---
+
+Returns your **maker rebate** totals and the rebates credited to your account, one row per fill.
+
+A rebate is paid to the **maker** of a matched offer when the game is graded. See [Fees](/pages/fees#maker-rebate) for the rate and how the amount is calculated.
+
+## Request
+
+`GET /user/getRebates`
+
+Authentication is required (see [Authentication](/pages/rest/authentication)).
+
+<ParamField query="sinceDays" type="integer">
+  Return only rebates credited in the last N days, up to `365`. Omit it to get your full history. `summary` is not affected by this parameter.
+</ParamField>
+
+<CodeGroup>
+```bash curl
+curl "https://api.4casters.io/user/getRebates?sinceDays=30" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+</CodeGroup>
+
+## Response
+
+<ResponseField name="data.rebateRate" type="number">
+  The rebate rate as a fraction: `0.001` is 0.1%.
+</ResponseField>
+
+<ResponseField name="data.rebateRates" type="object">
+  The same rate, for prematch and live games.
+  <Expandable title="rebateRates">
+    <ResponseField name="prematch" type="number">Rate on prematch games.</ResponseField>
+    <ResponseField name="live" type="number">Rate on live games.</ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="data.summary" type="object">
+  Totals across your whole history, whatever `sinceDays` is.
+  <Expandable title="summary">
+    <ResponseField name="totalEarned" type="number">All rebates ever credited.</ResponseField>
+    <ResponseField name="last7Days" type="number">Rebates credited in the last 7 days.</ResponseField>
+    <ResponseField name="last30Days" type="number">Rebates credited in the last 30 days.</ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="data.rebates" type="array">
+  Rebate credits, newest first. At most the newest **5,000** rows are returned per request; use `sinceDays` to keep the list short.
+  <Expandable title="Rebate">
+    <ResponseField name="id" type="string">Id of the rebate credit.</ResponseField>
+    <ResponseField name="txID" type="string">Id of the fill the rebate was paid on. The same `txID` as on [Get matched bets](/pages/rest/user/get-matched-bets) and [Get graded bets](/pages/rest/user/get-graded). `null` on rebates credited before October 2026.</ResponseField>
+    <ResponseField name="orderID" type="string">Id of your order that was filled.</ResponseField>
+    <ResponseField name="gameID" type="string">Id of the game.</ResponseField>
+    <ResponseField name="amount" type="number">Amount credited to your balance.</ResponseField>
+    <ResponseField name="createdAt" type="string">ISO 8601 time the rebate was credited, which is when the fill was graded.</ResponseField>
+    <ResponseField name="game" type="object">`eventName`, `league` and `start` of the game. `null` if the game can't be loaded.</ResponseField>
+    <ResponseField name="type" type="string">`moneyline`, `spread`, `total`, or `moneyline1x2`.</ResponseField>
+    <ResponseField name="odds" type="number">American odds from your side.</ResponseField>
+    <ResponseField name="side" type="string">The side you had, as text: a team name, a team and spread, or `Over` / `Under` and the total. `null` for `moneyline1x2`.</ResponseField>
+  </Expandable>
+</ResponseField>
+
+### Example
+
+<CodeGroup>
+```json JSON
+{
+  "data": {
+    "rebateRate": 0.001,
+    "rebateRates": {
+      "prematch": 0.001,
+      "live": 0.001
+    },
+    "rebates": [
+      {
+        "id": "6925f1a2c3e4d5a6b7c8d9e3",
+        "txID": "6925c0f0c3e4d5a6b7c8d9e0",
+        "orderID": "6925c0e9c3e4d5a6b7c8d9d1",
+        "gameID": "6924a7b1c3e4d5a6b7c8d101",
+        "amount": 0.1,
+        "createdAt": "2026-11-26T03:41:57.003Z",
+        "game": {
+          "eventName": "Boston Celtics vs Los Angeles Lakers",
+          "league": "NBA",
+          "start": "2026-11-26T00:30:00.000Z"
+        },
+        "type": "spread",
+        "odds": -110,
+        "side": "Los Angeles Lakers +3.5"
+      }
+    ],
+    "summary": {
+      "totalEarned": 0.1,
+      "last7Days": 0.1,
+      "last30Days": 0.1
+    }
+  }
+}
+```
+</CodeGroup>
+
+## Rebates on graded bets
+
+The rebate on a single fill is also on that fill's row in [Get graded bets](/pages/rest/user/get-graded) and [Get graded bets since a cursor](/pages/rest/user/get-graded-since), as `rebate`.

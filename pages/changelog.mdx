@@ -14,6 +14,12 @@ Conventions:
 
 ---
 
+<Update label="2026-11-25" tags={["REST API"]}>
+  ### Added
+  - **Maker rebate.** 0.1% on each matched offer, on fills matched before 2027-01-01 05:00 UTC, credited when the game is graded. See [Fees](/pages/fees#maker-rebate).
+  - **`GET /user/getRebates`.** Your rebate totals and one row per rebate credit. See [Get rebates](/pages/rest/user/get-rebates).
+</Update>
+
 <Update label="2026-11-21" tags={["REST API"]}>
   ### Changed
   - **Per-IP REST limit raised.** 1,000 / 10 seconds is now 1,500 / 10 seconds, and 30,000 / 10 minutes is now 100,000 / 10 minutes. Block lengths are unchanged. See [Rate limiting](/pages/rate-limiting#per-ip-rest).
