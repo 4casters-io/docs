@@ -35,6 +35,16 @@ Examples at 1%:
 | $100 at -200 (to win $50) | $0.50 fee, you win $49.50 | $0.50 fee, you lose $100.50 |
 | $100 at +150 (to win $150) | $1.50 fee, you win $148.50 | $1.00 fee, you lose $101.00 |
 
+## Maker rebate
+
+Makers are paid a rebate on each of their offers that is matched.
+
+Your rate is `rebateRate` on [Get current user](/pages/rest/user/get-me), as a fraction: `0.001` is 0.1%. It is `null` when your account earns no rebate. Every account earns 0.1% on fills matched before 2027-01-01 05:00 UTC (midnight ET on January 1).
+
+The rebate on a fill is rate × the smaller of the stake and `toWin`, whether your side wins or loses. A half win or half loss pays half. A push or refund pays none.
+
+It is credited to your balance when the game is graded, one credit per fill. [Get rebates](/pages/rest/user/get-rebates) lists the credits and your totals, and `rebate` on [Get graded bets](/pages/rest/user/get-graded) is the rebate on a single fill.
+
 ## When it is charged
 
 Commission is charged when the bet is graded. A regrade reverses it and charges it again on the new result.

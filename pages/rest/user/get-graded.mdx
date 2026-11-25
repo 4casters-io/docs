@@ -59,6 +59,7 @@ curl "https://api.4casters.io/user/v2/getGraded?startDate=2026-08-01T00:00:00.00
     <ResponseField name="market" type="string">The outcome backed. Set for `moneyline1x2`.</ResponseField>
     <ResponseField name="side" type="string">`yes` or `no`. Set for `moneyline1x2`.</ResponseField>
     <ResponseField name="fee" type="string">Commission charged on this fill. `"0.00"` when you were the maker — makers pay no commission.</ResponseField>
+    <ResponseField name="rebate" type="string">Maker rebate paid to you on this fill, with five decimals. Present only on `offer` rows where a rebate was paid. It is not included in `result`. See [Get rebates](/pages/rest/user/get-rebates).</ResponseField>
     <ResponseField name="risk" type="string">What you put at risk: stake plus `fee`.</ResponseField>
     <ResponseField name="win" type="string">What you stood to win: gross winnings minus `fee`.</ResponseField>
     <ResponseField name="result" type="string">Your settled P&L on this fill — `win` when you won, minus `risk` when you lost. Absent when the outcome is unknown.</ResponseField>
