@@ -1,0 +1,34 @@
+---
+title: 'Offer Rebates'
+description: 'Earn 0.1% on every matched offer, through the end of 2026'
+---
+
+When one of your offers is matched, you earn a rebate. Through the end of 2026 it is **0.1% for every account**.
+
+## Who earns it {#who-earns-it}
+
+The **maker**: the account whose offer was matched. Taking an offer earns no rebate.
+
+Accounts with an agreed rebate rate keep that rate.
+
+## How much {#how-much}
+
+0.1% of the smaller of what you risk and what you can win on each matched fill. You earn it whether your side wins or loses.
+
+| Your offer | Matched | Rebate |
+|---|---|---|
+| -110 | $1,100 risked to win $1,000 | $1.00 |
+| +150 | $400 risked to win $600 | $0.40 |
+
+A half win or half loss (quarter lines) pays half. A push or a refund pays nothing.
+
+## When {#when}
+
+Every fill matched before **2027-01-01 05:00 UTC** (midnight ET on January 1) earns the rebate. It is credited to your balance when the game is graded, one credit per fill, so a fill matched on December 31 and graded in January still pays.
+
+## Where to see it {#where-to-see-it}
+
+- **My Rebates** on 4casters.io, from the account menu or the rebate strip under the header: your all-time, 30-day and 7-day totals, each credit, and what is still waiting on a game to grade.
+- **API:** [Get rebates](/pages/rest/user/get-rebates) returns your totals and one row per credit. `rebate` on [Get graded bets](/pages/rest/user/get-graded) is the rebate on a single fill, and `rebateRate` on [Get current user](/pages/rest/user/get-me) is your current rate.
+
+The rate and the calculation are also on [Fees](/pages/fees#maker-rebate).

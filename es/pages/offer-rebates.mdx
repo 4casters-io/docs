@@ -1,0 +1,34 @@
+---
+title: 'Reembolsos de ofertas'
+description: 'Gana 0,1% en cada oferta cruzada, hasta el final de 2026'
+---
+
+Cuando una de tus ofertas se cruza, ganas un reembolso. Hasta el final de 2026 es **0,1% para todas las cuentas**.
+
+## Quién lo gana {#who-earns-it}
+
+El **maker**: la cuenta cuya oferta se cruzó. Tomar una oferta no genera reembolso.
+
+Las cuentas con una tarifa de reembolso acordada mantienen esa tarifa.
+
+## Cuánto {#how-much}
+
+0,1% de lo menor entre lo que arriesgas y lo que puedes ganar en cada cruce. Lo ganas tanto si tu lado gana como si pierde.
+
+| Tu oferta | Cruzado | Reembolso |
+|---|---|---|
+| -110 | $1,100 arriesgados para ganar $1,000 | $1.00 |
+| +150 | $400 arriesgados para ganar $600 | $0.40 |
+
+Media victoria o media derrota (líneas de cuarto) paga la mitad. Un push o un reembolso de la apuesta no paga nada.
+
+## Cuándo {#when}
+
+Todo cruce realizado antes del **2027-01-01 05:00 UTC** (medianoche ET del 1 de enero) gana el reembolso. Se abona a tu saldo cuando se liquida el evento, un abono por cruce, así que un cruce del 31 de diciembre liquidado en enero también paga.
+
+## Dónde verlo {#where-to-see-it}
+
+- **Mis reembolsos** en 4casters.io, desde el menú de la cuenta o la franja de reembolso bajo el encabezado: tus totales histórico, de 30 días y de 7 días, cada abono y lo que todavía espera que se liquide un evento.
+- **API:** [Get rebates](/pages/rest/user/get-rebates) devuelve tus totales y una fila por abono. `rebate` en [Get graded bets](/es/pages/rest/user/get-graded) es el reembolso de un solo cruce, y `rebateRate` en [Get current user](/es/pages/rest/user/get-me) es tu tarifa actual.
+
+La tarifa y el cálculo también están en [Comisiones](/es/pages/fees).

@@ -120,6 +120,12 @@
             "pages": [
               "pages/fees"
             ]
+          },
+          {
+            "tab": "Offer Rebates",
+            "pages": [
+              "pages/offer-rebates"
+            ]
           }
         ]
       },
@@ -231,6 +237,12 @@
             "pages": [
               "es/pages/fees"
             ]
+          },
+          {
+            "tab": "Reembolsos de ofertas",
+            "pages": [
+              "es/pages/offer-rebates"
+            ]
           }
         ]
       },
@@ -340,6 +352,12 @@
             "tab": "Taxas",
             "pages": [
               "pt-BR/pages/fees"
+            ]
+          },
+          {
+            "tab": "Cashback em ofertas",
+            "pages": [
+              "pt-BR/pages/offer-rebates"
             ]
           }
         ],
@@ -456,6 +474,12 @@
             "pages": [
               "zh-Hans/pages/fees"
             ]
+          },
+          {
+            "tab": "挂单返利",
+            "pages": [
+              "zh-Hans/pages/offer-rebates"
+            ]
           }
         ],
         "banner": {
@@ -570,6 +594,12 @@
             "tab": "費用",
             "pages": [
               "zh-Hant/pages/fees"
+            ]
+          },
+          {
+            "tab": "掛單返利",
+            "pages": [
+              "zh-Hant/pages/offer-rebates"
             ]
           }
         ],
