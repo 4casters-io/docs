@@ -1,0 +1,34 @@
+---
+title: 'Cashback em ofertas'
+description: 'Ganhe 0,1% em cada oferta casada, até o fim de 2026'
+---
+
+Quando uma das suas ofertas é casada, você ganha cashback. Até o fim de 2026 ele é de **0,1% para todas as contas**.
+
+## Quem ganha {#who-earns-it}
+
+O **maker**: a conta cuja oferta foi casada. Pegar uma oferta não gera cashback.
+
+Contas com uma taxa de cashback acordada mantêm essa taxa.
+
+## Quanto {#how-much}
+
+0,1% do menor valor entre o que você arrisca e o que pode ganhar em cada casamento. Você ganha tanto se o seu lado vencer quanto se perder.
+
+| Sua oferta | Casado | Cashback |
+|---|---|---|
+| -110 | $1,100 arriscados para ganhar $1,000 | $1.00 |
+| +150 | $400 arriscados para ganhar $600 | $0.40 |
+
+Meia vitória ou meia derrota (linhas de quarto) paga metade. Push ou aposta reembolsada não paga nada.
+
+## Quando {#when}
+
+Todo casamento feito antes de **2027-01-01 05:00 UTC** (meia-noite ET de 1º de janeiro) ganha o cashback. Ele é creditado no seu saldo quando o jogo é resolvido, um crédito por casamento, então um casamento de 31 de dezembro resolvido em janeiro também paga.
+
+## Onde ver {#where-to-see-it}
+
+- **Meu cashback** em 4casters.io, pelo menu da conta ou pela faixa de cashback abaixo do cabeçalho: seus totais de sempre, de 30 dias e de 7 dias, cada crédito e o que ainda espera o resultado de um jogo.
+- **API:** [Get rebates](/pages/rest/user/get-rebates) retorna seus totais e uma linha por crédito. `rebate` em [Get graded bets](/pt-BR/pages/rest/user/get-graded) é o cashback de um único casamento, e `rebateRate` em [Get current user](/pt-BR/pages/rest/user/get-me) é a sua taxa atual.
+
+A taxa e o cálculo também estão em [Taxas](/pt-BR/pages/fees).
